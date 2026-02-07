@@ -11,11 +11,15 @@ export function authorizedRoles (
             return res.status(403).send("Unauthenticated");
         }
 
+        //console.warn(req);
+
         try {
             const result = await pool.query(
-                `SELECT * FROM users WHERE id = $1`, // Just 'id' or 'users.id'
+                `SELECT * FROM users WHERE supabase_user_id = $1`,
                 [req.user.supabaseUserId]
             );
+
+            //console.warn(result);
 
             if (result.rows.length === 0) {
                 return res.status(403).json({ message: "User not registered" });
@@ -34,7 +38,11 @@ export function authorizedRoles (
 
             next()
         } catch (error) {
-            return res.status(500).json({ message: "Authorization error" });
+            console.error("DEBUG - Full Database Error:", error);
+            return res.status(500).json({
+                message: "Authorization error",
+                details: error instanceof Error ? error.message : "Unknown error"
+            });
         }
     }
 }

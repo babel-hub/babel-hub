@@ -7,6 +7,7 @@ interface AuthPayload extends JwtPayload {
     sub: string; // The supabase_user_id
     email?: string;
     role?: string;
+    schoolId?: string;
 }
 
 // 2. Extend the standard Request to include our user
@@ -28,7 +29,6 @@ export function authMiddleware(
     // 3. Robust Environment Check
     // Prevents the app from running this check if the secret is missing
     const secret = process.env.SUPABASE_JWT_SECRET;
-    console.log(secret);
 
     if (!secret) {
         console.error("FATAL: SUPABASE_JWT_SECRET is not defined.");
@@ -36,7 +36,6 @@ export function authMiddleware(
     }
 
     const authHeader = req.headers.authorization;
-    console.log("Raw Auth Header:", authHeader); // Add this line
 
     // 4. Validate Header Format
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -53,6 +52,7 @@ export function authMiddleware(
         }) as AuthPayload;
 
         // 6. Attach user data
+        console.log(decoded)
         req.user = {
             supabaseUserId: decoded.sub,
             role: decoded.role as UserRole, // Useful to pass the role along too
