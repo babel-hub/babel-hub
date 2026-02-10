@@ -6,10 +6,12 @@ import {strictLimiter} from "../middleware/ratelimit.middleware.js";
 
 const router = Router();
 
-router.post("/principal",
+router.post(
+    "/",
     strictLimiter,
     authMiddleware,
-    authorizedRoles(["principal"]),
-    createPrincipal);
+    authorizedRoles(["principal", "admin"]),
+    createPrincipal
+);
 
 export default router;

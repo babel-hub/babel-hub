@@ -26,20 +26,23 @@ export async function registerTeacher(
         try {
             await client.query("BEGIN");
 
-            await client.query(
+            const result = await client.query(
                 `INSERT INTO users (supabase_user_id, role, school_id, email, full_name) 
-                VALUES ($1, 'teacher', $2, $3, $4)`,
+                VALUES ($1, 'teacher', $2, $3, $4)
+                RETURNING id`,
                 [authUserId, creator.schoolId, email, fullName]
             )
+
+            const teacherId = result.rows[0].id;
 
             await client.query(
                 `INSERT INTO teachers (user_id) 
                 VALUES ($1)`,
-                [authUserId]
+                [teacherId]
             )
 
             await createAuditLog(client, {
-                targetUserId: authUserId,
+                targetUserId: teacherId,
                 actorUserId: creator.userId as string,
                 actorRole: creator.role as string,
                 action: "CREATE_TEACHER",
@@ -54,7 +57,7 @@ export async function registerTeacher(
 
             response.status(200).json({
                 "message": "teacher created",
-                "teacher": authUserId
+                "teacher": teacherId
             })
         } catch (dbError) {
             await client.query("ROLLBACK");
