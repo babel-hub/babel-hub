@@ -11,6 +11,7 @@ import studentRoutes from "./routes/student.routes.js";
 import SchoolRoutes from "./routes/school.routes.js";
 import { defaultLimiter } from "./middleware/ratelimit.middleware.js";
 import classRoutes from "./routes/class.routes.js";
+import healthcheckRoutes from "./routes/healthcheck.routes.js";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 app.use(defaultLimiter);
+
+app.use("/healthcheck", healthcheckRoutes);
 
 app.use("/attendance", attendanceRoutes);
 app.use("/grades", gradesRoutes);
