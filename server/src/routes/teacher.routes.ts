@@ -11,6 +11,7 @@ router.post(
     strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
-    registerTeacher);
+    registerTeacher
+);
 
 export default router;

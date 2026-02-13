@@ -4,6 +4,7 @@ import type { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 type UserProfileResponse = {
     id: string;
+    name: string;
     role: string;
     email: string;
     school_id: string | null;
@@ -12,58 +13,61 @@ type UserProfileResponse = {
 };
 
 export async function getUserRole(
-    req: AuthenticatedRequest,
-    res: Response
+    request: AuthenticatedRequest,
+    response: Response
 ) {
-    const { userId, role, email, schoolId: tokenSchoolId } = req.user!;
+    const { supabaseUserId } = request.user!;
 
     try {
-        let profileId: string | null = null;
-        let dbSchoolId: string | null = null;
+        const userResult = await pool.query(
+            `SELECT id, school_id, email, full_name, role FROM users WHERE supabase_user_id = $1`,
+            [supabaseUserId]
+        );
 
-        if (role === "student") {
-            const result = await pool.query(
-                `SELECT id, school_id FROM students WHERE user_id = $1`, // FIXED: userId -> user_id
-                [userId]
-            );
-            if (result.rows.length > 0) {
-                profileId = result.rows[0].id;
-                dbSchoolId = result.rows[0].school_id;
-            }
-        } else if (role === "teacher") {
-            const result = await pool.query(
-                `SELECT id, school_id FROM teachers WHERE user_id = $1`,
-                [userId]
-            );
-            if (result.rows.length > 0) {
-                profileId = result.rows[0].id;
-                dbSchoolId = result.rows[0].school_id;
-            }
-        } else if (role === "principal") {
-            const result = await pool.query(
-                `SELECT id, school_id FROM principals WHERE user_id = $1`,
-                [userId]
-            );
-            if (result.rows.length > 0) {
-                profileId = result.rows[0].id;
-                dbSchoolId = result.rows[0].school_id;
-            }
+        if (userResult.rowCount === 0) {
+            return response.status(404).json({ message: "User not found in local database" });
         }
 
-        const finalSchoolId = dbSchoolId || tokenSchoolId;
+        // This is the ID you need for the rest of your tables!
+        const internalUserId = userResult.rows[0].id;
+        const dbSchoolId = userResult.rows[0].school_id;
+        const email = userResult.rows[0].email;
+        const name = userResult.rows[0].full_name;
+        const realRole = userResult.rows[0].role;
+
+        let profileId: string | null = null;
+
+        if (realRole === "student") {
+            const result = await pool.query(
+                `SELECT id FROM students WHERE user_id = $1`,
+                [internalUserId]
+            );
+            if (result.rows.length > 0) profileId = result.rows[0].id;
+
+        } else if (realRole === "teacher") {
+            const result = await pool.query(
+                `SELECT id FROM teachers WHERE user_id = $1`,
+                [internalUserId]
+            );
+            if (result.rows.length > 0) profileId = result.rows[0].id;
+
+        } else if (realRole === "principal") {
+            profileId = internalUserId;
+        }
 
         const responseData: UserProfileResponse = {
-            id: userId!,
-            role: role!,
-            email: email!,
-            school_id: finalSchoolId!,
+            id: internalUserId,
+            role: realRole!,
+            name: name!,
+            email: email,
+            school_id: dbSchoolId,
             profile_id: profileId,
             is_profile_complete: !!profileId
         };
 
-        res.json(responseData);
+        response.json(responseData);
     } catch (error) {
         console.error("Get User Role Error:", error);
-        res.status(500).json({ message: "Failed to load profile" });
+        response.status(500).json({ message: "Failed to load profile" });
     }
 }
