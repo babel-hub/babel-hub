@@ -1,21 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
 import type { UserRole } from "../types/types.js";
 import {supabase} from "../services/index.js";
-
-interface AuthPayload extends JwtPayload {
-    sub: string;
-    email?: string;
-    role?: string;
-    schoolId?: string;
-    app_metadata?: {
-        role?: string;
-        provider?: string;
-    };
-    user_metadata?: {
-        role?: string;
-    };
-}
 
 export interface AuthenticatedRequest extends Request {
     user?: {
@@ -59,7 +44,6 @@ export async function authMiddleware(
         };
 
         next();
-
     } catch (err) {
         console.error("Middleware Logic Error:", err);
         return res.status(500).json({ message: "Internal Server Error" });

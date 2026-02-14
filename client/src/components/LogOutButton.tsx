@@ -21,10 +21,10 @@ export const LogOutButton = () => {
 
     return (
         <button
-            className="bg-green-500 px-3 py-2 text-white rounded cursor-pointer hover:bg-green-600 transition"
+            className="bg-primary-shadow w-full hover:bg-primary-darker px-3 py-2 text-primary-darker font-semibold hover:text-white rounded-lg cursor-pointer transition-colors"
             onClick={handleLogout}
         >
-            Logout
+            Cerrar sesión
         </button>
     );
 };

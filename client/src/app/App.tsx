@@ -16,7 +16,6 @@ function App() {
                         <Navigate to="/login" replace />
                     }
                 />
-
                 <Route
                     path="/login"
                     element={
@@ -47,6 +46,7 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
 
 
                 { /* Not Found Pages section */ }

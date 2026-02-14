@@ -3,17 +3,20 @@ import { supabase } from "../../auth/supabase.ts";
 import api from "../../api/client.ts";
 import { useAuth } from "../../auth/useAuth.ts";
 import { useNavigate } from "react-router-dom";
+import Loading from "../../components/Loading.tsx";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const setAuth = useAuth((s) => s.setAuth);
     const navigate = useNavigate();
 
     const handleLogin = async () => {
         setError("");
+        setLoading(true);
 
         try {
             const { data, error: supaError } = await supabase.auth.signInWithPassword({
@@ -26,6 +29,7 @@ export default function Login() {
                 return;
             }
 
+
             const token = data.session.access_token;
 
             localStorage.setItem("token", token);
@@ -37,9 +41,10 @@ export default function Login() {
             });
 
 
-            const role = userResponse.data.role;
+            const userData = userResponse.data;
+            const role = userData.role;
 
-            setAuth(token, role);
+            setAuth(token, userData);
 
             if (role === "principal") navigate("/principal");
             else if (role === "teacher") navigate("/teacher");
@@ -50,38 +55,49 @@ export default function Login() {
             console.error("Login Error:", err);
             localStorage.removeItem("token");
             setError("Login failed. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-6 rounded shadow w-80">
-                <h1 className="text-xl font-bold mb-4">Login</h1>
+        <>
+            {loading && ( <Loading  title="Iniciando sesión..." /> )}
 
-                {error && <p className="text-red-500 mb-2">{error}</p>}
+            <div className="min-h-screen flex items-center justify-center bg-page">
+                <div className="bg-white p-6 rounded-xl shadow-lg w-80">
+                    <h1 className="text-xl md:text-2xl font-bold text-primary mb-6 text-center">Babel</h1>
 
-                <input
-                    className="border w-full p-2 mb-2"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+                    {error && (
+                        <div className="bg-red-shadow text-red-error p-3 rounded-lg text-sm mb-4 text-center">
+                            {error}
+                        </div>
+                    )}
 
-                <input
-                    className="border w-full p-2 mb-4"
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                    <input
+                        className="text-custom-black w-full border border-gray-200 rounded-xl p-3 mb-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        placeholder="Email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
 
-                <button
-                    onClick={handleLogin}
-                    className="bg-black text-white w-full py-2"
-                >
-                    Login
-                </button>
+                    <input
+                        className="text-custom-black w-full border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        placeholder="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+
+                    <button
+                        onClick={handleLogin}
+                        className="bg-primary hover:bg-primary-darker cursor-pointer rounded-xl focus:outline-none font-semibold text-white w-full py-3 transition-colors shadow-md"
+                    >
+                        Acceder
+                    </button>
+                </div>
             </div>
-        </div>
+        </>
     );
 }
