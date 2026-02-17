@@ -24,15 +24,19 @@ app.use(defaultLimiter);
 
 app.use("/healthcheck", healthcheckRoutes);
 
+//CRUD of attendance and grades
 app.use("/attendance", attendanceRoutes);
 app.use("/grades", gradesRoutes);
 
+//GET current user info
 app.use("/user", accessRoleRoutes);
 
+//CRUD principals, teachers and students
 app.use("/principal", principalRoutes);
 app.use("/teacher", teacherRoutes);
-app.use("/students", studentRoutes);
+app.use("/student", studentRoutes);
 
+//CRUD classes and schools
 app.use("/school", SchoolRoutes);
 app.use("/classes", classRoutes);
 

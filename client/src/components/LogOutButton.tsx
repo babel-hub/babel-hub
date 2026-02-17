@@ -1,6 +1,7 @@
 import { supabase } from "../auth/supabase.ts";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from "../auth/useAuth.ts";
+import PrimaryButton from "./Button.tsx";
 
 export const LogOutButton = () => {
     const navigate = useNavigate();
@@ -20,12 +21,7 @@ export const LogOutButton = () => {
     };
 
     return (
-        <button
-            className="bg-primary-shadow w-full hover:bg-primary-darker px-3 py-2 text-primary-darker font-semibold hover:text-white rounded-lg cursor-pointer transition-colors"
-            onClick={handleLogout}
-        >
-            Cerrar sesión
-        </button>
+        <PrimaryButton title="Cerrar Sesión" full={true} onClick={handleLogout}></PrimaryButton>
     );
 };
 

@@ -16,9 +16,8 @@ export default function NotFoundPage() {
                 <p className="text-gray-500 mb-8 text-base sm:text-lg">
                     Parece que te has perdido. La página que estás buscando no existe o ha sido movida.
                 </p>
-
                 <button
-                    onClick={() => navigate("/")} // Sends them back to the default route (login or dashboard)
+                    onClick={() => navigate(-1)} // Sends them back to the default route (login or dashboard)
                     className="bg-primary hover:bg-primary-darker text-sm md:text-base cursor-pointer text-white font-semibold py-3 px-8 rounded-xl transition-colors shadow-md"
                 >
                     Volver al inicio

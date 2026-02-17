@@ -82,7 +82,16 @@ export async function getStudents (
     try {
         await client.query("BEGIN");
 
-        const result = await client.query(`SELECT * FROM students ORDER BY created_at DESC`);
+        const result = await client.query(`
+            SELECT  
+                s.id,
+                s.enrollment_code,
+                s.created_at,
+                u.full_name,
+                u.email
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            ORDER BY created_at DESC`);
 
         await client.query("COMMIT");
 

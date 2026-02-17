@@ -62,7 +62,7 @@ export default function Login() {
 
     return (
         <>
-            {loading && ( <Loading  title="Iniciando sesión..." /> )}
+            {loading && ( <Loading title="Iniciando sesión..." /> )}
 
             <div className="min-h-screen flex items-center justify-center bg-page">
                 <div className="bg-white p-6 rounded-xl shadow-lg w-80">

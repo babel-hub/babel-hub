@@ -6,7 +6,7 @@ export interface UserProfile {
     name?: string;
     role: UserRole;
     email: string;
-    school_id: string | null;
+    school_id?: string | null;
 }
 
 interface AuthState {

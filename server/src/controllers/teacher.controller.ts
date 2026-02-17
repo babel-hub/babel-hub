@@ -72,3 +72,41 @@ export async function registerTeacher(
         response.status(500).json({ message: "Failed to create teacher" });
     }
 }
+
+export async function getTeachers(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const result = await client.query(`
+            SELECT
+                t.id,
+                t.user_id,
+                t.created_at,
+                u.full_name,
+                u.email,
+                COUNT(c.id)::int AS total_classes
+            FROM teachers t
+                     JOIN users u ON t.user_id = u.id
+                     LEFT JOIN classes c ON c.teacher_id = t.id
+            GROUP BY t.id, t.user_id, t.created_at, u.full_name, u.email
+            ORDER BY t.created_at DESC;`);
+
+        await client.query("COMMIT");
+
+        response.status(200).json({
+            result: result.rows
+        })
+    } catch (dbError) {
+        await client.query("ROLLBACK");
+
+        console.error("Transaction Error - GET Students rolled back:", dbError);
+        response.status(500).json({ message: "Database error: GET Students failed" });
+    } finally {
+        client.release()
+    }
+}
