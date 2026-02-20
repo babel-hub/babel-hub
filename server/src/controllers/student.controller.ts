@@ -2,12 +2,12 @@ import type { Response } from "express";
 import { pool } from "../db/index.js";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 import { supabase } from "../services/index.js";
-import {createAuditLog} from "../services/audit.service.js";
+import { createAuditLog } from "../services/audit.service.js";
 
 export async function registerStudent (
     request: AuthenticatedRequest,
     response: Response) {
-    const { email,  password, fullName, enrollmentCode } = request.body;
+    const { email,  password, fullName, enrolmentCode, courseId } = request.body;
     const creator = request.user!;
 
     try {
@@ -35,9 +35,9 @@ export async function registerStudent (
             const internalId = userResult.rows[0].id;
 
             await client.query(`
-                INSERT INTO students (user_id, enrollment_code)
-                VALUES ($1, $2)
-            `, [internalId, enrollmentCode]);
+                INSERT INTO students (user_id, enrollment_code, course_id)
+                VALUES ($1, $2, $3)
+            `, [internalId, enrolmentCode, courseId]);
 
             await createAuditLog(client, {
                 actorUserId: creator.userId as string,
@@ -47,7 +47,8 @@ export async function registerStudent (
                 schoolId: creator.schoolId as string,
                 metadata: {
                     email,
-                    enrollmentCode
+                    courseId,
+                    enrolmentCode
                 }
             });
 
@@ -87,6 +88,7 @@ export async function getStudents (
                 s.id,
                 s.enrollment_code,
                 s.created_at,
+                s.course_id,
                 u.full_name,
                 u.email
             FROM students s
@@ -123,7 +125,8 @@ export async function getStudentById(
 
     try {
         const student = await client.query(`
-            SELECT s.*, u.supabase_user_id
+            SELECT s.*, 
+                   u.supabase_user_id
             FROM students s
             JOIN users u ON s.user_id = u.id
             WHERE s.id = $1

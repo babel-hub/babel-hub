@@ -26,8 +26,8 @@ function App() {
                     }
                 >
                     <Route index element={<PrincipalDashboard />} />
-                    <Route path="classes" element={<PrincipalClasses />} />
-                    <Route path="classes/:id" element={<ClassInfo />} />
+                    <Route path="cursos" element={<PrincipalClasses />} />
+                    <Route path="cursos/:id" element={<ClassInfo />} />
                     <Route path="students" element={<ListStudents />} />
                     <Route path="teachers" element={<ListTeacher />} />
                 </Route>

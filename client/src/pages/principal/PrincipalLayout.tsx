@@ -5,9 +5,9 @@ export const PrincipalLayout = () => {
     const user = useAuth((state) => state.user);
 
     const gridItems = [
-        { id: "1", icon: "", path:"/principal", label: "Dashboard" },
+        { id: "1", icon: "", path:"/principal/Dashboard", label: "Dashboard" },
         { id: "2", icon: "", path:"/unknow", label: "Calendario" },
-        { id: "3", icon: "", path:"/principal/classes", label: "Cursos" },
+        { id: "3", icon: "", path:"/principal/cursos", label: "Cursos" },
         { id: "4", icon: "", path:"/principal/teachers", label: "Profesores" },
         { id: "5", icon: "", path:"/principal/students", label: "Estudiantes" },
         { id: "6", icon: "", path:"/unknow", label: "Acudientes" },

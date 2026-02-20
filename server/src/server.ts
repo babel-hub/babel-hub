@@ -10,8 +10,9 @@ import teacherRoutes from "./routes/teacher.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import SchoolRoutes from "./routes/school.routes.js";
 import { defaultLimiter } from "./middleware/ratelimit.middleware.js";
-import classRoutes from "./routes/class.routes.js";
 import healthcheckRoutes from "./routes/healthcheck.routes.js";
+import coursesRoutes from "./routes/courses.routes.js";
+import classesRoutes from "./routes/classes.routes.js";
 
 dotenv.config();
 
@@ -38,7 +39,8 @@ app.use("/student", studentRoutes);
 
 //CRUD classes and schools
 app.use("/school", SchoolRoutes);
-app.use("/classes", classRoutes);
+app.use("/courses", coursesRoutes);
+app.use("/classes", classesRoutes);
 
 
 app.use(errorHandler);

@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 // import { useNavigate } from "react-router-dom";
 import Loading from "../../../components/Loading.tsx";
 import { formateDate } from "../../../types";
-import PrimaryButton from "../../../components/Button.tsx";
+import PrimaryButton from "../../../components/PrimaryButton.tsx";
+import CancelButton from "../../../components/CancelButton.tsx";
 
 interface Teacher {
     id: string;
@@ -14,29 +15,88 @@ interface Teacher {
     total_classes: number;
 }
 
+const formRegExp = [
+    { label: "name", regExp: "^[a-zA-Z\\s\\-\']{2,50}$" },
+    { label: "email", regExp: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" },
+    { label: "password", regExp: "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$" },
+];
+
 const ListTeacher = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
-    useEffect(() => {
-        const fetchTeachers = async () => {
-            setLoading(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formLoading, setFormLoading] = useState(false);
+    const [formError, setFormError] = useState("");
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        password: ""
+    });
 
-            try {
-                const response = await api.get("/teacher");
-                setTeachers(response.data.result || response.data);
-            } catch (fetchError) {
-                console.log(fetchError);
-                setError("Error fetching teachers");
-            } finally {
-                setLoading(false);
-            }
+    const fetchTeachers = async () => {
+        setLoading(true);
+
+        try {
+            const response = await api.get("/teacher");
+            setTeachers(response.data.result || response.data);
+        } catch (fetchError) {
+            console.log(fetchError);
+            setError("Error fetching teachers");
+        } finally {
+            setLoading(false);
         }
+    }
 
+    useEffect(() => {
         fetchTeachers();
     }, []);
+
+
+    const handleCreateTeacher = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError("");
+
+        const nameRegex = new RegExp(formRegExp.find(r => r.label === "name")?.regExp || "");
+        const emailRegex = new RegExp(formRegExp.find(r => r.label === "email")?.regExp || "");
+        const passRegex = new RegExp(formRegExp.find(r => r.label === "password")?.regExp || "");
+
+        if (!nameRegex.test(formData.fullName)) {
+            setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
+            return;
+        }
+
+        if (!emailRegex.test(formData.email)) {
+            setFormError("Por favor, ingresa un correo electrónico válido.");
+            return;
+        }
+
+        if (!passRegex.test(formData.password)) {
+            setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial (@$!%*#?&).");
+            return;
+        }
+
+        setFormLoading(true);
+
+        try {
+            await api.post("/teacher", formData);
+
+            setIsModalOpen(false);
+            setFormData({ fullName: "", email: "", password: "" });
+            await fetchTeachers();
+
+        } catch (err: any) {
+            setFormError(err.response?.data?.message || "Error al crear el profesor.");
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const getInitials = (name: string) => {
         const names = name.split(" ");
@@ -67,7 +127,7 @@ const ListTeacher = () => {
                         {teachers.length} profesores registrados en el sistema.
                     </p>
                 </div>
-                <PrimaryButton title="+ Nuevo Profesor"/>
+                <PrimaryButton onClick={() => setIsModalOpen(true)} title="+ Nuevo Profesor"/>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -129,6 +189,64 @@ const ListTeacher = () => {
             {filteredTeachers.length === 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
                     <p className="text-gray-500 font-medium text-lg">No se encontraron profesores.</p>
+                </div>
+            )}
+
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                            <h3 className="text-xl font-bold text-custom-black">Crear Profesor</h3>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none cursor-pointer"
+                            >
+                                &times;
+                            </button>
+                        </div>
+
+                        <div className="p-5 overflow-y-auto">
+                            {formError && (
+                                <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
+                                    {formError}
+                                </div>
+                            )}
+
+                            <form id="create-teacher-form" onSubmit={handleCreateTeacher} className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-semibold text-gray-700">Nombre Completo</label>
+                                    <input
+                                        type="text" name="fullName" required value={formData.fullName} onChange={handleFormChange}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-semibold text-gray-700">Correo Electrónico</label>
+                                    <input
+                                        type="email" name="email" required value={formData.email} onChange={handleFormChange}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-sm font-semibold text-gray-700">Contraseña</label>
+                                    <input
+                                        type="password" name="password" required value={formData.password} onChange={handleFormChange}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                    />
+                                </div>
+                            </form>
+                        </div>
+
+                        <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                            <CancelButton title="Cancelar" onClick={() => {
+                                setIsModalOpen(false);
+                                setFormError("");
+                                setFormData({ fullName: "", email: "", password: "" });
+                            }} />
+                            <PrimaryButton type="submit" form="create-teacher-form" title={formLoading ? "Guardando..." : "Crear"} />
+                        </div>
+                    </div>
                 </div>
             )}
 

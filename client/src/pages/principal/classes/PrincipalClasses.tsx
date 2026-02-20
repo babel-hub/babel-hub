@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import {useEffect, useState} from "react";
 import api from "../../../api/client.ts";
-import PrimaryButton from "../../../components/Button.tsx";
+import PrimaryButton from "../../../components/PrimaryButton.tsx";
+import Loading from "../../../components/Loading.tsx";
 
 interface ClassData {
     id: string;
@@ -35,6 +36,7 @@ const PrincipalClasses = () => {
         loadClasses();
     }, [])
 
+    if (loading) return <Loading title="Cargando cursos..." />
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -45,48 +47,43 @@ const PrincipalClasses = () => {
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
-            {loading ? (
-                <div className="w-full flex items-center justify-center">
-                    <div className="w-10 h-10 border-4 border-primary-shadow border-t-primary-darker rounded-full animate-spin"></div>
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-xl text-left border-collapse">
-                        <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="p-3 font-semibold text-custom-black">Clase</th>
-                            <th className="p-3 font-semibold text-custom-black">Materia</th>
-                            <th className="p-3 font-semibold text-custom-black">Profesor</th>
-                            <th className="p-3 font-semibold text-custom-black">Acciones</th>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-xl text-left border-collapse">
+                    <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="p-3 font-semibold text-custom-black">Clase</th>
+                        <th className="p-3 font-semibold text-custom-black">Materia</th>
+                        <th className="p-3 font-semibold text-custom-black">Profesor</th>
+                        <th className="p-3 font-semibold text-custom-black">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {classes.map((cls) => (
+                        <tr key={cls.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-3 font-medium text-black">{cls.class_name}</td>
+                            <td className="p-3 text-custom-black">{cls.subject_name}</td>
+                            <td className="p-3 text-custom-black">{cls.teacher_name}</td>
+                            <td className="p-3">
+                                <button
+                                    onClick={() => navigate(`/principal/classes/${cls.id}`)}
+                                    className="text-primary-600 hover:underline mr-3 cursor-pointer">
+                                    Ver Estudiantes
+                                </button>
+                            </td>
                         </tr>
-                        </thead>
-                        <tbody>
-                        {classes.map((cls) => (
-                            <tr key={cls.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                <td className="p-3 font-medium text-black">{cls.class_name}</td>
-                                <td className="p-3 text-custom-black">{cls.subject_name}</td>
-                                <td className="p-3 text-custom-black">{cls.teacher_name}</td>
-                                <td className="p-3">
-                                    <button
-                                        onClick={() => navigate(`/principal/classes/${cls.id}`)}
-                                        className="text-primary-600 hover:underline mr-3 cursor-pointer">
-                                        Ver Estudiantes
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                    ))}
 
-                        {classes.length === 0 && (
-                            <tr>
-                                <td colSpan={4} className="p-6 text-center text-gray-500">
-                                    No hay clases registradas.
-                                </td>
-                            </tr>
-                        )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+
+                    {classes.length === 0 && (
+                        <tr>
+                            <td colSpan={4} className="p-6 text-center text-gray-500">
+                                No hay clases registradas.
+                            </td>
+                        </tr>
+                    )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
