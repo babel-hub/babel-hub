@@ -1,10 +1,12 @@
-import api from "../../../api/client.ts";
+import api from "../../../../api/client.ts";
 import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-import Loading from "../../../components/Loading.tsx";
-import { formateDate } from "../../../types";
-import PrimaryButton from "../../../components/PrimaryButton.tsx";
-import CancelButton from "../../../components/CancelButton.tsx";
+import Loading from "../../../../components/Loading.tsx";
+import { formateDate } from "../../../../types";
+import PrimaryButton from "../../../../components/PrimaryButton.tsx";
+import CancelButton from "../../../../components/CancelButton.tsx";
+import { useNavigate } from "react-router-dom";
+import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
+
 
 interface StudentProps {
     id: string;
@@ -37,6 +39,8 @@ const ListStudents = () => {
         enrolmentCode: ""
     });
 
+    const navigate = useNavigate();
+
     const fetchStudents = async () => {
         setLoading(true);
 
@@ -45,7 +49,7 @@ const ListStudents = () => {
             setStudents(response.data);
         } catch (fetchError) {
             console.log(fetchError);
-            setError("Error fetching students");
+            setError("Error fetching community");
         } finally {
             setLoading(false);
         }
@@ -121,10 +125,12 @@ const ListStudents = () => {
 
     return (
         <div className="flex flex-col gap-6">
-
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-custom-black">Estudiantes</h2>
+                    <div className="flex gap-2">
+                        <ButtonChevronBack onClick={() => navigate(-1)}/>
+                        <h2 className="text-2xl font-bold text-custom-black">Estudiantes</h2>
+                    </div>
                     <p className="text-gray-500 text-sm mt-1">
                         {students.length} estudiantes registrados en el sistema.
                     </p>

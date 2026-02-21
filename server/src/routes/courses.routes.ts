@@ -13,7 +13,7 @@ router.get(
 );
 
 router.get(
-    "/:id/",
+    "/:id",
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     getCourseDetails

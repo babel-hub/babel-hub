@@ -6,16 +6,17 @@ import Loading from "../../../components/Loading.tsx";
 
 interface ClassData {
     id: string;
-    class_name: string;
-    subject_name: string;
-    teacher_id: string;
-    teacher_name: string;
+    course_name: string;
+    created_at: string;
+    year: string;
+    student_count: string;
 }
 
-const PrincipalClasses = () => {
+
+const PrincipalCourses = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [classes, setClasses] = useState<ClassData[]>([]);
+    const [courses, setCourses] = useState<ClassData[]>([]);
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -23,10 +24,10 @@ const PrincipalClasses = () => {
             setLoading(true);
 
             try {
-                const response = await api.get("/classes");
-                setClasses(response.data.classes);
+                const response = await api.get("/courses");
+                setCourses(response.data.courses);
             } catch (loadError) {
-                console.error("Failed to load classes", loadError);
+                console.error("Failed to load courses", loadError);
                 setError("No se pudieron cargar las clases.");
             } finally {
                 setLoading(false);
@@ -39,10 +40,10 @@ const PrincipalClasses = () => {
     if (loading) return <Loading title="Cargando cursos..." />
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
             <div className="p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <h2 className="text-xl lg:text-2xl font-bold text-custom-black">Gestión de Clases</h2>
-                <PrimaryButton title="Nueva Clase"/>
+                <h2 className="text-xl lg:text-2xl font-bold text-custom-black">Gestión de Cursos</h2>
+                <PrimaryButton title="Nuevo Curso"/>
             </div>
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -51,33 +52,33 @@ const PrincipalClasses = () => {
                 <table className="w-full min-w-xl text-left border-collapse">
                     <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="p-3 font-semibold text-custom-black">Clase</th>
-                        <th className="p-3 font-semibold text-custom-black">Materia</th>
-                        <th className="p-3 font-semibold text-custom-black">Profesor</th>
+                        <th className="p-3 font-semibold text-custom-black">Curso</th>
+                        <th className="p-3 font-semibold text-custom-black">Año</th>
+                        <th className="p-3 font-semibold text-custom-black">Estudiantes</th>
                         <th className="p-3 font-semibold text-custom-black">Acciones</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {classes.map((cls) => (
-                        <tr key={cls.id} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="p-3 font-medium text-black">{cls.class_name}</td>
-                            <td className="p-3 text-custom-black">{cls.subject_name}</td>
-                            <td className="p-3 text-custom-black">{cls.teacher_name}</td>
+                    {courses.map((course) => (
+                        <tr key={course.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-3 font-medium text-black">{course.course_name}</td>
+                            <td className="p-3 text-custom-black">{course.year}</td>
+                            <td className="p-3 text-custom-black">{course.student_count}</td>
+
                             <td className="p-3">
                                 <button
-                                    onClick={() => navigate(`/principal/classes/${cls.id}`)}
+                                    onClick={() => navigate(`/principal/cursos/${course.id}`)}
                                     className="text-primary-600 hover:underline mr-3 cursor-pointer">
-                                    Ver Estudiantes
+                                    Ver Detalles
                                 </button>
                             </td>
                         </tr>
                     ))}
 
-
-                    {classes.length === 0 && (
+                    {courses.length === 0 && (
                         <tr>
                             <td colSpan={4} className="p-6 text-center text-gray-500">
-                                No hay clases registradas.
+                                No hay cursos registrados.
                             </td>
                         </tr>
                     )}
@@ -88,4 +89,4 @@ const PrincipalClasses = () => {
     );
 }
 
-export default PrincipalClasses;
+export default PrincipalCourses;

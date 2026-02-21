@@ -5,11 +5,14 @@ import TeacherDashboard from "../pages/teacher/home.tsx";
 import PrincipalDashboard from "../pages/principal/PrincipalDashboard.tsx";
 import ProtectedRoute from "../auth/Route.tsx";
 import NotFoundPage from "../pages/misc/notFoundPage.tsx";
-import PrincipalClasses from "../pages/principal/classes/PrincipalClasses.tsx";
-import ClassInfo from "../pages/principal/classes/ClassInfo.tsx";
+import PrincipalCourses from "../pages/principal/courses/PrincipalCourses.tsx";
+import CourseDetails from "../pages/principal/courses/CourseDetails.tsx";
 import PrincipalLayout from "../pages/principal/PrincipalLayout.tsx";
-import ListStudents from "../pages/principal/students/Students.tsx";
-import ListTeacher from "../pages/principal/teachers/Teachers.tsx";
+import ListStudents from "../pages/principal/community/students/Students.tsx";
+import ListTeacher from "../pages/principal/community/teachers/Teachers.tsx";
+import Community from "../pages/principal/community/Community.tsx";
+import StudentProfile from "../pages/principal/community/students/StudentProfile.tsx";
+import ClassDetails from "../pages/principal/courses/classes/ClassesDetails.tsx";
 
 function App() {
     return (
@@ -25,11 +28,15 @@ function App() {
                         </ProtectedRoute>
                     }
                 >
-                    <Route index element={<PrincipalDashboard />} />
-                    <Route path="cursos" element={<PrincipalClasses />} />
-                    <Route path="cursos/:id" element={<ClassInfo />} />
-                    <Route path="students" element={<ListStudents />} />
-                    <Route path="teachers" element={<ListTeacher />} />
+                    <Route path="dashboard" index element={<PrincipalDashboard />} />
+                    <Route path="cursos" element={<PrincipalCourses />} />
+                    <Route path="cursos/:id" element={<CourseDetails />} />
+                    <Route path="cursos/:courseId/clase/:id" element={<ClassDetails />} />
+                    <Route path="comunidad" element={<Community />} />
+                    <Route path="comunidad/profesores" element={<ListTeacher />} />
+                    <Route path="comunidad/estudiantes" element={<ListStudents />} />
+                    <Route path="comunidad/estudiantes/:id" element={<StudentProfile />} />
+
                 </Route>
                 <Route
                     path="/student"

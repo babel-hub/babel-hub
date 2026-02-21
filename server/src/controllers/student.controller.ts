@@ -75,34 +75,33 @@ export async function registerStudent (
     }
 }
 
-export async function getStudents (
+export async function getStudents(
     request: AuthenticatedRequest,
-    response: Response) {
+    response: Response
+) {
+    const { schoolId } = request.user!;
     const client = await pool.connect();
 
     try {
-        await client.query("BEGIN");
-
         const result = await client.query(`
-            SELECT  
-                s.id,
+            SELECT
+                s.id as student_id,
                 s.enrollment_code,
                 s.created_at,
-                s.course_id,
+                c.name as course_name,
                 u.full_name,
                 u.email
             FROM students s
             JOIN users u ON s.user_id = u.id
-            ORDER BY created_at DESC`);
-
-        await client.query("COMMIT");
+            JOIN courses c ON s.course_id = c.id
+            WHERE u.school_id = $1
+            ORDER BY u.full_name ASC
+        `, [schoolId]);
 
         response.status(200).json(result.rows);
     } catch (dbError) {
-        await client.query("ROLLBACK");
-
-        console.error("Transaction Error - GET Students rolled back:", dbError);
-        response.status(500).json({ message: "Database error: GET Students failed" });
+        console.error("Database Error - GET Students failed:", dbError);
+        response.status(500).json({ message: "Database error: Failed to fetch students" });
     } finally {
         client.release();
     }
@@ -113,48 +112,70 @@ export async function getStudentById(
     response: Response
 ) {
     const { id } = request.params;
-    const { role, userId: authUserId } = request.user!;
+    const { role, userId: authUserId, schoolId } = request.user!;
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
     if (!uuidRegex.test(id as string)) {
-        return response.status(404).json({ message: "UUID not found" });
+        return response.status(400).json({ message: "Invalid UUID format" });
     }
 
     const client = await pool.connect();
 
     try {
-        const student = await client.query(`
-            SELECT s.*, 
-                   u.supabase_user_id
+        const studentQuery = await client.query(`
+            SELECT
+                s.id as student_id,
+                s.enrollment_code,
+                u.full_name,
+                u.email,
+                u.supabase_user_id,
+                c.name as course_name
             FROM students s
             JOIN users u ON s.user_id = u.id
-            WHERE s.id = $1
-        `, [id]);
+            JOIN courses c ON s.course_id = c.id
+            WHERE s.id = $1 AND u.school_id = $2
+        `, [id, schoolId]);
 
-        if (student.rowCount === 0) {
+        if (studentQuery.rowCount === 0) {
             return response.status(404).json({ message: "Student not found" });
         }
 
-        const studentInfo = student.rows[0];
+        const studentInfo = studentQuery.rows[0];
 
         if (role === 'student' && studentInfo.supabase_user_id !== authUserId) {
-            return response.status(403).json({ message: 'User no authorized' });
+            return response.status(403).json({ message: 'User not authorized to view this profile' });
         }
+
+        const gradesQuery = await client.query(`
+            SELECT 
+                a.id as assignment_id,
+                a.title as assignment_title,
+                s.name,
+                g.grade_value,
+                g.graded_at
+            FROM grades g
+            JOIN assignments a ON g.assignments_id = a.id
+            JOIN classes c ON a.class_id = c.id
+            JOIN subjects s ON c.subject_id = s.id
+            WHERE g.student_id = $1
+            ORDER BY g.graded_at DESC
+            LIMIT 5
+        `, [id]);
 
         delete studentInfo.supabase_user_id;
 
         return response.status(200).json({
-            student: studentInfo
+            id: studentInfo.student_id,
+            full_name: studentInfo.full_name,
+            email: studentInfo.email,
+            course_name: studentInfo.course_name,
+            enrollment_code: studentInfo.enrollment_code,
+            recent_grades: gradesQuery.rows
         });
 
     } catch (dbError) {
-        console.error("Database Error:", dbError);
-        return response.status(500).json({
-            message: "Database error",
-            error: dbError,
-            id: id
-        });
+        console.error("Database Error in getStudentById:", dbError);
+        return response.status(500).json({ message: "Database error" });
     } finally {
         client.release();
     }

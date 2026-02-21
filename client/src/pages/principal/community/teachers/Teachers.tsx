@@ -1,10 +1,11 @@
-import api from "../../../api/client.ts";
+import api from "../../../../api/client.ts";
 import { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom";
-import Loading from "../../../components/Loading.tsx";
-import { formateDate } from "../../../types";
-import PrimaryButton from "../../../components/PrimaryButton.tsx";
-import CancelButton from "../../../components/CancelButton.tsx";
+import Loading from "../../../../components/Loading.tsx";
+import { formateDate } from "../../../../types";
+import PrimaryButton from "../../../../components/PrimaryButton.tsx";
+import CancelButton from "../../../../components/CancelButton.tsx";
+import { useNavigate } from "react-router-dom";
+import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 
 interface Teacher {
     id: string;
@@ -35,6 +36,8 @@ const ListTeacher = () => {
         email: "",
         password: ""
     });
+
+    const navigate = useNavigate();
 
     const fetchTeachers = async () => {
         setLoading(true);
@@ -122,7 +125,10 @@ const ListTeacher = () => {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-custom-black">Profesores</h2>
+                    <div className="flex gap-2 items-center">
+                        <ButtonChevronBack onClick={() => navigate(-1)} />
+                        <h2 className="text-2xl font-bold text-custom-black">Profesores</h2>
+                    </div>
                     <p className="text-gray-500 text-sm mt-1">
                         {teachers.length} profesores registrados en el sistema.
                     </p>

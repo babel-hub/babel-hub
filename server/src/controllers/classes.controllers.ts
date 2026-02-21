@@ -111,9 +111,8 @@ export async function getClassInfo(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { id } = request.params;
+    const { id } = request.params; // The class ID
     const { schoolId } = request.user!;
-
     const client = await pool.connect();
 
     try {
@@ -148,9 +147,17 @@ export async function getClassInfo(
             ORDER BY u.full_name ASC
         `, [courseId]);
 
+        const assignmentsQuery = await client.query(`
+            SELECT id, title, type, due_date
+            FROM assignments
+            WHERE class_id = $1
+            ORDER BY due_date ASC
+        `, [id]);
+
         response.status(200).json({
             details: classQuery.rows[0],
-            students: studentsQuery.rows
+            students: studentsQuery.rows,
+            assignments: assignmentsQuery.rows
         });
 
     } catch (dbError) {

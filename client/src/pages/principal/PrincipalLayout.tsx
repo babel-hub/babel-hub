@@ -5,11 +5,11 @@ export const PrincipalLayout = () => {
     const user = useAuth((state) => state.user);
 
     const gridItems = [
-        { id: "1", icon: "", path:"/principal/Dashboard", label: "Dashboard" },
+        { id: "1", icon: "", path:"/principal/dashboard", label: "Dashboard" },
         { id: "2", icon: "", path:"/unknow", label: "Calendario" },
         { id: "3", icon: "", path:"/principal/cursos", label: "Cursos" },
-        { id: "4", icon: "", path:"/principal/teachers", label: "Profesores" },
-        { id: "5", icon: "", path:"/principal/students", label: "Estudiantes" },
+        { id: "4", icon: "", path:"/unknow", label: "Notificaciones" },
+        { id: "5", icon: "", path:"/principal/comunidad", label: "Comunidad" },
         { id: "6", icon: "", path:"/unknow", label: "Acudientes" },
         { id: "7", icon: "", path:"/unknow", label: "Formatos" },
         { id: "8", icon: "", path:"/unknow", label: "Mensajes" }

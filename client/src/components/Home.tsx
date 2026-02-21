@@ -30,9 +30,8 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
     const location = useLocation();
 
     return (
-        <div className="flex flex-row min-h-screen bg-gray-50">
-            <div className="border-r border-gray-300 bg-white flex flex-col w-60 p-5 justify-between xl:w-80 h-screen sticky top-0">
-
+        <div className="flex flex-row min-h-screen bg-white">
+            <div className="border-r border-gray-300 bg-white flex flex-col w-60 p-5 justify-between xl:w-72 h-screen sticky top-0">
                 <div>
                     <div className="flex items-center mb-5 justify-center">
                         <h1 className="text-custom-black text-base sm:text-lg font-bold capitalize">
@@ -80,7 +79,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                 </div>
             </div>
 
-            <div className="flex-1 p-5 overflow-y-auto">
+            <div className="flex-1 p-10 overflow-y-auto">
                 <ErrorBoundary>
                     <Outlet />
                 </ErrorBoundary>

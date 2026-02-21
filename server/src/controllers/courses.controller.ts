@@ -178,3 +178,75 @@ export async function changeStudentCourse(
         client.release();
     }
 }
+
+export async function createStudent(
+    request: AuthenticatedRequest,
+    response: Response,
+) {
+    const { supabaseUserId, fullName, email, courseId, enrollmentCode } = request.body;
+    const creator = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const courseCheck = await client.query(`
+            SELECT id FROM courses 
+            WHERE id = $1 AND school_id = $2
+        `, [courseId, creator.schoolId]);
+
+        if (courseCheck.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(403).json({ message: "Invalid Course for this school" });
+        }
+
+        const userResult = await client.query(`
+            INSERT INTO users (supabase_user_id, role, school_id, full_name, email)
+            VALUES ($1, 'student', $2, $3, $4)
+            RETURNING id
+        `, [supabaseUserId, creator.schoolId, fullName, email]);
+
+        const newUserId = userResult.rows[0].id;
+
+        const studentResult = await client.query(`
+            INSERT INTO students (user_id, course_id, enrollment_code)
+            VALUES ($1, $2, $3)
+            RETURNING id
+        `, [newUserId, courseId, enrollmentCode || null]);
+
+        const newStudentId = studentResult.rows[0].id;
+
+        await createAuditLog(client, {
+            actorUserId: creator.userId!,
+            actorRole: creator.role!,
+            action: "CREATE_STUDENT",
+            targetUserId: newUserId,
+            schoolId: creator.schoolId!,
+            metadata: {
+                studentId: newStudentId,
+                courseId: courseId
+            }
+        });
+
+        await client.query("COMMIT");
+
+        response.status(201).json({
+            message: "Student created and assigned to course successfully",
+            studentId: newStudentId,
+            userId: newUserId
+        });
+
+    } catch (dbError: any) {
+        await client.query("ROLLBACK");
+
+        if (dbError.code === '23505') {
+            return response.status(409).json({ message: "A user with this email or Auth ID already exists" });
+        }
+
+        console.error("Database Error:", dbError);
+        response.status(500).json({ message: "Failed to create student" });
+    } finally {
+        client.release();
+    }
+}

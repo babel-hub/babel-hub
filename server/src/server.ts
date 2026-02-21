@@ -32,12 +32,12 @@ app.use("/grades", gradesRoutes);
 //GET current user info
 app.use("/user", accessRoleRoutes);
 
-//CRUD principals, teachers and students
+//CRUD principals, teachers and community
 app.use("/principal", principalRoutes);
 app.use("/teacher", teacherRoutes);
 app.use("/student", studentRoutes);
 
-//CRUD classes and schools
+//CRUD courses and schools
 app.use("/school", SchoolRoutes);
 app.use("/courses", coursesRoutes);
 app.use("/classes", classesRoutes);
