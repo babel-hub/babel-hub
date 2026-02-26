@@ -1,11 +1,11 @@
 import api from "../../../../api/client.ts";
-import { useEffect, useState } from "react";
-import Loading from "../../../../components/Loading.tsx";
+import React, { useEffect, useState } from "react";
 import { formateDate } from "../../../../types";
 import PrimaryButton from "../../../../components/PrimaryButton.tsx";
-import CancelButton from "../../../../components/CancelButton.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
+import LoadingContent from "../../../../components/LoadingContent.tsx";
+import DynamicModalForm, {type FormField} from "../../../../components/ModalForm.tsx";
 
 interface Teacher {
     id: string;
@@ -44,7 +44,7 @@ const ListTeacher = () => {
 
         try {
             const response = await api.get("/teacher");
-            setTeachers(response.data.result || response.data);
+            setTeachers(response.data.teachers || response.data);
         } catch (fetchError) {
             console.log(fetchError);
             setError("Error fetching teachers");
@@ -56,6 +56,29 @@ const ListTeacher = () => {
     useEffect(() => {
         fetchTeachers();
     }, []);
+
+    const teacherFields: FormField[] = [
+        {
+            name: "fullName",
+            label: "Nombre",
+            type: "text",
+            placeholder: "Cristian Garcia",
+            required: true
+        },
+        {
+            name: "email",
+            label: "Correo electronico",
+            type: "email",
+            placeholder: "example@gmail.com",
+            required: true
+        },
+        {
+            name: "password",
+            label: "Contraseña",
+            type: "password",
+            required: true
+        }
+    ];
 
 
     const handleCreateTeacher = async (e: React.FormEvent) => {
@@ -97,9 +120,15 @@ const ListTeacher = () => {
         }
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
     };
+
 
     const getInitials = (name: string) => {
         const names = name.split(" ");
@@ -112,13 +141,8 @@ const ListTeacher = () => {
         teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
-        return ( <Loading title="Cargando Profesores" /> );
-    }
-
-    if (error) {
-        return <p className="text-red-500 font-semibold p-6 bg-red-50 rounded-xl">{error}</p>;
-    }
+    if (loading) return <LoadingContent title="Cargando profesores..." />;
+    if (error) return <p className="text-red-500 font-semibold p-6 bg-red-50 rounded-xl">{error}</p>;
 
     return (
         <div className="flex flex-col gap-6">
@@ -198,64 +222,21 @@ const ListTeacher = () => {
                 </div>
             )}
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
-                        <div className="flex justify-between items-center p-5 border-b border-gray-100">
-                            <h3 className="text-xl font-bold text-custom-black">Crear Profesor</h3>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none cursor-pointer"
-                            >
-                                &times;
-                            </button>
-                        </div>
-
-                        <div className="p-5 overflow-y-auto">
-                            {formError && (
-                                <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
-                                    {formError}
-                                </div>
-                            )}
-
-                            <form id="create-teacher-form" onSubmit={handleCreateTeacher} className="flex flex-col gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Nombre Completo</label>
-                                    <input
-                                        type="text" name="fullName" required value={formData.fullName} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Correo Electrónico</label>
-                                    <input
-                                        type="email" name="email" required value={formData.email} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Contraseña</label>
-                                    <input
-                                        type="password" name="password" required value={formData.password} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                    />
-                                </div>
-                            </form>
-                        </div>
-
-                        <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                            <CancelButton title="Cancelar" onClick={() => {
-                                setIsModalOpen(false);
-                                setFormError("");
-                                setFormData({ fullName: "", email: "", password: "" });
-                            }} />
-                            <PrimaryButton type="submit" form="create-teacher-form" title={formLoading ? "Guardando..." : "Crear"} />
-                        </div>
-                    </div>
-                </div>
-            )}
-
+            <DynamicModalForm
+                isOpen={isModalOpen}
+                title="Crear Nuevo Profesor"
+                fields={teacherFields}
+                formData={formData}
+                formError={formError}
+                formLoading={formLoading}
+                onChange={handleFormChange}
+                onSubmit={handleCreateTeacher}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setFormError("");
+                    setFormData({ fullName: "", password: "",email:"" });
+                }}
+            />
         </div>
     );
 }

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/login.tsx";
 import StudentDashboard from "../pages/student/home.tsx";
 import TeacherDashboard from "../pages/teacher/home.tsx";
-import PrincipalDashboard from "../pages/principal/PrincipalDashboard.tsx";
+import PrincipalDashboard from "../pages/principal/dashboard/PrincipalDashboard.tsx";
 import ProtectedRoute from "../auth/Route.tsx";
 import NotFoundPage from "../pages/misc/notFoundPage.tsx";
 import PrincipalCourses from "../pages/principal/courses/PrincipalCourses.tsx";

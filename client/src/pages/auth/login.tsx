@@ -3,7 +3,7 @@ import { supabase } from "../../auth/supabase.ts";
 import api from "../../api/client.ts";
 import { useAuth } from "../../auth/useAuth.ts";
 import { useNavigate } from "react-router-dom";
-import Loading from "../../components/Loading.tsx";
+import LoadingPage from "../../components/LoadingPage.tsx";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -62,7 +62,7 @@ export default function Login() {
 
     return (
         <>
-            {loading && ( <Loading title="Iniciando sesión..." /> )}
+            {loading && ( <LoadingPage title="Iniciando sesión..." /> )}
 
             <div className="min-h-screen flex items-center justify-center bg-page">
                 <div className="bg-white p-6 rounded-xl shadow-lg w-80">

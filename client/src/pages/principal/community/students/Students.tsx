@@ -1,25 +1,25 @@
 import api from "../../../../api/client.ts";
-import { useEffect, useState } from "react";
-import Loading from "../../../../components/Loading.tsx";
+import React, { useEffect, useState } from "react";
 import { formateDate } from "../../../../types";
 import PrimaryButton from "../../../../components/PrimaryButton.tsx";
-import CancelButton from "../../../../components/CancelButton.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
-
+import LoadingContent from "../../../../components/LoadingContent.tsx";
+import DynamicModalForm, {type FormField} from "../../../../components/ModalForm.tsx";
 
 interface StudentProps {
-    id: string;
+    student_id: string;
     enrollment_code: string;
     full_name: string;
     created_at: string;
+    course_name: string;
     email: string;
 }
 
 const formRegExp = [
-    { label: "name", regExp: "^[a-zA-Z\\s\\-\']{2,50}$" },
-    { label: "email", regExp: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" },
-    { label: "password", regExp: "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{7,}$" },
+    { label: "name", regExp: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-']{2,50}$/ },
+    { label: "email", regExp: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ },
+    { label: "password", regExp: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{7,}$/ },
 ];
 
 const ListStudents = () => {
@@ -28,6 +28,7 @@ const ListStudents = () => {
     const [error, setError] = useState("");
     const [students, setStudents] = useState<StudentProps[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [availableCourses, setAvailableCourses] = useState<any[]>([]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
@@ -36,10 +37,48 @@ const ListStudents = () => {
         fullName: "",
         email: "",
         password: "",
-        enrolmentCode: ""
+        enrolmentCode: "",
+        courseId: ""
     });
 
     const navigate = useNavigate();
+
+    const studentFields: FormField[] = [
+        {
+            name: "enrolmentCode",
+            label: "Codigo del estudiante",
+            type: "text",
+            placeholder: "STU-101",
+            required: true
+        },
+        {
+            name: "fullName",
+            label: "Nombre",
+            type: "text",
+            placeholder: "Cristian Garcia",
+            required: true
+        },
+        {
+            name: "email",
+            label: "Correo electronico",
+            type: "email",
+            placeholder: "example@gmail.com",
+            required: true
+        },
+        {
+            name: "password",
+            label: "Contraseña",
+            type: "password",
+            required: true
+        },
+        {
+            name: "courseId",
+            label: "Curso",
+            type: "select",
+            required: true,
+            options: availableCourses.map(t => ({ value: t.id, label: t.course_name }))
+        }
+    ];
 
     const fetchStudents = async () => {
         setLoading(true);
@@ -55,6 +94,21 @@ const ListStudents = () => {
         }
     }
 
+    useEffect(() => {
+        const fetchCoursesForDropdown = async () => {
+            try {
+                const response = await api.get('/courses');
+                setAvailableCourses(response.data.courses || response.data);
+            } catch (error) {
+                console.error("Error fetching courses for dropdown:", error);
+            }
+        };
+
+        if (isModalOpen && availableCourses.length === 0) {
+            fetchCoursesForDropdown();
+        }
+    }, [isModalOpen]);
+
 
     useEffect(() => {
         fetchStudents();
@@ -64,32 +118,31 @@ const ListStudents = () => {
         e.preventDefault();
         setFormError("");
 
-        const nameRegExp = new RegExp(formRegExp.find(r => r.label === "name")?.regExp || "");
-        const emailRegExp = new RegExp(formRegExp.find(r => r.label === "email")?.regExp || "");
-        const passwordRegExp = new RegExp(formRegExp.find(r => r.label === "password")?.regExp || "");
+        const nameRegExp = formRegExp.find(r => r.label === "name")?.regExp;
+        const emailRegExp = formRegExp.find(r => r.label === "email")?.regExp;
+        const passwordRegExp = formRegExp.find(r => r.label === "password")?.regExp;
 
-        if (!nameRegExp.test(formData.fullName)) {
+        if (nameRegExp && !nameRegExp.test(formData.fullName)) {
             setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
             return;
-        };
+        }
 
-        if (!emailRegExp.test(formData.email)) {
+        if (emailRegExp && !emailRegExp.test(formData.email)) {
             setFormError("Por favor, ingresa un correo electrónico válido.");
             return;
-        };
+        }
 
-        if (!passwordRegExp.test(formData.password)) {
+        if (passwordRegExp && !passwordRegExp.test(formData.password)) {
             setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial (@$!%*#?&).");
             return;
-        };
+        }
 
         setFormLoading(true);
 
         try {
             await api.post("/student", formData);
-
             setIsModalOpen(false);
-            setFormData({ fullName: "", email: "", password: "", enrolmentCode: "" });
+            setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
             await fetchStudents();
 
         } catch (err: any) {
@@ -99,8 +152,13 @@ const ListStudents = () => {
         }
     };
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const getInitials = (name: string) => {
@@ -115,13 +173,8 @@ const ListStudents = () => {
         (student.enrollment_code && student.enrollment_code.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    if(loading) {
-        return (<Loading title="Cargando Estudiantes..."/>);
-    }
-
-    if (error) {
-        return <p className="text-red-500 font-semibold p-6">{error || "Clase no encontrada"}</p>;
-    }
+    if(loading) return <LoadingContent title="Cargando estudiantes..."/>;
+    if (error) return <p className="text-red-500 font-semibold p-6">{error || "Clase no encontrada"}</p>;
 
     return (
         <div className="flex flex-col gap-6">
@@ -135,7 +188,6 @@ const ListStudents = () => {
                         {students.length} estudiantes registrados en el sistema.
                     </p>
                 </div>
-
                 <PrimaryButton onClick={() => setIsModalOpen(true)} title="+ Nuevo Estudiante"/>
             </div>
 
@@ -149,10 +201,10 @@ const ListStudents = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredStudents.map((student) => (
                     <div
-                        key={student.id}
+                        key={student.student_id}
                         className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col h-full"
                     >
                         <div className="flex items-center gap-4 mb-4">
@@ -183,16 +235,26 @@ const ListStudents = () => {
                                 )}
                             </div>
                             <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500 font-medium">Curso:</span>
+                                <span className="text-gray-700 font-medium">{student.course_name}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500 font-medium">Registro:</span>
                                 <span className="text-gray-700 font-medium">{formateDate(student.created_at)}</span>
                             </div>
                         </div>
 
                         <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button className="text-sm font-semibold text-gray-500 hover:text-custom-black transition-colors px-2 py-1 cursor-pointer">
+                            <button
+                                disabled={true}
+                                className="text-sm font-semibold text-gray-500 hover:text-custom-black transition-colors px-2 py-1 cursor-pointer"
+                            >
                                 Editar
                             </button>
-                            <button className="text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors px-2 py-1 cursor-pointer">
+                            <button
+                                onClick={() => navigate(`${student.student_id}`)}
+                                className="text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors px-2 py-1 cursor-pointer"
+                            >
                                 Ver Perfil
                             </button>
                         </div>
@@ -207,67 +269,21 @@ const ListStudents = () => {
                 </div>
             )}
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="flex justify-between items-center p-5 border-b border-gray-100">
-                            <h3 className="text-xl font-bold text-custom-black">Crear Estudiante</h3>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 text-2xl leading-none cursor-pointer"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="p-5 overflow-y-auto">
-                            {formError && (
-                                <div className="mb-4 bg-red-shadow text-red-error p-3 rounded-lg text-sm">
-                                    {formError}
-                                </div>
-                            )}
-
-                            <form id="create-student-form" onSubmit={handleCreateStudent} className="flex flex-col gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Codigo del estudiante</label>
-                                    <input
-                                        type="text" name="enrolmentCode" required value={formData.enrolmentCode} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Nombre Completo</label>
-                                    <input
-                                        type="text" name="fullName" required value={formData.fullName} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Correo Electrónico</label>
-                                    <input
-                                        type="email" name="email" required value={formData.email} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-sm font-semibold text-gray-700">Contraseña Temporal</label>
-                                    <input
-                                        type="password" name="password" required value={formData.password} onChange={handleFormChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                                    />
-                                </div>
-                            </form>
-                        </div>
-                        <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                            <CancelButton title="Cancelar" onClick={() => {
-                                setIsModalOpen(false);
-                                setFormError("");
-                                setFormData({ fullName: "", email: "", password: "", enrolmentCode: "" });
-                            }} />
-                            <PrimaryButton type="submit" form="create-student-form" title={formLoading ? "Guardando..." : "Crear"} />
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DynamicModalForm
+                isOpen={isModalOpen}
+                title="Crear Nuevo Estudiante"
+                fields={studentFields}
+                formData={formData}
+                formError={formError}
+                formLoading={formLoading}
+                onChange={handleFormChange}
+                onSubmit={handleCreateStudent}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setFormError("");
+                    setFormData({ fullName: "", courseId: "", enrolmentCode: "", password: "",email:"" });
+                }}
+            />
         </div>
     );
 }

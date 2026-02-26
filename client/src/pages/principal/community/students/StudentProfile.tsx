@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
+import LoadingContent from "../../../../components/LoadingContent.tsx";
 
 interface GradeRecord {
     assignment_id: string;
@@ -41,7 +42,7 @@ export default function StudentProfile() {
         fetchStudent();
     }, [id]);
 
-    if (loading) return <div className="p-6 text-center">Cargando perfil...</div>;
+    if (loading) return <LoadingContent title="Cargando estudiante..."/>;
     if (!data) return <div className="p-6 text-red-500">Estudiante no encontrado.</div>;
 
     return (

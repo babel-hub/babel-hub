@@ -7,7 +7,7 @@ export async function createCourse(
     request: AuthenticatedRequest,
     response: Response,
 ) {
-    const { name } = request.body;
+    const { name, year, teacherId } = request.body;
     const creator = request.user!;
 
     const client = await pool.connect();
@@ -16,10 +16,10 @@ export async function createCourse(
         await client.query("BEGIN");
 
         const result = await client.query(`
-            INSERT INTO courses (school_id, name)
-            VALUES ($1, $2)
-                RETURNING id
-        `, [creator.schoolId, name]);
+            INSERT INTO courses (school_id, name, year, teacher_id)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        `, [creator.schoolId, name, year, teacherId]);
 
         const newCourseId = result.rows[0].id;
 
@@ -64,11 +64,19 @@ export async function getAllCourses(
                 c.name as course_name,
                 c.created_at,
                 c.year,
+                u.full_name as director_name,
                 COUNT(s.id) as student_count
             FROM courses c
+            JOIN teachers t ON c.teacher_id = t.id
+            JOIN users u ON t.user_id = u.id
             LEFT JOIN students s ON c.id = s.course_id
             WHERE c.school_id = $1
-            GROUP BY c.id
+            GROUP BY
+                c.id,
+                c.name,
+                c.created_at,
+                c.year,
+                u.full_name
             ORDER BY c.name ASC;
         `;
 
@@ -96,7 +104,6 @@ export async function getCourseDetails(
     const client = await pool.connect();
 
     try {
-
         const courseQuery = await client.query(`
             SELECT id, name, created_at, year
             FROM courses 

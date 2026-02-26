@@ -4,6 +4,7 @@ import api from "../../../../api/client.ts";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import PrimaryButton from "../../../../components/PrimaryButton.tsx";
+import LoadingContent from "../../../../components/LoadingContent.tsx";
 
 interface Assignment {
     id: string;
@@ -51,7 +52,7 @@ export default function ClassDetails() {
         if (id) fetchClass();
     }, [id]);
 
-    if (loading) return <div className="p-6 text-center">Cargando clase...</div>;
+    if (loading) return <LoadingContent title="Cargando clase..."/>;
     if (!data) return <div className="p-6 text-red-500">Clase no encontrada.</div>;
 
     return (

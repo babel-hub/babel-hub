@@ -34,7 +34,7 @@ export async function createClass(
 
         const result = await client.query(`
             INSERT INTO classes (course_id, subject_id, teacher_id)
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, $3)
             RETURNING id
         `, [courseId, subjectId, teacherId]);
 
@@ -73,11 +73,19 @@ export async function getAllClasses(
     request: AuthenticatedRequest,
     response: Response
 ) {
+    const { subjects } = request.params;
     const { schoolId } = request.user!;
     const client = await pool.connect();
 
     try {
-        const query = `
+        let query = "";
+
+        if (subjects) {
+            query = `
+                SELECT * FROM subjects WHERE school_id =$1
+            `
+        } else {
+            query = `
             SELECT
                 cl.id,
                 c.name as course_name,
@@ -92,6 +100,7 @@ export async function getAllClasses(
             WHERE c.school_id = $1
             ORDER BY c.name;
         `;
+        }
 
         const result = await client.query(query, [schoolId]);
 
