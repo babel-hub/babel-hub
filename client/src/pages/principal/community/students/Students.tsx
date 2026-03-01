@@ -1,7 +1,7 @@
 import api from "../../../../api/client.ts";
 import React, { useEffect, useState } from "react";
 import { formateDate } from "../../../../types";
-import { PrimaryButton } from "../../../../components/Buttons.tsx";
+import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
@@ -13,6 +13,7 @@ interface StudentProps {
     full_name: string;
     created_at: string;
     course_name: string;
+    course_id?: string; // 🌟 Added this to hold the ID for the dropdown
     email: string;
 }
 
@@ -23,14 +24,15 @@ const formRegExp = [
 ];
 
 const ListStudents = () => {
-    // const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [students, setStudents] = useState<StudentProps[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [availableCourses, setAvailableCourses] = useState<any[]>([]);
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
@@ -42,6 +44,124 @@ const ListStudents = () => {
     });
 
     const navigate = useNavigate();
+
+    const fetchStudents = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get("/student");
+            setStudents(response.data);
+        } catch (fetchError) {
+            console.log(fetchError);
+            setError("Error fetching community");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        const fetchCoursesForDropdown = async () => {
+            try {
+                const response = await api.get('/courses');
+                setAvailableCourses(response.data.courses || response.data);
+            } catch (error) {
+                console.error("Error fetching courses for dropdown:", error);
+            }
+        };
+
+        if (modalMode !== 'none' && availableCourses.length === 0) {
+            fetchCoursesForDropdown();
+        }
+    }, [modalMode]);
+
+    useEffect(() => {
+        fetchStudents();
+    }, []);
+
+    const openEditModal = (student: StudentProps) => {
+        setSelectedStudentId(student.student_id);
+        setFormData({
+            fullName: student.full_name,
+            enrolmentCode: student.enrollment_code || "",
+            courseId: student.course_id || "",
+            email: "",
+            password: ""
+        });
+        setModalMode('edit');
+    };
+
+    const handleDeleteStudent = async (id: string, name: string) => {
+        if (!window.confirm(`¿Estás seguro de que deseas eliminar al estudiante ${name}? Esta acción no se puede deshacer y borrará su acceso.`)) return;
+
+        try {
+            await api.delete(`/student/${id}`);
+            await fetchStudents();
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Error al eliminar el estudiante.");
+        }
+    };
+
+    // 🌟 UPDATED: Handle Create AND Update
+    const handleModalSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError("");
+
+        const nameRegExp = formRegExp.find(r => r.label === "name")?.regExp;
+        const emailRegExp = formRegExp.find(r => r.label === "email")?.regExp;
+        const passwordRegExp = formRegExp.find(r => r.label === "password")?.regExp;
+
+        if (nameRegExp && !nameRegExp.test(formData.fullName)) {
+            setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
+            return;
+        }
+
+        // Only validate email and password if we are creating a NEW user
+        if (modalMode === 'create') {
+            if (emailRegExp && !emailRegExp.test(formData.email)) {
+                setFormError("Por favor, ingresa un correo electrónico válido.");
+                return;
+            }
+            if (passwordRegExp && !passwordRegExp.test(formData.password)) {
+                setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial.");
+                return;
+            }
+        }
+
+        setFormLoading(true);
+
+        try {
+            if (modalMode === 'create') {
+                await api.post("/student", formData);
+            } else if (modalMode === 'edit') {
+                // Send only the fields expected by updateStudent
+                await api.put(`/student/${selectedStudentId}`, {
+                    fullName: formData.fullName,
+                    enrolmentCode: formData.enrolmentCode,
+                    courseId: formData.courseId
+                });
+            }
+
+            setModalMode('none');
+            setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
+            setSelectedStudentId(null);
+            await fetchStudents();
+
+        } catch (err: any) {
+            setFormError(err.response?.data?.message || "Error al guardar el estudiante.");
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const getInitials = (name: string) => {
+        const names = name.split(" ");
+        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
+        return name[0].toUpperCase();
+    };
 
     const studentFields: FormField[] = [
         {
@@ -69,6 +189,7 @@ const ListStudents = () => {
             name: "password",
             label: "Contraseña",
             type: "password",
+            placeholder: "",
             required: true
         },
         {
@@ -78,94 +199,7 @@ const ListStudents = () => {
             required: true,
             options: availableCourses.map(t => ({ value: t.id, label: t.course_name }))
         }
-    ];
-
-    const fetchStudents = async () => {
-        setLoading(true);
-
-        try {
-            const response = await api.get("/student");
-            setStudents(response.data);
-        } catch (fetchError) {
-            console.log(fetchError);
-            setError("Error fetching community");
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    useEffect(() => {
-        const fetchCoursesForDropdown = async () => {
-            try {
-                const response = await api.get('/courses');
-                setAvailableCourses(response.data.courses || response.data);
-            } catch (error) {
-                console.error("Error fetching courses for dropdown:", error);
-            }
-        };
-
-        if (isModalOpen && availableCourses.length === 0) {
-            fetchCoursesForDropdown();
-        }
-    }, [isModalOpen]);
-
-
-    useEffect(() => {
-        fetchStudents();
-    }, []);
-
-    const handleCreateStudent = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setFormError("");
-
-        const nameRegExp = formRegExp.find(r => r.label === "name")?.regExp;
-        const emailRegExp = formRegExp.find(r => r.label === "email")?.regExp;
-        const passwordRegExp = formRegExp.find(r => r.label === "password")?.regExp;
-
-        if (nameRegExp && !nameRegExp.test(formData.fullName)) {
-            setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
-            return;
-        }
-
-        if (emailRegExp && !emailRegExp.test(formData.email)) {
-            setFormError("Por favor, ingresa un correo electrónico válido.");
-            return;
-        }
-
-        if (passwordRegExp && !passwordRegExp.test(formData.password)) {
-            setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial (@$!%*#?&).");
-            return;
-        }
-
-        setFormLoading(true);
-
-        try {
-            await api.post("/student", formData);
-            setIsModalOpen(false);
-            setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
-            await fetchStudents();
-
-        } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al crear el estudiante.");
-        } finally {
-            setFormLoading(false);
-        }
-    };
-
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const getInitials = (name: string) => {
-        const names = name.split(" ");
-        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
-        return name[0].toUpperCase();
-    };
+    ].filter(field => modalMode === 'create' || (field.name !== 'email' && field.name !== 'password'));
 
     const filteredStudents = students.filter(student =>
         student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,7 +208,7 @@ const ListStudents = () => {
     );
 
     if(loading) return <LoadingContent title="Cargando estudiantes..."/>;
-    if (error) return <p className="text-red-500 font-semibold p-6">{error || "Clase no encontrada"}</p>;
+    if (error) return <p className="text-red-500 font-semibold p-6">{error || "Error al cargar datos"}</p>;
 
     return (
         <div className="flex flex-col gap-6">
@@ -188,7 +222,13 @@ const ListStudents = () => {
                         {students.length} estudiantes registrados en el sistema.
                     </p>
                 </div>
-                <PrimaryButton onClick={() => setIsModalOpen(true)} title="+ Nuevo Estudiante"/>
+                <PrimaryButton
+                    onClick={() => {
+                        setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
+                        setModalMode('create');
+                    }}
+                    title="+ Nuevo Estudiante"
+                />
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -201,87 +241,86 @@ const ListStudents = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredStudents.map((student) => (
-                    <div
-                        key={student.student_id}
-                        className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col h-full"
-                    >
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-lg">
-                                {getInitials(student.full_name)}
-                            </div>
-                            <div className="overflow-hidden">
-                                <h3 className="font-bold text-custom-black text-lg truncate" title={student.full_name}>
-                                    {student.full_name}
-                                </h3>
-                                <p className="text-gray-500 text-sm truncate" title={student.email}>
-                                    {student.email}
-                                </p>
-                            </div>
-                        </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
+                        <th className="p-4 text-sm font-semibold">Estudiante</th>
+                        <th className="p-4 text-sm font-semibold">Código</th>
+                        <th className="p-4 text-sm font-semibold">Curso</th>
+                        <th className="p-4 text-sm font-semibold">Fecha de Registro</th>
+                        <th className="p-4 text-sm font-semibold text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                    {filteredStudents.map((student) => (
+                        <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
+                            <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm">
+                                        {getInitials(student.full_name)}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className="font-bold text-custom-black truncate" title={student.full_name}>
+                                            {student.full_name}
+                                        </p>
+                                        <p className="text-gray-500 text-xs truncate" title={student.email}>
+                                            {student.email}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
 
-                        <div className="mb-4 flex flex-col gap-2">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Código:</span>
+                            <td className="p-4">
                                 {student.enrollment_code ? (
-                                    <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">
-                                        {student.enrollment_code}
-                                    </span>
+                                    <span className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded text-xs">
+                                            {student.enrollment_code}
+                                        </span>
                                 ) : (
-                                    <span className="bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded text-xs">
-                                        Pendiente
-                                    </span>
+                                    <span className="bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded text-xs">
+                                            Pendiente
+                                        </span>
                                 )}
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Curso:</span>
-                                <span className="text-gray-700 font-medium">{student.course_name}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Registro:</span>
-                                <span className="text-gray-700 font-medium">{formateDate(student.created_at)}</span>
-                            </div>
-                        </div>
+                            </td>
 
-                        <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button
-                                disabled={true}
-                                className="text-sm font-semibold text-gray-500 hover:text-custom-black transition-colors px-2 py-1 cursor-pointer"
-                            >
-                                Editar
-                            </button>
-                            <button
-                                onClick={() => navigate(`${student.student_id}`)}
-                                className="text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors px-2 py-1 cursor-pointer"
-                            >
-                                Ver Perfil
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                            <td className="p-4 font-medium text-gray-700">
+                                {student.course_name}
+                            </td>
+
+                            <td className="p-4 text-gray-500 text-sm">
+                                {formateDate(student.created_at)}
+                            </td>
+
+                            <td className="p-4 text-right space-x-3">
+                                <EditButton onClick={() => openEditModal(student)} />
+                                <DeleteButton onClick={() => handleDeleteStudent(student.student_id, student.full_name)} />
+                                <button
+                                    onClick={() => navigate(`${student.student_id}`)}
+                                    className="text-sm font-semibold text-gray-600 hover:text-custom-black transition-colors cursor-pointer"
+                                >
+                                    Perfil
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
             </div>
 
-            {filteredStudents.length === 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
-                    <p className="text-gray-500 font-medium text-lg">No se encontraron estudiantes.</p>
-                    <p className="text-sm mt-1 text-gray-400">Intenta buscar con otros términos.</p>
-                </div>
-            )}
-
             <DynamicModalForm
-                isOpen={isModalOpen}
-                title="Crear Nuevo Estudiante"
+                isOpen={modalMode !== 'none'}
+                title={modalMode === 'create' ? "Crear Nuevo Estudiante" : "Editar Estudiante"}
                 fields={studentFields}
                 formData={formData}
                 formError={formError}
                 formLoading={formLoading}
                 onChange={handleFormChange}
-                onSubmit={handleCreateStudent}
+                onSubmit={handleModalSubmit}
                 onClose={() => {
-                    setIsModalOpen(false);
+                    setModalMode('none');
                     setFormError("");
                     setFormData({ fullName: "", courseId: "", enrolmentCode: "", password: "",email:"" });
+                    setSelectedStudentId(null);
                 }}
             />
         </div>

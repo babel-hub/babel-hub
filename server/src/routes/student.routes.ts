@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {getStudentById, getStudents, registerStudent} from "../controllers/student.controller.js";
+import {getStudentById, getStudents, registerStudent, deleteStudent, updateStudent} from "../controllers/student.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { strictLimiter } from "../middleware/ratelimit.middleware.js";
@@ -29,5 +29,21 @@ router.post(
     authorizedRoles(['principal', 'admin']),
     registerStudent
 );
+
+router.put(
+    "/:id",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(['principal', 'admin']),
+    updateStudent
+)
+
+router.delete(
+    "/:id",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(['principal', 'admin']),
+    deleteStudent
+)
 
 export default router;

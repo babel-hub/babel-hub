@@ -1,7 +1,7 @@
 import api from "../../../../api/client.ts";
 import React, { useEffect, useState } from "react";
 import { formateDate } from "../../../../types";
-import { PrimaryButton } from "../../../../components/Buttons.tsx";
+import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
@@ -17,9 +17,9 @@ interface Teacher {
 }
 
 const formRegExp = [
-    { label: "name", regExp: "^[a-zA-Z\\s\\-\']{2,50}$" },
-    { label: "email", regExp: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" },
-    { label: "password", regExp: "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$" },
+    { label: "name", regExp: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-']{2,50}$/ },
+    { label: "email", regExp: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ },
+    { label: "password", regExp: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/ },
 ];
 
 const ListTeacher = () => {
@@ -28,7 +28,10 @@ const ListTeacher = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    // 🌟 UPDATED: Modal States
+    const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
+    const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
+
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
@@ -41,7 +44,6 @@ const ListTeacher = () => {
 
     const fetchTeachers = async () => {
         setLoading(true);
-
         try {
             const response = await api.get("/teacher");
             setTeachers(response.data.teachers || response.data);
@@ -56,6 +58,85 @@ const ListTeacher = () => {
     useEffect(() => {
         fetchTeachers();
     }, []);
+
+    // 🌟 NEW: Open Edit Modal
+    const openEditModal = (teacher: Teacher) => {
+        setSelectedTeacherId(teacher.id);
+        setFormData({
+            fullName: teacher.full_name,
+            email: "", // Not used in edit
+            password: "" // Not used in edit
+        });
+        setModalMode('edit');
+    };
+
+    const handleDeleteTeacher = async (id: string, name: string) => {
+        if (!window.confirm(`¿Estás seguro de que deseas eliminar al profesor ${name}? Se revocará su acceso al sistema.`)) return;
+
+        try {
+            await api.delete(`/teacher/${id}`);
+            await fetchTeachers();
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Error al eliminar el profesor.");
+        }
+    };
+
+    // 🌟 UPDATED: Handle Create AND Update
+    const handleModalSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError("");
+
+        const nameRegex = formRegExp.find(r => r.label === "name")?.regExp;
+        const emailRegex = formRegExp.find(r => r.label === "email")?.regExp;
+        const passRegex = formRegExp.find(r => r.label === "password")?.regExp;
+
+        if (nameRegex && !nameRegex.test(formData.fullName)) {
+            setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
+            return;
+        }
+
+        if (modalMode === 'create') {
+            if (emailRegex && !emailRegex.test(formData.email)) {
+                setFormError("Por favor, ingresa un correo electrónico válido.");
+                return;
+            }
+            if (passRegex && !passRegex.test(formData.password)) {
+                setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial.");
+                return;
+            }
+        }
+
+        setFormLoading(true);
+
+        try {
+            if (modalMode === 'create') {
+                await api.post("/teacher", formData);
+            } else if (modalMode === 'edit') {
+                await api.put(`/teacher/${selectedTeacherId}`, { fullName: formData.fullName });
+            }
+
+            setModalMode('none');
+            setFormData({ fullName: "", email: "", password: "" });
+            setSelectedTeacherId(null);
+            await fetchTeachers();
+
+        } catch (err: any) {
+            setFormError(err.response?.data?.message || "Error al guardar el profesor.");
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const getInitials = (name: string) => {
+        const names = name.split(" ");
+        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
+        return name[0].toUpperCase();
+    };
 
     const teacherFields: FormField[] = [
         {
@@ -78,63 +159,7 @@ const ListTeacher = () => {
             type: "password",
             required: true
         }
-    ];
-
-
-    const handleCreateTeacher = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setFormError("");
-
-        const nameRegex = new RegExp(formRegExp.find(r => r.label === "name")?.regExp || "");
-        const emailRegex = new RegExp(formRegExp.find(r => r.label === "email")?.regExp || "");
-        const passRegex = new RegExp(formRegExp.find(r => r.label === "password")?.regExp || "");
-
-        if (!nameRegex.test(formData.fullName)) {
-            setFormError("El nombre debe tener entre 2 y 50 caracteres y solo contener letras.");
-            return;
-        }
-
-        if (!emailRegex.test(formData.email)) {
-            setFormError("Por favor, ingresa un correo electrónico válido.");
-            return;
-        }
-
-        if (!passRegex.test(formData.password)) {
-            setFormError("La contraseña debe tener mínimo 8 caracteres, e incluir al menos una letra, un número y un carácter especial (@$!%*#?&).");
-            return;
-        }
-
-        setFormLoading(true);
-
-        try {
-            await api.post("/teacher", formData);
-
-            setIsModalOpen(false);
-            setFormData({ fullName: "", email: "", password: "" });
-            await fetchTeachers();
-
-        } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al crear el profesor.");
-        } finally {
-            setFormLoading(false);
-        }
-    };
-
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-
-    const getInitials = (name: string) => {
-        const names = name.split(" ");
-        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
-        return name[0].toUpperCase();
-    };
+    ].filter(field => modalMode === 'create' || field.name === 'fullName');
 
     const filteredTeachers = teachers.filter(teacher =>
         teacher.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,7 +171,6 @@ const ListTeacher = () => {
 
     return (
         <div className="flex flex-col gap-6">
-
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <div className="flex gap-2 items-center">
@@ -157,7 +181,13 @@ const ListTeacher = () => {
                         {teachers.length} profesores registrados en el sistema.
                     </p>
                 </div>
-                <PrimaryButton onClick={() => setIsModalOpen(true)} title="+ Nuevo Profesor"/>
+                <PrimaryButton
+                    onClick={() => {
+                        setFormData({ fullName: "", email: "", password: "" });
+                        setModalMode('create');
+                    }}
+                    title="+ Nuevo Profesor"
+                />
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -170,71 +200,75 @@ const ListTeacher = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTeachers.map((teacher) => (
-                    <div
-                        key={teacher.id}
-                        className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow flex flex-col h-full"
-                    >
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary-darker font-bold text-lg">
-                                {getInitials(teacher.full_name)}
-                            </div>
-                            <div className="overflow-hidden">
-                                <h3 className="font-bold text-custom-black text-lg truncate" title={teacher.full_name}>
-                                    {teacher.full_name}
-                                </h3>
-                                <p className="text-gray-500 text-sm truncate" title={teacher.email}>
-                                    {teacher.email}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mb-4 flex flex-col gap-3">
-                            <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center border border-gray-100">
-                                <span className="text-gray-600 font-medium text-sm">Clases Asignadas</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-custom-black text-lg">{teacher.total_classes || 0}</span>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
+                        <th className="p-4 text-sm font-semibold">Profesor</th>
+                        <th className="p-4 text-sm font-semibold">Clases Asignadas</th>
+                        <th className="p-4 text-sm font-semibold">Fecha de Contratación</th>
+                        <th className="p-4 text-sm font-semibold text-right">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                    {filteredTeachers.map((teacher) => (
+                        <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary-darker font-bold text-sm">
+                                        {getInitials(teacher.full_name)}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className="font-bold text-custom-black truncate" title={teacher.full_name}>
+                                            {teacher.full_name}
+                                        </p>
+                                        <p className="text-gray-500 text-xs truncate" title={teacher.email}>
+                                            {teacher.email}
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            </td>
 
-                            <div className="flex justify-between items-center text-sm px-1">
-                                <span className="text-gray-500 font-medium">Contratado/a:</span>
-                                <span className="text-gray-700 font-medium">{formateDate(teacher.created_at)}</span>
-                            </div>
-                        </div>
+                            <td className="p-4">
+                                    <span className="bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full text-xs border border-indigo-100">
+                                        {teacher.total_classes || 0} Clases
+                                    </span>
+                            </td>
 
-                        <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end gap-3">
-                            <button className="text-sm font-semibold text-gray-500 hover:text-custom-black transition-colors px-2 py-1 cursor-pointer">
-                                Editar
-                            </button>
-                            <button className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors px-2 py-1 cursor-pointer">
-                                Ver Perfil
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                            <td className="p-4 text-gray-500 text-sm font-medium">
+                                {formateDate(teacher.created_at)}
+                            </td>
+
+                            <td className="p-4 text-right space-x-3">
+                                <EditButton onClick={() => openEditModal(teacher)} />
+                                <DeleteButton onClick={() => handleDeleteTeacher(teacher.id, teacher.full_name)}/>
+                                <button
+                                    onClick={() => navigate(`${teacher.id}`)}
+                                    className="text-sm font-semibold text-gray-600 hover:text-custom-black transition-colors cursor-pointer"
+                                >
+                                    Perfil
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
             </div>
 
-            {filteredTeachers.length === 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 p-10 text-center">
-                    <p className="text-gray-500 font-medium text-lg">No se encontraron profesores.</p>
-                </div>
-            )}
-
             <DynamicModalForm
-                isOpen={isModalOpen}
-                title="Crear Nuevo Profesor"
+                isOpen={modalMode !== 'none'}
+                title={modalMode === 'create' ? "Crear Nuevo Profesor" : "Editar Profesor"}
                 fields={teacherFields}
                 formData={formData}
                 formError={formError}
                 formLoading={formLoading}
                 onChange={handleFormChange}
-                onSubmit={handleCreateTeacher}
+                onSubmit={handleModalSubmit}
                 onClose={() => {
-                    setIsModalOpen(false);
+                    setModalMode('none');
                     setFormError("");
                     setFormData({ fullName: "", password: "",email:"" });
+                    setSelectedTeacherId(null);
                 }}
             />
         </div>

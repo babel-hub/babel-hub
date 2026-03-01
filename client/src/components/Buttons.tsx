@@ -39,3 +39,32 @@ export const PrimaryButton = ({ title, onClick, full, type, form }: PrimaryButto
         </button>
     )
 }
+
+interface ButtonProps {
+    onClick?: () => void;
+    disabled?: boolean;
+}
+
+export function DeleteButton({ onClick, disabled }: ButtonProps) {
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+        >
+            Eliminar
+        </button>
+    );
+}
+
+export function EditButton({ onClick, disabled }: ButtonProps) {
+    return (
+        <button
+            disabled={disabled}
+            onClick={onClick}
+            className="text-sm text-primary-600 hover:text-primary-800 font-medium transition-colors"
+        >
+            Editar
+        </button>
+    );
+}

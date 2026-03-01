@@ -15,6 +15,7 @@ import StudentProfile from "../pages/principal/community/students/StudentProfile
 import ClassDetails from "../pages/principal/courses/classes/ClassesDetails.tsx";
 import FilesDashboard from "../pages/principal/files/FilesDashboard.tsx";
 import AreaDetails from "../pages/principal/files/areas/AreaDetails.tsx";
+import TeacherDetails from "../pages/principal/community/teachers/TeacherDetails.tsx";
 
 function App() {
     return (
@@ -38,6 +39,7 @@ function App() {
 
                     <Route path="comunidad" element={<Community />} />
                     <Route path="comunidad/profesores" element={<ListTeacher />} />
+                    <Route path="comunidad/profesores/:id" element={<TeacherDetails />} />
                     <Route path="comunidad/estudiantes" element={<ListStudents />} />
                     <Route path="comunidad/estudiantes/:id" element={<StudentProfile />} />
 

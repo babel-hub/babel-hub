@@ -89,6 +89,7 @@ export async function getStudents(
                 s.enrollment_code,
                 s.created_at,
                 c.name as course_name,
+                c.id as course_id,
                 u.full_name,
                 u.email
             FROM students s
@@ -176,6 +177,128 @@ export async function getStudentById(
     } catch (dbError) {
         console.error("Database Error in getStudentById:", dbError);
         return response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}
+
+export async function updateStudent(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { id } = request.params;
+    const { fullName, enrolmentCode, courseId } = request.body;
+    const creator = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const studentCheck = await client.query(`
+            SELECT s.user_id, u.supabase_user_id 
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.id = $1 AND u.school_id = $2
+        `, [id, creator.schoolId]);
+
+        if (studentCheck.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Student not found or unauthorized" });
+        }
+
+        const { user_id, supabase_user_id } = studentCheck.rows[0];
+
+        await client.query(`
+            UPDATE users 
+            SET full_name = $1 
+            WHERE id = $2
+        `, [fullName, user_id]);
+
+        await client.query(`
+            UPDATE students 
+            SET enrollment_code = $1, course_id = $2 
+            WHERE id = $3
+        `, [enrolmentCode, courseId, id]);
+
+        await createAuditLog(client, {
+            actorUserId: creator.userId as string,
+            actorRole: creator.role as string,
+            action: 'UPDATE_STUDENT',
+            targetUserId: supabase_user_id,
+            schoolId: creator.schoolId as string,
+            metadata: { studentId: id, fullName, enrolmentCode, courseId }
+        });
+
+        await client.query("COMMIT");
+        response.status(200).json({ message: "Student updated successfully" });
+
+    } catch (error) {
+        await client.query("ROLLBACK");
+        console.error("Error updating student:", error);
+        response.status(500).json({ message: "Failed to update student" });
+    } finally {
+        client.release();
+    }
+}
+
+export async function deleteStudent(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { id } = request.params;
+    const creator = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const studentCheck = await client.query(`
+            SELECT s.user_id, u.supabase_user_id, u.full_name
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.id = $1 AND u.school_id = $2
+        `, [id, creator.schoolId]);
+
+        if (studentCheck.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Student not found or unauthorized" });
+        }
+
+        const { user_id, supabase_user_id, full_name } = studentCheck.rows[0];
+
+        await client.query(`DELETE FROM students WHERE id = $1`, [id]);
+        await client.query(`DELETE FROM users WHERE id = $1`, [user_id]);
+
+        await createAuditLog(client, {
+            actorUserId: creator.userId as string,
+            actorRole: creator.role as string,
+            action: 'DELETE_STUDENT',
+            schoolId: creator.schoolId as string,
+            metadata: { studentId: id, studentName: full_name }
+        });
+
+        const { error: supabaseError } = await supabase.auth.admin.deleteUser(supabase_user_id);
+
+        if (supabaseError) {
+            throw new Error(`Supabase deletion failed: ${supabaseError.message}`);
+        }
+
+        await client.query("COMMIT");
+        response.status(200).json({ message: "Student deleted successfully" });
+
+    } catch (error: any) {
+        await client.query("ROLLBACK");
+
+        if (error.code === '23503') {
+            return response.status(409).json({
+                message: "Cannot delete student because they have assigned grades or active records."
+            });
+        }
+
+        console.error("Error deleting student:", error);
+        response.status(500).json({ message: "Failed to delete student" });
     } finally {
         client.release();
     }

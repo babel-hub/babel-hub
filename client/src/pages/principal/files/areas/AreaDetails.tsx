@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import DynamicModalForm, { type FormField } from "../../../../components/ModalForm.tsx";
-import {PrimaryButton} from "../../../../components/Buttons.tsx";
+import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import {LoadingContent} from "../../../../components/Loadings.tsx";
 
@@ -10,13 +10,11 @@ export default function AreaSubjects() {
     const { areaId } = useParams<{ areaId: string }>();
     const navigate = useNavigate();
 
-    // Page State
     const [areaName, setAreaName] = useState("");
     const [subjects, setSubjects] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // 🌟 UPDATED: Modal & Form State
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
     const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
     const [formLoading, setFormLoading] = useState(false);
@@ -57,7 +55,7 @@ export default function AreaSubjects() {
 
     const openEditModal = (subjectId: string, currentName: string) => {
         setSelectedSubjectId(subjectId);
-        setFormData({ name: currentName }); // Pre-fill the input!
+        setFormData({ name: currentName });
         setModalMode('edit');
     };
 
@@ -106,8 +104,7 @@ export default function AreaSubjects() {
     if (error) return <div className="p-6 text-red-500">{error}</div>;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-6">
-
+        <div className="space-y-5">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
                 <div className="flex items-center gap-3">
                     <ButtonChevronBack onClick={() => navigate(-1)} />
@@ -139,18 +136,8 @@ export default function AreaSubjects() {
                                 <span className="font-medium text-custom-black">{subject.name}</span>
 
                                 <div className="space-x-4">
-                                    <button
-                                        onClick={() => openEditModal(subject.id, subject.name)}
-                                        className="text-sm text-primary-600 hover:text-primary-800 font-medium transition-colors"
-                                    >
-                                        Editar
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteSubject(subject.id, subject.name)}
-                                        className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
-                                    >
-                                        Eliminar
-                                    </button>
+                                    <EditButton onClick={() => openEditModal(subject.id, subject.name)} />
+                                    <DeleteButton  onClick={() => handleDeleteSubject(subject.id, subject.name)}/>
                                 </div>
                             </li>
                         ))}
@@ -158,7 +145,6 @@ export default function AreaSubjects() {
                 )}
             </div>
 
-            {/* 🌟 UPDATED: Reusable Modal now handles both actions dynamically */}
             <DynamicModalForm
                 isOpen={modalMode !== 'none'}
                 title={modalMode === 'create' ? `Añadir Materia a ${areaName}` : `Editar Materia`}
