@@ -13,6 +13,8 @@ import ListTeacher from "../pages/principal/community/teachers/Teachers.tsx";
 import Community from "../pages/principal/community/Community.tsx";
 import StudentProfile from "../pages/principal/community/students/StudentProfile.tsx";
 import ClassDetails from "../pages/principal/courses/classes/ClassesDetails.tsx";
+import FilesDashboard from "../pages/principal/files/FilesDashboard.tsx";
+import AreaDetails from "../pages/principal/files/areas/AreaDetails.tsx";
 
 function App() {
     return (
@@ -29,13 +31,18 @@ function App() {
                     }
                 >
                     <Route path="dashboard" index element={<PrincipalDashboard />} />
+
                     <Route path="cursos" element={<PrincipalCourses />} />
                     <Route path="cursos/:id" element={<CourseDetails />} />
                     <Route path="cursos/:courseId/clase/:id" element={<ClassDetails />} />
+
                     <Route path="comunidad" element={<Community />} />
                     <Route path="comunidad/profesores" element={<ListTeacher />} />
                     <Route path="comunidad/estudiantes" element={<ListStudents />} />
                     <Route path="comunidad/estudiantes/:id" element={<StudentProfile />} />
+
+                    <Route path="formatos" element={<FilesDashboard />} />
+                    <Route path="formatos/areas/:areaId" element={<AreaDetails />} />
 
                 </Route>
                 <Route

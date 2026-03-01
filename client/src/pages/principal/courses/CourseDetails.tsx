@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../api/client.ts";
 import ButtonChevronBack from "../../../components/ButtonChevrowBack.tsx";
-import LoadingContent from "../../../components/LoadingContent.tsx";
-import PrimaryButton from "../../../components/PrimaryButton.tsx";
+import { LoadingContent } from "../../../components/Loadings.tsx";
+import { PrimaryButton } from "../../../components/Buttons.tsx";
 import DynamicModalForm, {type FormField} from "../../../components/ModalForm.tsx";
 
 interface Student {

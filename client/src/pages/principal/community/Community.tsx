@@ -1,26 +1,19 @@
 import { useNavigate } from "react-router-dom";
+import ListData from "../../../components/List.tsx";
 
 function Community () {
     const navigate = useNavigate();
 
+    const listItems = [
+        { label: "Estudiantes", onClick: () => navigate("/principal/comunidad/estudiantes") },
+        { label: "Profesores", onClick: () => navigate("/principal/comunidad/profesores") }
+    ]
+
     return (
         <div>
-            <ul>
-                <li className="mb-3">
-                    <button
-                        onClick={() => navigate("/principal/comunidad/estudiantes")}
-                        className="bg-primary-shadow hover:bg-primary hover:text-white transition-colors text-sm sm:text-base cursor-pointer rounded-xl text-primary-darker font-medium w-full p-5 text-left">
-                        Estudientes
-                    </button>
-                </li>
-                <li>
-                    <button
-                        onClick={() => navigate("/principal/comunidad/profesores")}
-                        className="bg-primary-shadow hover:bg-primary hover:text-white transition-colors text-sm sm:text-base cursor-pointer rounded-xl text-primary-darker font-medium w-full p-5 text-left">
-                        Profesores
-                    </button>
-                </li>
-            </ul>
+            <ListData
+                data={listItems}
+            />
         </div>
     );
 }

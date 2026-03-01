@@ -1,6 +1,5 @@
 import React from "react";
-import PrimaryButton from "./PrimaryButton";
-import CancelButton from "./CancelButton";
+import { CancelButton, PrimaryButton } from "./Buttons.tsx";
 
 export interface FormField {
     name: string;

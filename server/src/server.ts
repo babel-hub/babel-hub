@@ -14,6 +14,7 @@ import healthcheckRoutes from "./routes/healthcheck.routes.js";
 import coursesRoutes from "./routes/courses.routes.js";
 import classesRoutes from "./routes/classes.routes.js";
 import subjectsRoutes from "./routes/subjects.routes.js";
+import areasRoutes from "./routes/areas.routes.js";
 
 
 dotenv.config();
@@ -44,6 +45,7 @@ app.use("/school", SchoolRoutes);
 app.use("/courses", coursesRoutes);
 app.use("/classes", classesRoutes);
 app.use("/subjects", subjectsRoutes);
+app.use("/areas", areasRoutes);
 
 
 app.use(errorHandler);

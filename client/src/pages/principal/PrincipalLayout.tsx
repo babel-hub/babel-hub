@@ -11,7 +11,7 @@ export const PrincipalLayout = () => {
         { id: "4", icon: "", path:"/unknow", label: "Notificaciones" },
         { id: "5", icon: "", path:"/principal/comunidad", label: "Comunidad" },
         { id: "6", icon: "", path:"/unknow", label: "Acudientes" },
-        { id: "7", icon: "", path:"/unknow", label: "Formatos" },
+        { id: "7", icon: "", path:"/principal/formatos", label: "Formatos" },
         { id: "8", icon: "", path:"/unknow", label: "Mensajes" }
     ]
 

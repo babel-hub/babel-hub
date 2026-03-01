@@ -1,49 +1,57 @@
 import Router from "express";
-import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
-import { getAllSubjects, createSubject, deleteSubject, getSubject, updateSubject } from "../controllers/subjects.controllers.js";
-import { strictLimiter } from "../middleware/ratelimit.middleware.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import {strictLimiter} from "../middleware/ratelimit.middleware.js";
+import { getArea, getAreas, deleteArea, insertArea, updateArea, getSubjectsByArea } from "../controllers/areas.controllers.js";
 
 const router = Router();
 
 router.get(
-    "/",
+    '/',
     strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
-    getAllSubjects
+    getAreas
 );
 
 router.get(
-    "/:id",
+    '/:id',
     strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
-    getSubject
+    getArea
+);
+
+router.get(
+    "/:areaId/subjects",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["admin", "principal"]),
+    getSubjectsByArea
 );
 
 router.post(
-    "/",
+    '/',
     strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
-    createSubject
+    insertArea
 );
 
 router.put(
-    "/:id",
+    '/:id',
     strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
-    updateSubject
+    updateArea
 );
 
 router.delete(
-    "/:id",
+    '/:id',
     strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
-    deleteSubject
+    deleteArea
 );
 
 export default router;

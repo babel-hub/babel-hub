@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "../../../api/client.ts";
-import PrimaryButton from "../../../components/PrimaryButton.tsx";
-import LoadingPage from "../../../components/LoadingPage.tsx";
+import { PrimaryButton } from "../../../components/Buttons.tsx";
+import { LoadingPage } from "../../../components/Loadings.tsx";
 import DynamicModalForm, { type FormField } from "../../../components/ModalForm.tsx";
 
 interface ClassData {

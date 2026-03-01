@@ -1,10 +1,10 @@
 import api from "../../../../api/client.ts";
 import React, { useEffect, useState } from "react";
 import { formateDate } from "../../../../types";
-import PrimaryButton from "../../../../components/PrimaryButton.tsx";
+import { PrimaryButton } from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
-import LoadingContent from "../../../../components/LoadingContent.tsx";
+import { LoadingContent } from "../../../../components/Loadings.tsx";
 import DynamicModalForm, {type FormField} from "../../../../components/ModalForm.tsx";
 
 interface Teacher {

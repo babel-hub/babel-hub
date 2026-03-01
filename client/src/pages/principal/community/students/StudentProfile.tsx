@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
-import LoadingContent from "../../../../components/LoadingContent.tsx";
+import { LoadingContent } from "../../../../components/Loadings.tsx";
 
 interface GradeRecord {
     assignment_id: string;

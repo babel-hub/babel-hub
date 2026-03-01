@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
-import PrimaryButton from "../../../../components/PrimaryButton.tsx";
-import LoadingContent from "../../../../components/LoadingContent.tsx";
+import { PrimaryButton } from "../../../../components/Buttons.tsx";
+import { LoadingContent } from "../../../../components/Loadings.tsx";
 
 interface Assignment {
     id: string;
