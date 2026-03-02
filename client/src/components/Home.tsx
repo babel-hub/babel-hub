@@ -1,4 +1,4 @@
-import React from "react";
+import React, {type JSX} from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import LogOutButton from "./LogOutButton.tsx";
 import type {UserProfile} from "../auth/useAuth.ts";
@@ -6,7 +6,7 @@ import ErrorBoundary from "./ErrorBoundary.tsx";
 
 interface GridItem {
     id: string | number;
-    icon: string;
+    icon: JSX.Element;
     label: string;
     path: string;
 }
@@ -53,6 +53,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                             const disabled = item.path === "/unknow";
                             const isActive = location.pathname.startsWith(item.path);
 
+                            // @ts-ignore
                             return (
                                 <button
                                     key={item.id}
@@ -66,7 +67,9 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                     }
                                 `}
                                 >
-                                    <div className={`w-8 h-8 mb-2 rounded-lg ${isActive ? "bg-primary" : "bg-gray-200"}`}></div>
+                                    <div className={`mb-2 text-3xl ${isActive ? "text-primary" : "text-gray-300"}`}>
+                                        {item.icon}
+                                    </div>
                                     <p className="font-medium text-xs text-center">{item.label}</p>
                                 </button>
                             );
@@ -79,7 +82,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                 </div>
             </div>
 
-            <div className="flex-1 p-10 overflow-y-auto">
+            <div className="flex-1 p-5 bg-gray-50 overflow-y-auto">
                 <ErrorBoundary>
                     <Outlet />
                 </ErrorBoundary>

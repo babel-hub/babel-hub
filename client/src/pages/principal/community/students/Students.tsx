@@ -1,6 +1,6 @@
 import api from "../../../../api/client.ts";
 import React, { useEffect, useState } from "react";
-import { formateDate } from "../../../../types";
+import {formateDate, getInitials, reverseName} from "../../../../types";
 import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
@@ -13,7 +13,7 @@ interface StudentProps {
     full_name: string;
     created_at: string;
     course_name: string;
-    course_id?: string; // 🌟 Added this to hold the ID for the dropdown
+    course_id?: string;
     email: string;
 }
 
@@ -100,7 +100,6 @@ const ListStudents = () => {
         }
     };
 
-    // 🌟 UPDATED: Handle Create AND Update
     const handleModalSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError("");
@@ -114,7 +113,6 @@ const ListStudents = () => {
             return;
         }
 
-        // Only validate email and password if we are creating a NEW user
         if (modalMode === 'create') {
             if (emailRegExp && !emailRegExp.test(formData.email)) {
                 setFormError("Por favor, ingresa un correo electrónico válido.");
@@ -132,7 +130,6 @@ const ListStudents = () => {
             if (modalMode === 'create') {
                 await api.post("/student", formData);
             } else if (modalMode === 'edit') {
-                // Send only the fields expected by updateStudent
                 await api.put(`/student/${selectedStudentId}`, {
                     fullName: formData.fullName,
                     enrolmentCode: formData.enrolmentCode,
@@ -155,12 +152,6 @@ const ListStudents = () => {
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const getInitials = (name: string) => {
-        const names = name.split(" ");
-        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
-        return name[0].toUpperCase();
     };
 
     const studentFields: FormField[] = [
@@ -257,17 +248,20 @@ const ListStudents = () => {
                         <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
                             <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm">
+                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary font-bold text-sm">
                                         {getInitials(student.full_name)}
                                     </div>
-                                    <div className="overflow-hidden">
+                                    <button
+                                        onClick={() => navigate(`${student.student_id}`)}
+                                        className="overflow-hidden text-left cursor-pointer"
+                                    >
                                         <p className="font-bold text-custom-black truncate" title={student.full_name}>
-                                            {student.full_name}
+                                            {reverseName(student.full_name)}
                                         </p>
                                         <p className="text-gray-500 text-xs truncate" title={student.email}>
                                             {student.email}
                                         </p>
-                                    </div>
+                                    </button>
                                 </div>
                             </td>
 
@@ -279,7 +273,7 @@ const ListStudents = () => {
                                 ) : (
                                     <span className="bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded text-xs">
                                             Pendiente
-                                        </span>
+                                    </span>
                                 )}
                             </td>
 
@@ -294,12 +288,6 @@ const ListStudents = () => {
                             <td className="p-4 text-right space-x-3">
                                 <EditButton onClick={() => openEditModal(student)} />
                                 <DeleteButton onClick={() => handleDeleteStudent(student.student_id, student.full_name)} />
-                                <button
-                                    onClick={() => navigate(`${student.student_id}`)}
-                                    className="text-sm font-semibold text-gray-600 hover:text-custom-black transition-colors cursor-pointer"
-                                >
-                                    Perfil
-                                </button>
                             </td>
                         </tr>
                     ))}

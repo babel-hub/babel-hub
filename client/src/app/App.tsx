@@ -33,9 +33,10 @@ function App() {
                 >
                     <Route path="dashboard" index element={<PrincipalDashboard />} />
 
-                    <Route path="cursos" element={<PrincipalCourses />} />
-                    <Route path="cursos/:id" element={<CourseDetails />} />
-                    <Route path="cursos/:courseId/clase/:id" element={<ClassDetails />} />
+                    <Route path="cursos" element={<PrincipalCourses />}>
+                        <Route path=":id" element={<CourseDetails />} />
+                        <Route path=":courseId/clase/:id" element={<ClassDetails />} />
+                    </Route>
 
                     <Route path="comunidad" element={<Community />} />
                     <Route path="comunidad/profesores" element={<ListTeacher />} />

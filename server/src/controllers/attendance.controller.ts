@@ -1,128 +1,141 @@
 import type { Response } from "express";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 import { pool } from "../db/index.js";
-import {createAuditLog} from "../services/audit.service.js";
+import { createAuditLog } from "../services/audit.service.js";
 
-export async function getAttendance(
+export async function getClassAttendance(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { role, userId, schoolId } = request.user!;
+    const { classId } = request.params;
+    const date = request.query.date as string || new Date().toISOString().split('T')[0];
+    const { schoolId } = request.user!;
+
+    const client = await pool.connect();
 
     try {
-        let query = "";
-        let params: any[] = [];
+        const result = await client.query(`
+            SELECT 
+                s.id as student_id,
+                u.full_name,
+                a.status,
+                a.date
+            FROM classes c
+            JOIN students s ON s.course_id = c.course_id
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = $1 AND a.date = $2
+            WHERE c.id = $1 AND u.school_id = $3
+            ORDER BY u.full_name ASC;
+        `, [classId, date, schoolId]);
 
-        switch (role) {
-            case "student":
-                query = `
-                    SELECT a.*, sb.name as name
-                    FROM attendance a
-                    JOIN students s ON a.student_id = s.id
-                    JOIN classes c ON a.class_id = c.id
-                    JOIN subjects sb ON c.subject_id = sb.id
-                    WHERE s.user_id = $1
-                `;
-                params = [userId];
-                break;
-            case "teacher":
-                query = `
-                    SELECT a.*, u.name as name
-                    FROM attendance a
-                    JOIN classes c ON a.class_id = c.id
-                    JOIN teachers t ON c.teacher_id = t.id
-                    JOIN students s ON a.student_id = s.id
-                    JOIN users u ON t.user_id = u.id
-                    WHERE t.user_id = $1
-                `;
-                params = [userId];
-                break;
-            case "principal":
-                query = `
-                    SELECT a.*, c.name as class_name
-                    FROM attendance a
-                    JOIN classes c ON a.class_id = c.id
-                    JOIN subjects sb ON c.subject_id = sb.id
-                    WHERE sb.school_id = $1
-                `;
-                params = [schoolId];
-                break;
-            default:
-                return response.status(403).json({ message: "Role not authorized for attendance" });
-        }
+        response.status(200).json({
+            date: date,
+            records: result.rows
+        });
 
-        const result = await pool.query(query, params);
-        response.json(result.rows);
     } catch (error) {
-        console.error("Get Attendance Error:", error);
+        console.error("Get Class Attendance Error:", error);
         response.status(500).json({ message: "Failed to fetch attendance" });
+    } finally {
+        client.release();
     }
 }
 
-export async function upsertAttendance(
+
+export async function getCourseDailySummary(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { status, studentId, classId } = request.body;
-    const creator = request.user!;
+    const { courseId } = request.params;
+    const date = request.query.date as string || new Date().toISOString().split('T')[0];
+    const { schoolId } = request.user!;
 
-    const isPrincipal = creator.role?.includes("principal");
-    const isTeacher = creator.role?.includes("teacher");
+    const client = await pool.connect();
 
-    if (!isPrincipal && !isTeacher) {
-        return response.status(403).json({ message: "Role not authorized" });
+    try {
+        const result = await client.query(`
+            SELECT 
+                s.id as student_id,
+                CASE 
+                WHEN bool_or(a.status = 'absent') THEN 'absent'
+                WHEN bool_or(a.status = 'late') THEN 'late'
+                ELSE 'present'
+                END as daily_status
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN classes c ON c.course_id = s.course_id
+            LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = c.id AND a.date = $1
+            WHERE s.course_id = $2 AND u.school_id = $3
+            GROUP BY s.id
+        `, [date, courseId, schoolId]);
+
+        response.status(200).json({
+            date: date,
+            records: result.rows
+        });
+
+    } catch (error) {
+        console.error("Get Course Daily Summary Error:", error);
+        response.status(500).json({ message: "Failed to fetch course attendance summary" });
+    } finally {
+        client.release();
     }
+}
 
+export async function bulkUpsertClassAttendance(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { classId } = request.params;
+    const { date, records } = request.body;
+
+    const creator = request.user!;
     const client = await pool.connect();
 
     try {
         await client.query("BEGIN");
 
-        if (isTeacher) {
-            const belongsToClass = await client.query(`
-                SELECT 1 FROM classes 
-                WHERE id = $1 AND teacher_id = (SELECT id FROM teachers WHERE user_id = $2)
-            `, [classId, creator.userId]);
+        const classCheck = await client.query(`
+            SELECT c.id
+            FROM classes c
+            JOIN courses co ON c.course_id = co.id
+            WHERE c.id = $1 AND co.school_id = $2
+        `, [classId, creator.schoolId]);
 
-            if (belongsToClass.rowCount === 0) {
-                await client.query("ROLLBACK");
-                return response.status(403).json({ message: "You don't teach this class" });
-            }
-        } else if (isPrincipal) {
-            const isInSchool = await client.query(`
-                SELECT 1 FROM classes c
-                JOIN subjects s ON c.subject_id = s.id
-                WHERE c.id = $1 AND s.school_id = $2
-            `, [classId, creator.schoolId]);
-
-            if (isInSchool.rowCount === 0) {
-                await client.query("ROLLBACK");
-                return response.status(403).json({ message: "Class not in your school" });
-            }
+        if (classCheck.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(403).json({ message: "Class not found or unauthorized" });
         }
 
-        const result = await client.query(`
-            INSERT INTO attendance (student_id, class_id, date, status)
-            VALUES ($1, $2, CURRENT_DATE, $3)
-            ON CONFLICT (student_id, class_id, date) 
-            DO UPDATE SET
-                status = EXCLUDED.status,
-                updated_at = NOW()
-                RETURNING student_id, class_id, date, status;
-        `, [studentId, classId, status]);
+        const upsertPromises = records.map((record: { studentId: string, status: string }) => {
+            return client.query(`
+                INSERT INTO attendance (student_id, class_id, date, status)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (student_id, class_id, date) 
+                DO UPDATE SET
+                    status = EXCLUDED.status,
+                    updated_at = NOW();
+            `, [record.studentId, classId, date, record.status]);
+        });
+
+        await Promise.all(upsertPromises);
+
+        await createAuditLog(client, {
+            actorUserId: creator.userId as string,
+            actorRole: creator.role as string,
+            action: 'TAKE_CLASS_ATTENDANCE',
+            schoolId: creator.schoolId as string,
+            metadata: { classId, date, studentsCount: records.length }
+        });
 
         await client.query("COMMIT");
 
-        return response.status(200).json({
-            message: "Attendance recorded",
-            attendance: result.rows[0]
-        });
+        return response.status(200).json({ message: "Attendance successfully recorded" });
 
     } catch (dbError) {
         await client.query("ROLLBACK");
-        console.error("Attendance Error:", dbError);
-
-        return response.status(500).json({ message: "Server error" });
+        console.error("Attendance Upsert Error:", dbError);
+        return response.status(500).json({ message: "Server error while saving attendance" });
     } finally {
         client.release();
     }

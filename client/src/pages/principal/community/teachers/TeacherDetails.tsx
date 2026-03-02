@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts"; // Adjust path as needed
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
-import {formateDate} from "../../../../types";
+import {formateDate, getInitials} from "../../../../types";
 
 interface ClassItem {
     class_id: string;
@@ -45,12 +45,6 @@ export default function TeacherDetails() {
             fetchTeacherProfile();
         }
     }, [id]);
-
-    const getInitials = (name: string) => {
-        const names = name.split(" ");
-        if (names.length >= 2) return (names[0][0] + names[1][0]).toUpperCase();
-        return name[0].toUpperCase();
-    };
 
     if (loading) return <LoadingContent title="Cargando perfil del profesor..." />;
     if (error) return <div className="p-6 text-red-500 font-semibold">{error}</div>;

@@ -1,3 +1,11 @@
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { HiOutlineTrash } from "react-icons/hi";
+import { AiOutlineEdit } from "react-icons/ai";
+import { FiEdit2 } from "react-icons/fi";
+
+
+
+
 interface CancelButtonProps {
     title: string;
     full?: boolean;
@@ -21,17 +29,34 @@ interface PrimaryButtonProps {
     title: string;
     full?: boolean;
     onClick?: () => void;
+    disabled?: boolean;
     form?: string;
     type?: "submit" | "reset" | "button" | undefined;
 }
 
-export const PrimaryButton = ({ title, onClick, full, type, form }: PrimaryButtonProps) => {
+export const PrimaryButton = ({ title, onClick, full, type, disabled,form }: PrimaryButtonProps) => {
+    return (
+        <button
+            form={form}
+            type={type}
+            disabled={disabled}
+            onClick={onClick}
+            className={`bg-primary-shadow text-sm md:text-base hover:bg-primary text-primary-darker hover:text-white px-5 py-2 rounded-xl font-semibold transition-colors shadow-sm cursor-pointer
+                        ${full ? "w-full" : "w-full md:w-auto"}
+            `}
+        >
+            {title}
+        </button>
+    )
+}
+
+export const PrimaryButtonSmall = ({ title, onClick, full, type, form }: PrimaryButtonProps) => {
     return (
         <button
             form={form}
             type={type}
             onClick={onClick}
-            className={`bg-primary-shadow text-sm md:text-base hover:bg-primary text-primary-darker hover:text-white px-5 py-2 rounded-xl font-semibold transition-colors shadow-sm cursor-pointer
+            className={`bg-primary-shadow text-sm hover:bg-primary text-primary hover:text-white px-3 py-1 rounded-xl font-semibold transition-colors shadow-sm cursor-pointer
                         ${full ? "w-full" : "w-full md:w-auto"}
             `}
         >
@@ -50,9 +75,9 @@ export function DeleteButton({ onClick, disabled }: ButtonProps) {
         <button
             onClick={onClick}
             disabled={disabled}
-            className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+            className="text-lg p-1.5 cursor-pointer text-gray-500 hover:text-red-500 font-medium transition-colors"
         >
-            Eliminar
+            <HiOutlineTrash />
         </button>
     );
 }
@@ -62,9 +87,9 @@ export function EditButton({ onClick, disabled }: ButtonProps) {
         <button
             disabled={disabled}
             onClick={onClick}
-            className="text-sm text-primary-600 hover:text-primary-800 font-medium transition-colors"
+            className="text-base p-1.5 cursor-pointer text-gray-500 hover:text-primary font-medium transition-colors"
         >
-            Editar
+            <FiEdit2 />
         </button>
     );
 }

@@ -1,13 +1,14 @@
 @import "tailwindcss";
-/* --color-primary: #615fff; */
+/* --color-primary: #615fff;      --color-primary-darker: #4f39f6;
+*/
 
 @theme {
     --color-page: #f9fafb;
     --color-white: #fff;
     --color-custom-black: #333333;
-    --color-primary:  #7A52FF;
+    --color-primary:  #8C7CE3;
     --color-primary-shadow: #e0e7ff;
-    --color-primary-darker: #4f39f6;
+    --color-primary-darker: #8C7CE3;
     --color-secondary: #00bcd4;
     --color-red-error: #fb2c36;
     --color-red-shadow: #fef2f2;

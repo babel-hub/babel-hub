@@ -120,7 +120,7 @@ export async function getClassInfo(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { id } = request.params; // The class ID
+    const { id } = request.params;
     const { schoolId } = request.user!;
     const client = await pool.connect();
 

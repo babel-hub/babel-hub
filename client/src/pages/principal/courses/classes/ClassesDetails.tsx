@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
-import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { PrimaryButton } from "../../../../components/Buttons.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
+import { formatterDate, getInitials, reverseName } from "../../../../types";
 
 interface Assignment {
     id: string;
@@ -33,13 +33,24 @@ interface ClassDetailsData {
 
 export default function ClassDetails() {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+
     const [data, setData] = useState<ClassDetailsData | null>(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate();
+
+    const [activeTab, setActiveTab] = useState<'assignments' | 'students' | 'attendance'>('students');
+
+    const [attendanceRecords, setAttendanceRecords] = useState<Record<string, string>>({});
+    const [loadingAttendance, setLoadingAttendance] = useState(false);
+    const [savingAttendance, setSavingAttendance] = useState(false);
+
+    const date = formatterDate.format(new Date());
+    const [attendanceDate, setAttendanceDate] = useState(date);
 
     useEffect(() => {
         const fetchClass = async () => {
             try {
+                setLoading(true);
                 const response = await api.get(`/classes/${id}`);
                 setData(response.data);
             } catch (error) {
@@ -52,69 +63,217 @@ export default function ClassDetails() {
         if (id) fetchClass();
     }, [id]);
 
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            if (!data) return;
+
+            try {
+                setLoadingAttendance(true);
+                const response = await api.get(`/attendance/class/${id}?date=${attendanceDate}`);
+
+                const fetchedRecords = response.data.records;
+                const newRecordsMap: Record<string, string> = {};
+
+                data.students.forEach(student => {
+                    const existingRecord = fetchedRecords.find((r: any) => r.student_id === student.student_id);
+                    newRecordsMap[student.student_id] = existingRecord?.status ?? 'present';
+                });
+
+                setAttendanceRecords(newRecordsMap);
+            } catch (error) {
+                console.error("Error fetching attendance:", error);
+            } finally {
+                setLoadingAttendance(false);
+            }
+        };
+
+        if (activeTab === 'attendance') {
+            fetchAttendance();
+        }
+    }, [activeTab, attendanceDate, id, data]);
+
+    const handleSaveAttendance = async () => {
+        try {
+            setSavingAttendance(true);
+
+            const recordsArray = Object.entries(attendanceRecords).map(([studentId, status]) => ({
+                studentId,
+                status
+            }));
+
+            await api.post(`/attendance/class/${id}/bulk`, {
+                date: attendanceDate,
+                records: recordsArray
+            });
+
+            alert("Asistencia guardada correctamente.");
+        } catch (error) {
+            console.error("Error saving attendance:", error);
+            alert("Error al guardar la asistencia.");
+        } finally {
+            setSavingAttendance(false);
+        }
+    };
+
+    const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late') => {
+        setAttendanceRecords(prev => ({ ...prev, [studentId]: status }));
+    };
+
     if (loading) return <LoadingContent title="Cargando clase..."/>;
-    if (!data) return <div className="p-6 text-red-500">Clase no encontrada.</div>;
+    if (!data) return <div className="p-6 text-gray-500 text-center flex-1">Clase no encontrada.</div>;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                    <div className="flex gap-2 items-center">
+        <div className="flex flex-col h-full w-full bg-gray-50/30">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-6 flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex gap-4 items-center">
                         <ButtonChevronBack onClick={() => navigate(-1)} />
-                        <h1 className="text-xl md:text-2xl font-bold text-custom-black">
-                            {data.details.subject_name} <span className="text-gray-400 font-normal">| {data.details.course_name}</span>
-                        </h1>
+                        <div>
+                            <h1 className="text-xl md:text-2xl font-bold text-custom-black">
+                                {data.details.subject_name}
+                                <span className="text-gray-400 font-normal ml-2">| {data.details.course_name}</span>
+                            </h1>
+                            <p className="text-gray-500 mt-1 text-sm">
+                                Profesor: <span className="font-medium text-gray-700">{data.details.teacher_name}</span>
+                            </p>
+                        </div>
                     </div>
-                    <p className="text-gray-500 mt-1">Profesor: {data.details.teacher_name}</p>
+                    {activeTab === 'assignments' && <PrimaryButton title="+ Nueva Asignación"/>}
+                    {activeTab === 'attendance' && (
+                        <PrimaryButton
+                            onClick={handleSaveAttendance}
+                            disabled={savingAttendance}
+                            title={savingAttendance ? "Guardando..." : "Guardar Asistencia"}
+                        />
+                    )}
                 </div>
-                <div className="mt-4 md:mt-0">
-                    <PrimaryButton title="Nueva Asignación"/>
+
+                <div className="flex gap-6 mt-2 border-b border-gray-100">
+                    <button
+                        onClick={() => setActiveTab('students')}
+                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'students' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Estudiantes
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('assignments')}
+                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Asignaciones
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('attendance')}
+                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Asistencia
+                    </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="text-xl font-bold text-custom-black mb-4 border-b pb-2">Asignaciones (Tareas y Exámenes)</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-6 flex-1 overflow-y-auto">
+                {activeTab === 'assignments' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {data.assignments.map((assignment) => (
-                            <div key={assignment.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-semibold text-custom-black">{assignment.title}</h3>
-                                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-md uppercase">
+                            <div key={assignment.id} className="border border-gray-100 rounded-xl p-5 hover:shadow-md transition-all bg-white flex flex-col h-full">
+                                <div className="flex justify-between items-start mb-3 gap-2">
+                                    <h3 className="font-bold text-custom-black leading-tight">{assignment.title}</h3>
+                                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider shrink-0">
                                         {assignment.type}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-500">
-                                    Entrega: {new Date(assignment.due_date).toLocaleDateString()}
-                                </p>
-                                <button className="mt-4 text-sm text-primary-600 font-medium hover:underline w-full text-left">
-                                    Ver Calificaciones →
-                                </button>
+                                <div className="mt-auto pt-3 border-t border-gray-50">
+                                    <p className="text-xs text-gray-500 font-medium mb-3">
+                                        Entrega: <span className="text-gray-700">{new Date(assignment.due_date).toLocaleDateString()}</span>
+                                    </p>
+                                    <button className="text-sm text-primary-600 font-bold hover:text-primary-800 w-full text-left transition-colors">
+                                        Ver Calificaciones;
+                                    </button>
+                                </div>
                             </div>
                         ))}
+                        {data.assignments.length === 0 && (
+                            <div className="col-span-full text-center py-10 bg-white rounded-xl border border-gray-100">
+                                <p className="text-gray-500 font-medium">No hay asignaciones creadas todavía.</p>
+                            </div>
+                        )}
                     </div>
+                )}
 
-                    {data.assignments.length === 0 && (
-                        <p className="text-gray-500 text-center py-6">No hay asignaciones creadas todavía.</p>
-                    )}
-                </div>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 className="text-xl font-bold text-custom-black mb-4 border-b pb-2">
-                        Estudiantes ({data.students.length})
-                    </h2>
-                    <div className="overflow-y-auto max-h-[400px]">
-                        <ul className="divide-y divide-gray-100">
+                {activeTab === 'students' && (
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden max-w-3xl mx-auto">
+                        <ul className="divide-y divide-gray-50">
                             {data.students.map((student) => (
-                                <li key={student.student_id} className="py-2 flex flex-col justify-center">
-                                    <span className="font-medium text-sm text-custom-black">{student.full_name}</span>
-                                    <span className="text-xs text-gray-500">{student.email}</span>
+                                <li key={student.student_id} className="py-3 px-5 flex items-center gap-4 hover:bg-gray-50">
+                                    <div className="w-10 h-10 rounded-full bg-primary-shadow text-primary-darker flex items-center justify-center text-sm font-bold shrink-0">
+                                        {getInitials(student.full_name)}
+                                    </div>
+                                    <div>
+                                        <span className="block font-medium text-custom-black">{reverseName(student.full_name)}</span>
+                                        <span className="block text-sm text-gray-500">{student.email}</span>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
                     </div>
-                </div>
+                )}
 
+                {activeTab === 'attendance' && (
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center justify-between">
+                            <span className="font-medium text-gray-700">Fecha de asistencia:</span>
+                            <input
+                                type="date"
+                                value={attendanceDate}
+                                onChange={(e) => setAttendanceDate(e.target.value)}
+                                className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                            />
+                        </div>
+
+                        {loadingAttendance ? (
+                            <LoadingContent title="Cargando lista..." />
+                        ) : (
+                            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                                <ul className="divide-y divide-gray-50">
+                                    {data.students.map((student) => {
+                                        const status = attendanceRecords[student.student_id] || 'present';
+
+                                        return (
+                                            <li key={student.student_id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
+                                                        {getInitials(student.full_name)}
+                                                    </div>
+                                                    <span className="font-medium text-custom-black">{reverseName(student.full_name)}</span>
+                                                </div>
+
+                                                <div className="flex p-1 shrink-0">
+                                                    <button
+                                                        onClick={() => updateStudentStatus(student.student_id, 'present')}
+                                                        className={`px-2 py-1.5 rounded-md transition-all`}
+                                                    >
+                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'present' ? 'bg-green-600 border-green-600' : 'bg-transparent border-gray-600'}`}></span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => updateStudentStatus(student.student_id, 'late')}
+                                                        className={`px-2 py-1.5 rounded-md transition-all}`}
+                                                    >
+                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'late' ? 'bg-yellow-400 border-yellow-400' : 'bg-transparent border-gray-600'}`}></span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => updateStudentStatus(student.student_id, 'absent')}
+                                                        className={`px-2 py-1.5 rounded-md transition-all'}`}
+                                                    >
+                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'absent' ? 'bg-red-600 border-red-600' : 'bg-transparent border-gray-600'}`}></span>
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
