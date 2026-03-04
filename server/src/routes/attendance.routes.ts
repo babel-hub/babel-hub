@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
-import { getClassAttendance, bulkUpsertClassAttendance, getCourseDailySummary} from "../controllers/attendance.controller.js";
+import { getClassAttendance, bulkUpsertClassAttendance, getCourseDailySummary, getAttendanceCenterSummary } from "../controllers/attendance.controller.js";
 
 const router = Router();
 
@@ -17,6 +17,13 @@ router.get(
     authMiddleware,
     authorizedRoles(["student", "teacher", "principal", "admin"]),
     getCourseDailySummary
+);
+
+router.get(
+    "/summary",
+    authMiddleware,
+    authorizedRoles(["principal", "admin"]),
+    getAttendanceCenterSummary
 );
 
 router.post(

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/login.tsx";
 import StudentDashboard from "../pages/student/home.tsx";
-import TeacherDashboard from "../pages/teacher/home.tsx";
+import TeacherDashboard from "../pages/teacher/dashboard/TeacherDashboard.tsx";
 import PrincipalDashboard from "../pages/principal/dashboard/PrincipalDashboard.tsx";
 import ProtectedRoute from "../auth/Route.tsx";
 import NotFoundPage from "../pages/misc/notFoundPage.tsx";
@@ -16,6 +16,10 @@ import ClassDetails from "../pages/principal/courses/classes/ClassesDetails.tsx"
 import FilesDashboard from "../pages/principal/files/FilesDashboard.tsx";
 import AreaDetails from "../pages/principal/files/areas/AreaDetails.tsx";
 import TeacherDetails from "../pages/principal/community/teachers/TeacherDetails.tsx";
+import TeacherLayout from "../pages/teacher/TeacherLayout.tsx";
+import TeacherCourses from "../pages/teacher/courses/TeacherCourses.tsx";
+import NotificationCenter from "../pages/principal/notifications/NotificationCenter.tsx";
+import AttendanceNotification from "../pages/principal/notifications/attendance/AttendanceNotification.tsx";
 
 function App() {
     return (
@@ -47,7 +51,24 @@ function App() {
                     <Route path="formatos" element={<FilesDashboard />} />
                     <Route path="formatos/areas/:areaId" element={<AreaDetails />} />
 
+                    <Route path="notificaciones" element={<NotificationCenter />} />
+                    <Route path="notificaciones/asistencia" element={<AttendanceNotification />} />
+
                 </Route>
+
+                <Route
+                    path="/teacher"
+                    element={
+                        <ProtectedRoute>
+                            <TeacherLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="dashboard" index element={<TeacherDashboard />}/>
+
+                    <Route path="cursos" element={<TeacherCourses />}/>
+                </Route>
+
                 <Route
                     path="/student"
                     element={
@@ -56,16 +77,6 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route
-                    path="/teacher"
-                    element={
-                        <ProtectedRoute>
-                            <TeacherDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-
 
                 { /* Not Found Pages section */ }
                 <Route

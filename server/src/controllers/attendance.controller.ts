@@ -57,9 +57,9 @@ export async function getCourseDailySummary(
             SELECT 
                 s.id as student_id,
                 CASE 
-                WHEN bool_or(a.status = 'absent') THEN 'absent'
+                WHEN bool_or(a.status = 'present') THEN 'present'
                 WHEN bool_or(a.status = 'late') THEN 'late'
-                ELSE 'present'
+                ELSE 'absent'
                 END as daily_status
             FROM students s
             JOIN users u ON s.user_id = u.id
@@ -136,6 +136,50 @@ export async function bulkUpsertClassAttendance(
         await client.query("ROLLBACK");
         console.error("Attendance Upsert Error:", dbError);
         return response.status(500).json({ message: "Server error while saving attendance" });
+    } finally {
+        client.release();
+    }
+}
+
+
+export async function getAttendanceCenterSummary(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { schoolId } = request.user!;
+    const startDate = request.query.startDate as string;
+    const endDate = request.query.endDate as string;
+
+    if (!startDate || !endDate) {
+        return response.status(400).json({ message: "startDate and endDate are required" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const result = await client.query(`
+            SELECT 
+                c.id as course_id,
+                c.name as course_name,
+                s.id as student_id,
+                u.full_name as student_name,
+                COUNT(a.id) FILTER (WHERE a.status = 'absent') as total_absences,
+                COUNT(a.id) FILTER (WHERE a.status = 'late') as total_lates
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            JOIN courses c ON s.course_id = c.id
+            LEFT JOIN attendance a ON a.student_id = s.id 
+            AND a.date >= $1 AND a.date <= $2
+            WHERE u.school_id = $3
+            GROUP BY c.id, c.name, s.id, u.full_name
+            ORDER BY c.name ASC, total_absences DESC, u.full_name ASC;
+        `, [startDate, endDate, schoolId]);
+
+        response.status(200).json(result.rows);
+
+    } catch (error) {
+        console.error("Get Attendance Center Error:", error);
+        response.status(500).json({ message: "Failed to fetch attendance center data" });
     } finally {
         client.release();
     }

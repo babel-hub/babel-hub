@@ -133,7 +133,7 @@ const PrincipalCourses = () => {
                         <button
                             key={course.id}
                             onClick={() => navigate(`${course.id}`)}
-                            className={`w-full text-left p-4 rounded-xl transition-colors flex items-center gap-3 border ${
+                            className={`w-full text-left cursor-pointer p-4 rounded-xl transition-colors flex items-center gap-3 border ${
                                 activeCourseId === course.id
                                     ? 'bg-primary-shadow border-primary-shadow'
                                     : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-100'

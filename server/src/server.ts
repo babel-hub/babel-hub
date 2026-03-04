@@ -15,6 +15,7 @@ import coursesRoutes from "./routes/courses.routes.js";
 import classesRoutes from "./routes/classes.routes.js";
 import subjectsRoutes from "./routes/subjects.routes.js";
 import areasRoutes from "./routes/areas.routes.js";
+import periodsRoutes from "./routes/periods.routes.js";
 
 
 dotenv.config();
@@ -46,7 +47,7 @@ app.use("/courses", coursesRoutes);
 app.use("/classes", classesRoutes);
 app.use("/subjects", subjectsRoutes);
 app.use("/areas", areasRoutes);
-
+app.use("/periods", periodsRoutes);
 
 app.use(errorHandler);
 
