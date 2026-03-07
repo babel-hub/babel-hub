@@ -4,7 +4,7 @@ import { CancelButton, PrimaryButton } from "./Buttons.tsx";
 export interface FormField {
     name: string;
     label: string;
-    type: "text" | "email" | "password" | "number" | "select";
+    type: "text" | "email" | "password" | "number" | "select" | "date";
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
@@ -19,7 +19,7 @@ interface DynamicModalFormProps {
     formError: string;
     formLoading: boolean;
     onClose: () => void;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement >) => void;
     onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -77,6 +77,14 @@ export default function DynamicModalForm({
                                             </option>
                                         ))}
                                     </select>
+                                ) : field.type === "date" ? (
+                                        <input
+                                            type="date"
+                                            name={field.name}
+                                            value={formData[field.name] || ""}
+                                            onChange={onChange}
+                                            className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                                        />
                                 ) : (
                                     <input
                                         type={field.type}
@@ -88,7 +96,8 @@ export default function DynamicModalForm({
                                         onChange={onChange}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
-                                )}
+                                )
+                                }
                             </div>
                         ))}
                     </form>

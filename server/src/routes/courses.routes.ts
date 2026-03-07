@@ -1,7 +1,7 @@
 import Router  from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
-import { createCourse, getAllCourses, getCourseDetails, changeStudentCourse } from "../controllers/courses.controller.js";
+import { createCourse, getAllCourses, getCourseDetails, deleteCourse, updateCourse} from "../controllers/courses.controller.js";
 
 const router = Router();
 
@@ -26,13 +26,19 @@ router.post(
     createCourse
 );
 
-
-router.post(
-    "/:courseId/students/:studentId",
+router.put(
+    "/:id",
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
-    changeStudentCourse
+    updateCourse
 );
+
+router.delete(
+    "/:id",
+    authMiddleware,
+    authorizedRoles(["principal", "admin"]),
+    deleteCourse
+)
 
 
 export default router;

@@ -125,7 +125,8 @@ export default function CourseDetails() {
         switch(status) {
             case 'absent': return 'bg-red-500';
             case 'late': return 'bg-yellow-400';
-            default: return 'bg-green-500';
+            case 'present': return 'bg-green-500';
+            default: return 'bg-gray-300';
         }
     };
 

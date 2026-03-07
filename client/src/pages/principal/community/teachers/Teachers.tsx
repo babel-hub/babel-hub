@@ -28,7 +28,6 @@ const ListTeacher = () => {
     const [teachers, setTeachers] = useState<Teacher[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // 🌟 UPDATED: Modal States
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
     const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
 
@@ -81,7 +80,6 @@ const ListTeacher = () => {
         }
     };
 
-    // 🌟 UPDATED: Handle Create AND Update
     const handleModalSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError("");
@@ -109,10 +107,15 @@ const ListTeacher = () => {
         setFormLoading(true);
 
         try {
+            const payload = {
+                ...formData,
+                fullName: formData.fullName.trim().toLowerCase()
+            }
+
             if (modalMode === 'create') {
-                await api.post("/teacher", formData);
+                await api.post("/teacher", payload);
             } else if (modalMode === 'edit') {
-                await api.put(`/teacher/${selectedTeacherId}`, { fullName: formData.fullName });
+                await api.put(`/teacher/${selectedTeacherId}`, { fullName: payload.fullName });
             }
 
             setModalMode('none');
@@ -132,6 +135,7 @@ const ListTeacher = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    //@ts-ignore
     const teacherFields: FormField[] = [
         {
             name: "fullName",
@@ -180,7 +184,7 @@ const ListTeacher = () => {
                         setFormData({ fullName: "", email: "", password: "" });
                         setModalMode('create');
                     }}
-                    title="+ Nuevo Profesor"
+                    title="Nuevo Profesor"
                 />
             </div>
 

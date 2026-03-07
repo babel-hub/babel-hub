@@ -2,6 +2,15 @@
 /* --color-primary: #615fff;      --color-primary-darker: #4f39f6;
 */
 
+@utility no-scrollbar {
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 @theme {
     --color-page: #f9fafb;
     --color-white: #fff;

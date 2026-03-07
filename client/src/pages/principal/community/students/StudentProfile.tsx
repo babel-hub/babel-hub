@@ -33,7 +33,6 @@ export default function StudentProfile() {
             try {
                 const response = await api.get(`/student/${id as string}`);
                 setData(response.data);
-                console.log(response.data);
             } finally {
                 setLoading(false);
             }
@@ -59,7 +58,7 @@ export default function StudentProfile() {
                     </div>
                 </div>
                 <div className="mt-4 md:mt-0 text-right">
-                    <span className="inline-block bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold border border-blue-200">
+                    <span className="inline-block bg-primary-shadow text-primary px-3 py-1 rounded-full text-sm font-semibold border border-primary-shadow">
                         Curso: {data.course_name}
                     </span>
                 </div>

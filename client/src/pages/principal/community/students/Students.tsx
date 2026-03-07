@@ -79,6 +79,7 @@ const ListStudents = () => {
 
     const openEditModal = (student: StudentProps) => {
         setSelectedStudentId(student.student_id);
+
         setFormData({
             fullName: student.full_name,
             enrolmentCode: student.enrollment_code || "",
@@ -86,6 +87,7 @@ const ListStudents = () => {
             email: "",
             password: ""
         });
+
         setModalMode('edit');
     };
 
@@ -127,15 +129,22 @@ const ListStudents = () => {
         setFormLoading(true);
 
         try {
+            const payload = {
+                ...formData,
+                fullName: formData.fullName.trim().toLowerCase(),
+                enrolmentCode: formData.enrolmentCode.trim().toUpperCase()
+            };
+
             if (modalMode === 'create') {
-                await api.post("/student", formData);
+                await api.post("/student", payload);
             } else if (modalMode === 'edit') {
                 await api.put(`/student/${selectedStudentId}`, {
-                    fullName: formData.fullName,
-                    enrolmentCode: formData.enrolmentCode,
-                    courseId: formData.courseId
+                    fullName: payload.fullName,
+                    enrolmentCode: payload.enrolmentCode,
+                    courseId: payload.courseId
                 });
             }
+
 
             setModalMode('none');
             setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
@@ -154,6 +163,7 @@ const ListStudents = () => {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    //@ts-ignore
     const studentFields: FormField[] = [
         {
             name: "enrolmentCode",
@@ -180,7 +190,6 @@ const ListStudents = () => {
             name: "password",
             label: "Contraseña",
             type: "password",
-            placeholder: "",
             required: true
         },
         {
@@ -218,7 +227,7 @@ const ListStudents = () => {
                         setFormData({ fullName: "", courseId: "", email: "", password: "", enrolmentCode: "" });
                         setModalMode('create');
                     }}
-                    title="+ Nuevo Estudiante"
+                    title="Nuevo Estudiante"
                 />
             </div>
 

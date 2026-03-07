@@ -25,7 +25,7 @@ export default function Login() {
             });
 
             if (supaError || !data.session) {
-                setError("Incorrect email or password");
+                setError("La cuenta o la contraseña es incorrecta.");
                 return;
             }
 

@@ -64,6 +64,7 @@ export async function getAllCourses(
                 c.name as course_name,
                 c.created_at,
                 c.year,
+                c.teacher_id as director_id,
                 u.full_name as director_name,
                 COUNT(s.id) as student_count
             FROM courses c
@@ -76,6 +77,7 @@ export async function getAllCourses(
                 c.name,
                 c.created_at,
                 c.year,
+                c.teacher_id,
                 u.full_name
             ORDER BY c.name ASC;
         `;
@@ -146,11 +148,12 @@ export async function getCourseDetails(
     }
 }
 
-export async function changeStudentCourse(
+export async function updateCourse(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { courseId, studentId } = request.params;
+    const { id } = request.params;
+    const { name, year, teacherId } = request.body;
     const creator = request.user!;
 
     const client = await pool.connect();
@@ -159,38 +162,46 @@ export async function changeStudentCourse(
         await client.query("BEGIN");
 
         const result = await client.query(`
-            UPDATE students
-            SET course_id = $1
-            WHERE id = $2 AND user_id IN (SELECT id FROM users WHERE school_id = $3)
-                RETURNING id
-        `, [courseId, studentId, creator.schoolId]);
+            UPDATE courses 
+            SET name = $1, year = $2, teacher_id = $3
+            WHERE id = $4 AND school_id = $5
+            RETURNING id, name
+        `, [name, year, teacherId, id, creator.schoolId]);
+
+        if (result.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Course not found or unauthorized" });
+        }
 
         await createAuditLog(client, {
             actorUserId: creator.userId!,
             actorRole: creator.role!,
-            action: "TRANSFER_STUDENT_COURSE",
-            targetUserId: studentId as string,
+            action: "UPDATE_COURSE",
             schoolId: creator.schoolId!,
-            metadata: { newCourseId: courseId }
+            metadata: {
+                courseId: id,
+                updatedFields: { name, year, teacherId }
+            }
         });
 
         await client.query("COMMIT");
-        response.status(200).json({ message: "Student transferred to new course successfully" });
+
+        response.status(200).json({ message: "Course updated successfully" });
 
     } catch (dbError) {
         await client.query("ROLLBACK");
         console.error("Database Error:", dbError);
-        response.status(500).json({ message: "Database error" });
+        response.status(500).json({ message: "Failed to update course" });
     } finally {
         client.release();
     }
 }
 
-export async function createStudent(
+export async function deleteCourse(
     request: AuthenticatedRequest,
-    response: Response,
+    response: Response
 ) {
-    const { supabaseUserId, fullName, email, courseId, enrollmentCode } = request.body;
+    const { id } = request.params;
     const creator = request.user!;
 
     const client = await pool.connect();
@@ -198,61 +209,52 @@ export async function createStudent(
     try {
         await client.query("BEGIN");
 
-        const courseCheck = await client.query(`
-            SELECT id FROM courses 
-            WHERE id = $1 AND school_id = $2
-        `, [courseId, creator.schoolId]);
+        const checkQuery = await client.query(`
+            SELECT 
+                (SELECT COUNT(*) FROM students WHERE course_id = $1) as student_count,
+                (SELECT COUNT(*) FROM classes WHERE course_id = $1) as class_count
+        `, [id]);
 
-        if (courseCheck.rowCount === 0) {
+        const studentCount = parseInt(checkQuery.rows[0].student_count);
+        const classCount = parseInt(checkQuery.rows[0].class_count);
+
+        if (studentCount > 0 || classCount > 0) {
             await client.query("ROLLBACK");
-            return response.status(403).json({ message: "Invalid Course for this school" });
+            return response.status(400).json({
+                message: `No se puede eliminar este curso. Todavía tiene ${studentCount} estudiantes y ${classCount} clases asignadas. Por favor, reasígnalos primero.`
+            });
         }
 
-        const userResult = await client.query(`
-            INSERT INTO users (supabase_user_id, role, school_id, full_name, email)
-            VALUES ($1, 'student', $2, $3, $4)
-            RETURNING id
-        `, [supabaseUserId, creator.schoolId, fullName, email]);
+        const result = await client.query(`
+            DELETE FROM courses 
+            WHERE id = $1 AND school_id = $2
+            RETURNING id, name
+        `, [id, creator.schoolId]);
 
-        const newUserId = userResult.rows[0].id;
-
-        const studentResult = await client.query(`
-            INSERT INTO students (user_id, course_id, enrollment_code)
-            VALUES ($1, $2, $3)
-            RETURNING id
-        `, [newUserId, courseId, enrollmentCode || null]);
-
-        const newStudentId = studentResult.rows[0].id;
+        if (result.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Course not found or unauthorized" });
+        }
 
         await createAuditLog(client, {
             actorUserId: creator.userId!,
             actorRole: creator.role!,
-            action: "CREATE_STUDENT",
-            targetUserId: newUserId,
+            action: "DELETE_COURSE",
             schoolId: creator.schoolId!,
             metadata: {
-                studentId: newStudentId,
-                courseId: courseId
+                courseId: id,
+                courseName: result.rows[0].name
             }
         });
 
         await client.query("COMMIT");
 
-        response.status(201).json({
-            message: "Student created and assigned to course successfully",
-            studentId: newStudentId,
-            userId: newUserId
-        });
+        response.status(200).json({ message: "Course deleted successfully" });
 
-    } catch (dbError: any) {
+    } catch (dbError) {
         await client.query("ROLLBACK");
-
-        if (dbError.code === '23505') {
-            return response.status(409).json({ message: "A user with this email or Auth ID already exists" });
-        }
-
         console.error("Database Error:", dbError);
-        response.status(500).json({ message: "Failed to create student" });
+        response.status(500).json({ message: "Failed to delete course" });
     } finally {
         client.release();
     }
