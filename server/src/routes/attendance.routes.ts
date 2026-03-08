@@ -5,7 +5,8 @@ import { getClassAttendance,
     bulkUpsertClassAttendance,
     getAttendanceStatusByCalendar,
     getCourseDailySummary,
-    getAttendanceCenterSummary } from "../controllers/attendance.controller.js";
+    getAttendanceCenterSummary,
+    getAttendanceCourseByClass} from "../controllers/attendance.controller.js";
 
 const router = Router();
 
@@ -35,7 +36,14 @@ router.get(
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     getAttendanceStatusByCalendar
-)
+);
+
+router.get(
+    "/course/:courseId/class/:classId",
+    authMiddleware,
+    authorizedRoles(["principal", "admin", "teacher"]),
+    getAttendanceCourseByClass
+);
 
 router.post(
     "/class/:classId/bulk",

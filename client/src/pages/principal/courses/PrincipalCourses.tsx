@@ -1,5 +1,5 @@
 import { useNavigate, useParams, Outlet } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import api from "../../../api/client.ts";
 import { PrimaryButton } from "../../../components/Buttons.tsx";
 import { FaSchool } from "react-icons/fa6";
@@ -20,6 +20,7 @@ interface ClassData {
 const PrincipalCourses = () => {
     const navigate = useNavigate();
     const { id: activeCourseId } = useParams();
+    const ref = useRef<HTMLUListElement | null>(null);
 
     const [courses, setCourses] = useState<ClassData[]>([]);
     const [indexOption, setindexOption] = useState<number | null>(null);
@@ -97,6 +98,21 @@ const PrincipalCourses = () => {
         }
     }, [isModalOpen, availableTeachers.length]);
 
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (ref.current && !ref.current.contains(event.target as Node)) {
+                setindexOption(null);
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [ref]);
+
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -171,7 +187,7 @@ const PrincipalCourses = () => {
     return (
         <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-3rem)] ">
             <div className={`bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/4`}>
-                <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+                <div className="p-5 border-b border-gray-100 flex justify-between items-center rounded-t-xl bg-white z-10">
                     <h2 className="text-xl font-bold text-custom-black">Cursos</h2>
                     <PrimaryButton
                         onClick={() => {
@@ -219,7 +235,7 @@ const PrincipalCourses = () => {
                                 <HiDotsVertical />
                             </button>
                             {indexOption === index && (
-                                <ul className="absolute z-40 w-48 h-fit p-2 text-sm md:text-base font-semibold -right-[150px] top-3/4 bg-white text-custom-black shadow rounded-xl">
+                                <ul ref={ref} className="absolute z-40 w-48 h-fit p-2 text-sm md:text-base font-semibold -right-[150px] top-3/4 bg-white text-custom-black shadow rounded-xl">
                                     <li>
                                         <button
                                             onClick={() => navigate(`/principal/notificaciones/asistencia?course=${course.course_name}`)}

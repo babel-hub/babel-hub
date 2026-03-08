@@ -196,6 +196,7 @@ export async function getAttendanceStatusByCalendar(
 ){
     const creator = request.user!;
     const startDate = request.query.startDate as string;
+    const endDate = request.query.endDate as string;
     const studentId = request.query.studentId as string;
 
     if (!startDate) {
@@ -215,16 +216,16 @@ export async function getAttendanceStatusByCalendar(
                 ELSE 'present'
             END as daily_status
             FROM generate_series(
-            $1::date,
-            CURRENT_DATE,
-            '1 day'::interval
+                $1::date,
+                LEAST($3::date, CURRENT_DATE),
+                '1 day'::interval
             ) as d(calendar_date)
             LEFT JOIN attendance a 
             ON a.date = d.calendar_date::date 
                 AND a.student_id = $2
             GROUP BY d.calendar_date
             ORDER BY d.calendar_date DESC;
-        `, [startDate, studentId])
+        `, [startDate, studentId, endDate])
 
         response.status(200).json({
             attendanceByCalendar: result.rows
@@ -232,6 +233,60 @@ export async function getAttendanceStatusByCalendar(
     } catch (dbError) {
         console.error("Get Attendance By Calendar Error:", dbError);
         response.status(500).json({ message: "Failed to fetch attendance by calendar" });
+    } finally {
+        client.release();
+    }
+}
+
+export async function getAttendanceCourseByClass(
+    request: AuthenticatedRequest,
+    response: Response
+){
+    const creator = request.user!;
+    const courseId = request.params.courseId as string;
+    const classId = request.params.classId as string;
+    const startDate = request.query.startDate as string;
+    const endDate = request.query.endDate as string;
+
+    if (!startDate || !endDate) {
+        return response.status(400).json({ message: "startDate and endDate is required" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const result = await client.query(`
+            WITH CalendarDates AS (
+                SELECT generate_series($1::date, $2::date, '1 day'::interval )::date AS calendar_date  
+            ),
+            CourseStudents AS (
+                SELECT 
+                    s.id as student_id,
+                    u.full_name as name
+                FROM students s
+                JOIN users u ON s.user_id = u.id
+                WHERE s.course_id = $3
+            )
+            SELECT
+                cs.student_id,
+                cs.name,
+                cd.calendar_date as date,
+                COALESCE(a.status, 'no_data') as status
+            FROM CourseStudents cs
+            CROSS JOIN CalendarDates cd
+            LEFT JOIN attendance a
+                ON a.student_id = cs.student_id
+                AND a.date = cd.calendar_date
+                AND a.class_id = $4
+            ORDER BY cs.name ASC, cd.calendar_date ASC;
+        `, [startDate, endDate, courseId, classId])
+
+        response.status(200).json({
+            attendanceClass: result.rows
+        })
+    } catch (dbError) {
+        console.error("Get Attendance By Course Error:", dbError);
+        response.status(500).json({ message: "Failed to fetch attendance by course" });
     } finally {
         client.release();
     }

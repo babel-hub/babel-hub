@@ -19,6 +19,13 @@ interface Student {
     email: string;
 }
 
+interface Period {
+    id: string;
+    name: string;
+    start_date: string;
+    end_date: string;
+}
+
 interface ClassDetailsData {
     details: {
         id: string;
@@ -32,13 +39,13 @@ interface ClassDetailsData {
 }
 
 export default function ClassDetails() {
-    const { id } = useParams<{ id: string }>();
+    const { id, courseId } = useParams<{ id: string, courseId: string }>();
     const navigate = useNavigate();
 
     const [data, setData] = useState<ClassDetailsData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const [activeTab, setActiveTab] = useState<'assignments' | 'students' | 'attendance'>('students');
+    const [activeTab, setActiveTab] = useState<'assignments' | 'students' | 'register attendance' | 'see attendance'>('students');
 
     const [attendanceRecords, setAttendanceRecords] = useState<Record<string, string>>({});
     const [loadingAttendance, setLoadingAttendance] = useState(false);
@@ -46,6 +53,11 @@ export default function ClassDetails() {
 
     const date = formatterDate.format(new Date());
     const [attendanceDate, setAttendanceDate] = useState(date);
+    const [periods, setPeriods] = useState<Period[]>([]);
+    const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
+    const [calendarDates, setCalendarDates] = useState<string[]>([]);
+    const [attendanceGrid, setAttendanceGrid] = useState<any[]>([]);
+    const [loadingGrid, setLoadingGrid] = useState(false);
 
     useEffect(() => {
         const fetchClass = async () => {
@@ -87,10 +99,82 @@ export default function ClassDetails() {
             }
         };
 
-        if (activeTab === 'attendance') {
+        if (activeTab === 'register attendance') {
             fetchAttendance();
         }
     }, [activeTab, attendanceDate, id, data]);
+
+    useEffect(() => {
+        const fetchPeriods = async () => {
+            try {
+                const response = await api.get('/periods');
+                const fetchedPeriods = response.data.periods || response.data;
+                setPeriods(fetchedPeriods);
+
+                if (fetchedPeriods.length > 0) {
+                    setSelectedPeriod(fetchedPeriods[0]);
+                }
+            } catch (err: any) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPeriods();
+    }, []);
+
+    console.log(courseId, id);
+
+    useEffect(() => {
+        const fetchCourseAttendanceByClass = async () => {
+            if (!selectedPeriod || activeTab !== 'see attendance') return;
+
+            const today = new Date();
+            const periodStart = new Date(selectedPeriod.start_date);
+
+            if (today < periodStart) {
+                setAttendanceGrid([]);
+                setCalendarDates([]);
+                return;
+            }
+            const todayStr = today.toISOString().split('T')[0];
+            const periodEndStr = selectedPeriod.end_date.split('T')[0];
+            const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
+
+            try {
+                setLoadingGrid(true);
+                const response = await api.get(`/attendance/course/${courseId}/class/${id}?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`);
+                const rawData = response.data.attendanceClass;
+
+                const datesSet = new Set<string>();
+                const studentMap = new Map();
+
+                rawData.forEach((row: any) => {
+                    datesSet.add(row.date);
+
+                    if (!studentMap.has(row.student_id)) {
+                        studentMap.set(row.student_id, {
+                            student_id: row.student_id,
+                            name: row.name,
+                            records: []
+                        });
+                    }
+                    studentMap.get(row.student_id).records.push({ date: row.date, status: row.status });
+                });
+
+                setCalendarDates(Array.from(datesSet).sort()); // The columns
+                setAttendanceGrid(Array.from(studentMap.values())); // The rows
+
+            } catch (dbError) {
+                console.error(dbError);
+            } finally {
+                setLoadingGrid(false);
+            }
+        }
+
+        fetchCourseAttendanceByClass();
+    }, [selectedPeriod, activeTab, courseId, id]);
 
     const handleSaveAttendance = async () => {
         try {
@@ -115,6 +199,15 @@ export default function ClassDetails() {
         }
     };
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return {
+            dayNum: date.getUTCDate(),
+            month: date.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
+            weekday: date.toLocaleString('es-ES', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()
+        };
+    };
+
     const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late') => {
         setAttendanceRecords(prev => ({ ...prev, [studentId]: status }));
     };
@@ -123,7 +216,7 @@ export default function ClassDetails() {
     if (!data) return <div className="p-6 text-gray-500 text-center flex-1">Clase no encontrada.</div>;
 
     return (
-        <div className="flex flex-col h-full w-full bg-gray-50/30">
+        <div className="flex flex-col h-full w-full bg-gray-50">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-6 flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex gap-4 items-center">
@@ -138,34 +231,55 @@ export default function ClassDetails() {
                             </p>
                         </div>
                     </div>
-                    {activeTab === 'assignments' && <PrimaryButton title="+ Nueva Asignación"/>}
-                    {activeTab === 'attendance' && (
+                    {activeTab === 'assignments' && <PrimaryButton title="Nueva Asignación"/>}
+                    {activeTab === 'register attendance' && (
                         <PrimaryButton
                             onClick={handleSaveAttendance}
                             disabled={savingAttendance}
                             title={savingAttendance ? "Guardando..." : "Guardar Asistencia"}
                         />
                     )}
+                    {activeTab === 'see attendance' && (
+                        <select
+                            className="bg-gray-50 text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                            value={selectedPeriod?.id || ""}
+                            onChange={(e) => {
+                                const period = periods.find(p => p.id === e.target.value);
+                                setSelectedPeriod(period || null);
+                            }}
+                        >
+                            {periods.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                            {periods.length === 0 && <option value="">Sin periodos</option>}
+                        </select>
+                    )}
                 </div>
 
                 <div className="flex gap-6 mt-2 border-b border-gray-100">
                     <button
                         onClick={() => setActiveTab('students')}
-                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'students' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'students' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
                         Estudiantes
                     </button>
                     <button
                         onClick={() => setActiveTab('assignments')}
-                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
                         Asignaciones
                     </button>
                     <button
-                        onClick={() => setActiveTab('attendance')}
-                        className={`pb-3 font-medium text-sm transition-colors border-b-2 ${activeTab === 'attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setActiveTab('register attendance')}
+                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'register attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        Asistencia
+                        Registrar Asistencia
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('see attendance')}
+                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'see attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Ver Asistencia
                     </button>
                 </div>
             </div>
@@ -217,7 +331,7 @@ export default function ClassDetails() {
                     </div>
                 )}
 
-                {activeTab === 'attendance' && (
+                {activeTab === 'register attendance' && (
                     <div className="max-w-4xl mx-auto space-y-4">
                         <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center justify-between">
                             <span className="font-medium text-gray-700">Fecha de asistencia:</span>
@@ -230,7 +344,7 @@ export default function ClassDetails() {
                         </div>
 
                         {loadingAttendance ? (
-                            <LoadingContent title="Cargando lista..." />
+                            <LoadingContent title="Cargando..." />
                         ) : (
                             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                                 <ul className="divide-y divide-gray-50">
@@ -270,6 +384,72 @@ export default function ClassDetails() {
                                         );
                                     })}
                                 </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'see attendance' && (
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                        {loadingGrid ? (
+                            <div className="p-5">
+                                <LoadingContent title="Cargando asistencia..." />
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse min-w-max">
+                                    <thead>
+                                    <tr className="bg-gray-50 text-gray-600 text-[10px] uppercase tracking-wider">
+                                        <th className="sticky left-0 bg-gray-50 p-4 border-b border-r border-gray-100 z-10 font-bold min-w-[200px]">
+                                            Estudiante
+                                        </th>
+                                        {calendarDates.map(date => {
+                                            const { dayNum, month, weekday } = formatDate(date);
+
+                                            return (
+                                                <th key={date} className="p-1 border-b border-gray-100 text-center font-semibold w-8">
+                                                    <div className="text-[10px] flex flex-col items-center font-medium text-gray-400">
+                                                        <span>{dayNum}</span>
+                                                        <span className="text-custom-black -my-1">{month}</span>
+                                                        <span>{weekday}</span>
+                                                    </div>
+                                                </th>
+                                            );
+                                        })}
+                                    </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                    {attendanceGrid.map((student) => (
+                                        <tr key={student.student_id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="sticky left-0 bg-white p-4 border-r border-gray-100 z-10 font-medium text-custom-black text-sm truncate max-w-[200px]" title={reverseName(student.name)}>
+                                                {reverseName(student.name)}
+                                            </td>
+                                            {student.records.map((record: any, idx: number) => {
+
+                                                let bg = "bg-gray-100";
+                                                if (record.status === 'present') bg = "bg-green-500 shadow-sm";
+                                                if (record.status === 'absent') bg = "bg-red-500 shadow-sm";
+                                                if (record.status === 'late') bg = "bg-yellow-300 shadow-sm";
+
+                                                return (
+                                                    <td key={idx} className="p-2 text-center border-r border-gray-50 last:border-0">
+                                                        <div className={`w-3.5 h-3.5 mx-auto rounded-full ${bg}`} title={`${record.date.split('T')[0]}: ${record.status}`}></div>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                    {attendanceGrid.length === 0 && (
+                                        <tr>
+                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-10 text-center text-gray-500">
+                                                {new Date() < new Date(selectedPeriod.start_date)
+                                                    ? "Este periodo aún no ha comenzado."
+                                                    : "No hay datos de asistencia para este periodo."}
+                                            </td>
+                                        </tr>
+                                    )}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </div>
