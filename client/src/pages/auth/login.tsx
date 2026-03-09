@@ -4,6 +4,7 @@ import api from "../../api/client.ts";
 import { useAuth } from "../../auth/useAuth.ts";
 import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "../../components/Loadings.tsx";
+import logo from "../../assets/images/logo.png";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -64,8 +65,15 @@ export default function Login() {
         <>
             {loading && ( <LoadingPage title="Iniciando sesión..." /> )}
 
-            <div className="min-h-screen flex items-center justify-center bg-page">
-                <div className="bg-white p-6 rounded-xl shadow-lg w-80">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-page">
+                <div>
+                    <img
+                        alt="Logo"
+                        src={logo}
+                        className="max-w-38"
+                    />
+                </div>
+                <div className="bg-transparent p-6 rounded-xl w-80">
                     <h1 className="text-xl md:text-2xl font-bold text-primary mb-6 text-center">Babel</h1>
 
                     {error && (
@@ -75,7 +83,7 @@ export default function Login() {
                     )}
 
                     <input
-                        className="text-custom-black w-full border border-gray-200 rounded-xl p-3 mb-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 mb-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                         placeholder="Email"
                         type="email"
                         value={email}
@@ -83,7 +91,7 @@ export default function Login() {
                     />
 
                     <input
-                        className="text-custom-black w-full border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                         placeholder="Password"
                         type="password"
                         value={password}
@@ -92,7 +100,7 @@ export default function Login() {
 
                     <button
                         onClick={handleLogin}
-                        className="bg-primary hover:bg-primary-darker cursor-pointer rounded-xl focus:outline-none font-semibold text-white w-full py-3 transition-colors shadow-md"
+                        className="bg-primary text-sm md:text-base hover:bg-primary-darker cursor-pointer rounded-xl focus:outline-none font-semibold text-white w-full py-3 transition-colors shadow-md"
                     >
                         Acceder
                     </button>

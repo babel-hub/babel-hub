@@ -144,12 +144,13 @@ export default function CourseDetails() {
         };
     }, []);
 
-
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const subjectsResponse = await api.get(`/subjects`);
-                setSubjects(subjectsResponse.data.subjects || subjectsResponse.data);
+                const subjectsResponse = await api.get(`/courses/course/${id}`);
+                setSubjects(subjectsResponse.data.availableSubjects || subjectsResponse.data);
+
+                console.log(subjectsResponse)
 
                 const teachersResponse = await api.get(`/teacher`);
                 setTeachers(teachersResponse.data.teachers || teachersResponse.data);
@@ -159,7 +160,7 @@ export default function CourseDetails() {
             }
         }
 
-        if (isModalOpen && subjects.length === 0 && teachers.length === 0) {
+        if (isModalOpen) {
             fetchDropdownData();
         }
     }, [isModalOpen]);
@@ -200,9 +201,9 @@ export default function CourseDetails() {
                     </h1>
                     <p className="text-gray-500 mt-1 text-sm">Año Lectivo: {data.course.year}</p>
                 </div>
-                <div className="flex gap-5 items-center">
-                    <PrimaryButton onClick={() => setIsModalOpen(true)} title="+ Asignar asignatura"/>
-                    <div ref={dropdownRef}>
+                <div className="flex w-full md:w-auto gap-5 items-center">
+                    <PrimaryButton onClick={() => setIsModalOpen(true)} title="Asignar asignatura"/>
+                    <div className="w-full md:w-auto" ref={dropdownRef}>
                         <PrimaryButton
                             onClick={() => setShowClasses(!showClasses)}
                             title={showClasses ? "Ocultar Clases" : "Ver Clases"}
@@ -240,21 +241,21 @@ export default function CourseDetails() {
             <div className="p-5">
                 <div className="flex w-full mb-2 items-end justify-between">
                     <h2 className="text-lg font-bold text-primary">
-                        Estudiantes ({data.students.length})
+                        Estudiantes
                     </h2>
                     <h2 className="text-xs pr-9 text-primary">
                         Asistencia
                     </h2>
                 </div>
                 <div className="bg-white rounded-xl overflow-hidden">
-                    <div className="overflow-y-auto max-h-[475px] h-full">
+                    <div className="overflow-y-auto max-h-[475px] no-scrollbar h-full">
                         <ul>
                             {data.students.map((student) => {
                                 const status = attendanceRecords[student.student_id] || 'present';
 
                                 return (
                                 <li className="mb-3" key={student.student_id}>
-                                    <div className="p-4 shadow-sm rounded-xl border border-gray-100 flex w-full justify-between items-center hover:bg-gray-50 transition-colors">
+                                    <div className="p-2 shadow-sm rounded-xl border border-gray-100 flex w-full justify-between items-center hover:bg-gray-50 transition-colors">
                                         <button
                                             onClick={() => navigate(`/principal/comunidad/estudiantes/${student.student_id}`)}
                                             className="flex items-center cursor-pointer justify-start gap-3"

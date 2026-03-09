@@ -259,3 +259,43 @@ export async function deleteCourse(
         client.release();
     }
 }
+
+export async function getAvailableSubjectsForCourse(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { schoolId } = request.user!;
+    const { courseId } = request.params;
+
+    if (!courseId) {
+        return response.status(400).json({ message: "courseId is required" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const query = `
+            SELECT id, name 
+            FROM subjects 
+            WHERE school_id = $1
+            AND id NOT IN (
+                SELECT subject_id 
+                FROM classes 
+                WHERE course_id = $2
+            )
+            ORDER BY name ASC;
+        `;
+
+        const result = await client.query(query, [schoolId, courseId]);
+
+        response.status(200).json({
+            availableSubjects: result.rows
+        });
+
+    } catch (dbError) {
+        console.error("Error fetching available subjects:", dbError);
+        response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}

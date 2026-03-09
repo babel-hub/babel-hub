@@ -1,10 +1,5 @@
-import { FaEdit, FaTrash } from "react-icons/fa";
 import { HiOutlineTrash } from "react-icons/hi";
-import { AiOutlineEdit } from "react-icons/ai";
 import { FiEdit2 } from "react-icons/fi";
-
-
-
 
 interface CancelButtonProps {
     title: string;

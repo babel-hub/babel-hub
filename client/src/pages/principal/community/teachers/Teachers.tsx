@@ -240,7 +240,7 @@ const ListTeacher = () => {
                                 {formateDate(teacher.created_at)}
                             </td>
 
-                            <td className="p-4 text-right space-x-3">
+                            <td className="md:p-4 pr-3 text-right space-x-3">
                                 <EditButton onClick={() => openEditModal(teacher)} />
                                 <DeleteButton onClick={() => handleDeleteTeacher(teacher.id, teacher.full_name)}/>
                             </td>

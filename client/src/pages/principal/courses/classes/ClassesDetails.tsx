@@ -352,7 +352,7 @@ export default function ClassDetails() {
                                         const status = attendanceRecords[student.student_id] || 'present';
 
                                         return (
-                                            <li key={student.student_id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+                                            <li key={student.student_id} className="p-4 flex flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
                                                         {getInitials(student.full_name)}
@@ -442,7 +442,8 @@ export default function ClassDetails() {
                                     {attendanceGrid.length === 0 && (
                                         <tr>
                                             <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-10 text-center text-gray-500">
-                                                {new Date() < new Date(selectedPeriod.start_date)
+                                                {   //@ts-ignore
+                                                    new Date() < new Date(selectedPeriod.start_date)
                                                     ? "Este periodo aún no ha comenzado."
                                                     : "No hay datos de asistencia para este periodo."}
                                             </td>

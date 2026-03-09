@@ -294,7 +294,7 @@ const ListStudents = () => {
                                 {formateDate(student.created_at)}
                             </td>
 
-                            <td className="p-4 text-right space-x-3">
+                            <td className="md:p-4 pr-3 text-right space-x-3">
                                 <EditButton onClick={() => openEditModal(student)} />
                                 <DeleteButton onClick={() => handleDeleteStudent(student.student_id, student.full_name)} />
                             </td>
