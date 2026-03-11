@@ -3,6 +3,8 @@ import type { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 import { pool } from "../db/index.js";
 import { createAuditLog } from "../services/audit.service.js";
 
+// DIRECTOR CONTROLLERS
+
 export async function createCourse(
     request: AuthenticatedRequest,
     response: Response,
@@ -294,6 +296,49 @@ export async function getAvailableSubjectsForCourse(
 
     } catch (dbError) {
         console.error("Error fetching available subjects:", dbError);
+        response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}
+
+
+// TEACHER CONTROLLERS
+
+export async function getTeacherCourse(
+    request: AuthenticatedRequest,
+    response: Response
+){
+    const user = request.user!;
+
+    if (user.role !== "teacher") {
+        return response.status(403).json({ message: "Forbidden" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const result = await client.query(`
+            SELECT
+                c.id,
+                c.name,
+                COUNT(s.id) as total_students
+            FROM courses c
+            JOIN teachers t ON c.teacher_id = t.id
+            LEFT JOIN students s ON s.course_id = c.id
+            WHERE t.user_id = $1 AND c.school_id = $2
+            GROUP BY c.id, c.name;
+        `, [user.userId, user.schoolId]);
+
+        if (result.rowCount === 0) {
+            return response.status(200).json({ course: null });
+        }
+
+        response.status(200).json({
+            teacherCourse: result.rows[0]
+        });
+    } catch (dbError) {
+        console.error("Database Error in getTeacherCourse:", dbError);
         response.status(500).json({ message: "Database error" });
     } finally {
         client.release();

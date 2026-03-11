@@ -176,3 +176,45 @@ export async function getClassInfo(
         client.release();
     }
 }
+
+
+// TEACHERS CONTROLLERS
+
+export async function getTeacherClasses(
+    request: AuthenticatedRequest,
+    response: Response
+){
+    const user = request.user!;
+
+    if (user.role !== "teacher") {
+        return response.status(403).json({ message: "Forbidden" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const result = await client.query(`
+            SELECT
+                cl.id as class_id,
+                s.name as subject_name,
+                co.name as course_name,
+                co.id as course_id
+            FROM classes cl
+            JOIN subjects s ON cl.subject_id = s.id
+            JOIN courses co ON cl.course_id = co.id
+            JOIN teachers t ON cl.teacher_id = t.id
+            WHERE t.user_id = $1
+              AND co.school_id = $2
+            ORDER BY co.name, s.name;
+        `, [user.userId, user.schoolId]);
+
+        response.status(200).json({
+            teacherClasses: result.rows
+        });
+    } catch (dbError) {
+        console.error("Database Error in getTeacherClasses:", dbError);
+        response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}

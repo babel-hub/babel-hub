@@ -20,6 +20,7 @@ import TeacherLayout from "../pages/teacher/TeacherLayout.tsx";
 import TeacherCourses from "../pages/teacher/courses/TeacherCourses.tsx";
 import NotificationCenter from "../pages/principal/notifications/NotificationCenter.tsx";
 import AttendanceNotification from "../pages/principal/notifications/attendance/AttendanceNotification.tsx";
+import TeacherCourseDetails from "../pages/teacher/courses/CourseDetails.tsx";
 
 function App() {
     return (
@@ -66,7 +67,9 @@ function App() {
                 >
                     <Route path="dashboard" index element={<TeacherDashboard />}/>
 
-                    <Route path="cursos" element={<TeacherCourses />}/>
+                    <Route path="cursos" element={<TeacherCourses />}>
+                        <Route path=":id" element={<TeacherCourseDetails />}/>
+                    </Route>
                 </Route>
 
                 <Route

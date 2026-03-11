@@ -1,5 +1,5 @@
 import Router from "express";
-import { createClass, getClassInfo, getAllClasses } from "../controllers/classes.controllers.js";
+import { createClass, getClassInfo, getAllClasses, getTeacherClasses } from "../controllers/classes.controllers.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -18,6 +18,13 @@ router.get(
     authorizedRoles(["principal", "admin"]),
     getClassInfo
 );
+
+router.get(
+    "/teacher/classes",
+    authMiddleware,
+    authorizedRoles(["principal", "admin", "teacher"]),
+    getTeacherClasses
+)
 
 router.post(
     "/",
