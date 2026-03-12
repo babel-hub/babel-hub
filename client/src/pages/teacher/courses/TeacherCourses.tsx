@@ -17,6 +17,7 @@ interface TeacherClass {
     subject_name: string;
     course_name: string;
     course_id: string;
+    total_students: number;
 }
 
 function TeacherCourses() {
@@ -120,10 +121,11 @@ function TeacherCourses() {
                                             }`}>
                                                 {cls.course_name ? cls.course_name.replace("-", "") : "CC"}
                                             </div>
-                                            <div>
+                                            <div className="flex flex-col gap-0.5 items-start">
                                                 <h3 className={`font-bold capitalize text-base truncate ${activeCourseId === cls.class_id ? 'text-primary-900' : 'text-custom-black'}`}>
                                                     {cls.subject_name} • {cls.course_name}
                                                 </h3>
+                                                <p className="text-gray-400 text-xs">{cls.total_students} Estudiantes</p>
                                             </div>
                                         </button>
                                         <button

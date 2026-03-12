@@ -163,8 +163,8 @@ export default function ClassDetails() {
                     studentMap.get(row.student_id).records.push({ date: row.date, status: row.status });
                 });
 
-                setCalendarDates(Array.from(datesSet).sort()); // The columns
-                setAttendanceGrid(Array.from(studentMap.values())); // The rows
+                setCalendarDates(Array.from(datesSet).sort());
+                setAttendanceGrid(Array.from(studentMap.values()));
 
             } catch (dbError) {
                 console.error(dbError);

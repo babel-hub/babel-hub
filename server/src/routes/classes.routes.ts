@@ -1,5 +1,10 @@
 import Router from "express";
-import { createClass, getClassInfo, getAllClasses, getTeacherClasses } from "../controllers/classes.controllers.js";
+import {
+    createClass,
+    getClassInfo,
+    getAllClasses,
+    getTeacherClasses,
+    getTeacherClassDetails } from "../controllers/classes.controllers.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
@@ -24,7 +29,14 @@ router.get(
     authMiddleware,
     authorizedRoles(["principal", "admin", "teacher"]),
     getTeacherClasses
-)
+);
+
+router.get(
+    "/teacher/class/:classId",
+    authMiddleware,
+    authorizedRoles(["principal", "admin", "teacher"]),
+    getTeacherClassDetails
+);
 
 router.post(
     "/",

@@ -194,17 +194,22 @@ export async function getTeacherClasses(
 
     try {
         const result = await client.query(`
-            SELECT
+            SELECT 
                 cl.id as class_id,
                 s.name as subject_name,
                 co.name as course_name,
-                co.id as course_id
+                co.id as course_id,
+                COUNT(s.id) as total_students
             FROM classes cl
             JOIN subjects s ON cl.subject_id = s.id
             JOIN courses co ON cl.course_id = co.id
+            LEFT JOIN students st ON co.id = st.course_id
             JOIN teachers t ON cl.teacher_id = t.id
-            WHERE t.user_id = $1
-              AND co.school_id = $2
+            WHERE t.user_id = $1 AND co.school_id = $2 
+            GROUP BY cl.id,
+                     s.name,
+                     co.name,
+                     co.id
             ORDER BY co.name, s.name;
         `, [user.userId, user.schoolId]);
 
@@ -213,6 +218,73 @@ export async function getTeacherClasses(
         });
     } catch (dbError) {
         console.error("Database Error in getTeacherClasses:", dbError);
+        response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}
+
+export async function getTeacherClassDetails(
+    request: AuthenticatedRequest,
+    response: Response
+){
+    const { classId } = request.params;
+    const user = request.user!;
+
+    if (user.role !== "teacher") {
+        return response.status(403).json({ message: "Forbidden" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        const classDetails = await client.query(`
+            SELECT
+                sb.name AS subject_name,
+                cs.name AS course_name,
+                s.user_id AS student_id,
+                u.full_name AS student_name
+            FROM classes cl
+            JOIN courses cs ON cl.course_id = cs.id
+            JOIN subjects sb ON cl.subject_id = sb.id
+            JOIN teachers t ON cl.teacher_id = t.id
+            LEFT JOIN students s ON s.course_id = cs.id
+            LEFT JOIN users u ON s.user_id = u.id
+            WHERE cl.id = $1
+            AND cs.school_id = $2
+            AND t.user_id = $3
+            ORDER BY u.full_name ASC
+        `, [classId, user.schoolId, user.userId]);
+
+        const rows = classDetails.rows;
+
+        if (rows.length === 0) {
+            return response.status(404).json({ message: "Class not found or unauthorized" });
+        }
+
+        const classInfo = {
+            subject_name: rows[0].subject_name,
+            course_name: rows[0].course_name,
+        };
+
+        const studentsList = rows
+            .filter(row => row.student_id !== null)
+            .map(row => ({
+                student_id: row.student_id,
+                student_name: row.student_name
+            }));
+
+        response.status(200).json({
+            teacherClass: {
+                subject_name: classInfo.subject_name,
+                course_name: classInfo.course_name,
+                total_students: studentsList.length,
+                students: studentsList
+            }
+        });
+
+    } catch (dbError) {
+        console.error("Database Error:", dbError);
         response.status(500).json({ message: "Database error" });
     } finally {
         client.release();
