@@ -150,8 +150,6 @@ export default function CourseDetails() {
                 const subjectsResponse = await api.get(`/courses/course/${id}`);
                 setSubjects(subjectsResponse.data.availableSubjects || subjectsResponse.data);
 
-                console.log(subjectsResponse)
-
                 const teachersResponse = await api.get(`/teacher`);
                 setTeachers(teachersResponse.data.teachers || teachersResponse.data);
 

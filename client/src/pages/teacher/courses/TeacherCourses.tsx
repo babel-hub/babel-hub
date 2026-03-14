@@ -38,8 +38,6 @@ function TeacherCourses() {
                     api.get("/courses/teacher/course"),
                     api.get("/classes/teacher/classes")
                 ]);
-
-                console.log(courseRes, classesRes);
                 setCourseData(courseRes.data.teacherCourse || null);
                 setClassData(classesRes.data.teacherClasses || []);
 
@@ -71,6 +69,7 @@ function TeacherCourses() {
                         >
                             <button
                                 onClick={() => navigate(`${courseData.id}`)}
+                                disabled={true}
                                 className="flex items-center cursor-pointer text-left gap-2"
                             >
                                 <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${

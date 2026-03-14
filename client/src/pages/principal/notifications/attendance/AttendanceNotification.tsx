@@ -64,9 +64,21 @@ export default function AttendanceCenter() {
         const fetchSummary = async () => {
             if (!selectedPeriod) return;
 
-            setFetchingData(true);
+            const today = new Date();
+            const initialDate = new Date(selectedPeriod.start_date);
+
+            if (today < initialDate) {
+                setSummaryData([]);
+                return;
+            }
+
+            const todayStr = today.toISOString().split('T')[0];
+            const periodEndStr = selectedPeriod.end_date.split('T')[0];
+            const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
+
             try {
-                const response = await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${selectedPeriod.end_date}`);
+                setFetchingData(true);
+                const response = await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`);
                 setSummaryData(response.data.attendanceSummary || response.data);
             } catch (err: any) {
                 console.error(err);

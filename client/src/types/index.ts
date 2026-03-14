@@ -6,7 +6,16 @@ export function formateDate(date: string) {
         month: 'long',
         day: 'numeric'
     });
-};
+}
+
+export const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+        dayNum: date.getUTCDate(),
+        month: date.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
+        weekday: date.toLocaleString('es-ES', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()
+    };
+}
 
 export const getInitials = (name: string) => {
     const names = name.split(" ");

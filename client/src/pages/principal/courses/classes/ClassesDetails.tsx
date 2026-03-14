@@ -4,7 +4,7 @@ import api from "../../../../api/client.ts";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { PrimaryButton } from "../../../../components/Buttons.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
-import { formatterDate, getInitials, reverseName } from "../../../../types";
+import {formatDate, formatterDate, getInitials, reverseName} from "../../../../types";
 
 interface Assignment {
     id: string;
@@ -124,8 +124,6 @@ export default function ClassDetails() {
         fetchPeriods();
     }, []);
 
-    console.log(courseId, id);
-
     useEffect(() => {
         const fetchCourseAttendanceByClass = async () => {
             if (!selectedPeriod || activeTab !== 'see attendance') return;
@@ -197,15 +195,6 @@ export default function ClassDetails() {
         } finally {
             setSavingAttendance(false);
         }
-    };
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return {
-            dayNum: date.getUTCDate(),
-            month: date.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
-            weekday: date.toLocaleString('es-ES', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()
-        };
     };
 
     const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late') => {

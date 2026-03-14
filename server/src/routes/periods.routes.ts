@@ -8,7 +8,7 @@ const router = Router();
 router.get(
     "/",
     authMiddleware,
-    authorizedRoles(["principal", "admin"]),
+    authorizedRoles(["principal", "admin", "teacher"]),
     getAcademicPeriods
 );
 

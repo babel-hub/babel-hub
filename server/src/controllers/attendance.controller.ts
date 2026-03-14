@@ -108,7 +108,7 @@ export async function bulkUpsertClassAttendance(
             return response.status(403).json({ message: "Class not found or unauthorized" });
         }
 
-        const upsertPromises = records.map((record: { studentId: string, status: string }) => {
+        const upsert = records.map((record: { studentId: string, status: string }) => {
             return client.query(`
                 INSERT INTO attendance (student_id, class_id, date, status)
                 VALUES ($1, $2, $3, $4)
@@ -119,7 +119,7 @@ export async function bulkUpsertClassAttendance(
             `, [record.studentId, classId, date, record.status]);
         });
 
-        await Promise.all(upsertPromises);
+        await Promise.all(upsert);
 
         await createAuditLog(client, {
             actorUserId: creator.userId as string,
@@ -170,7 +170,7 @@ export async function getAttendanceCenterSummary(
             JOIN users u ON s.user_id = u.id
             JOIN courses c ON s.course_id = c.id
             LEFT JOIN attendance a ON a.student_id = s.id
-                AND a.date >= $1 AND a.date <= $2
+            AND a.date >= $1 AND a.date <= $2
             WHERE u.school_id = $3
             GROUP BY c.id, c.name, s.id, u.full_name
             HAVING COUNT(a.id) FILTER (WHERE a.status = 'absent') > 0 
@@ -194,7 +194,6 @@ export async function getAttendanceStatusByCalendar(
     request: AuthenticatedRequest,
     response: Response
 ){
-    const creator = request.user!;
     const startDate = request.query.startDate as string;
     const endDate = request.query.endDate as string;
     const studentId = request.query.studentId as string;
@@ -208,7 +207,7 @@ export async function getAttendanceStatusByCalendar(
     try {
         const result = await client.query(`
             SELECT 
-            d.calendar_date::date as date,
+                d.calendar_date::date as date,
             CASE 
                 WHEN count(a.id) = 0 THEN 'no_data'
                 WHEN bool_or(a.status = 'absent') THEN 'absent'
@@ -242,7 +241,6 @@ export async function getAttendanceCourseByClass(
     request: AuthenticatedRequest,
     response: Response
 ){
-    const creator = request.user!;
     const courseId = request.params.courseId as string;
     const classId = request.params.classId as string;
     const startDate = request.query.startDate as string;

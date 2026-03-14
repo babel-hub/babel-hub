@@ -241,8 +241,9 @@ export async function getTeacherClassDetails(
         const classDetails = await client.query(`
             SELECT
                 sb.name AS subject_name,
+                cs.id as course_id,
                 cs.name AS course_name,
-                s.user_id AS student_id,
+                s.id AS student_id,
                 u.full_name AS student_name
             FROM classes cl
             JOIN courses cs ON cl.course_id = cs.id
@@ -264,6 +265,7 @@ export async function getTeacherClassDetails(
 
         const classInfo = {
             subject_name: rows[0].subject_name,
+            course_id: rows[0].course_id,
             course_name: rows[0].course_name,
         };
 
@@ -277,6 +279,7 @@ export async function getTeacherClassDetails(
         response.status(200).json({
             teacherClass: {
                 subject_name: classInfo.subject_name,
+                course_id: classInfo.course_id,
                 course_name: classInfo.course_name,
                 total_students: studentsList.length,
                 students: studentsList
