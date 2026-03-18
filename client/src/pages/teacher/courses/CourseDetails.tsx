@@ -67,6 +67,26 @@ export default function TeacherCourseDetails() {
     }, [classId]);
 
     useEffect(() => {
+        const fetchPeriods = async () => {
+            try {
+                const response = await api.get('/periods');
+                const fetchedPeriods = response.data.periods || response.data;
+                setPeriods(fetchedPeriods);
+
+                if (fetchedPeriods.length > 0) {
+                    setSelectedPeriod(fetchedPeriods[0]);
+                }
+            } catch (err: any) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPeriods();
+    }, []);
+
+    useEffect(() => {
         const fetchAttendance = async () => {
             if (!classDetails?.students || activeTab !== "register attendance") return;
 
@@ -149,26 +169,6 @@ export default function TeacherCourseDetails() {
 
         fetchPeriodAttendance();
     }, [activeTab, selectedPeriod, activeTab, classId]);
-
-    useEffect(() => {
-        const fetchPeriods = async () => {
-            try {
-                const response = await api.get('/periods');
-                const fetchedPeriods = response.data.periods || response.data;
-                setPeriods(fetchedPeriods);
-
-                if (fetchedPeriods.length > 0) {
-                    setSelectedPeriod(fetchedPeriods[0]);
-                }
-            } catch (err: any) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPeriods();
-    }, []);
 
 
     const handleSaveAttendance = async () => {
@@ -405,10 +405,7 @@ export default function TeacherCourseDetails() {
                                         {attendanceGrid.length === 0 && (
                                             <tr>
                                                 <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-10 text-center text-gray-500">
-                                                    {   //@ts-ignore
-                                                        new Date() < new Date(selectedPeriod.start_date)
-                                                            ? "Este periodo aún no ha comenzado."
-                                                            : "No hay datos de asistencia para este periodo."}
+                                                    No hay datos de asistencia para este periodo.
                                                 </td>
                                             </tr>
                                         )}

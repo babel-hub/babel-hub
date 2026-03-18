@@ -70,7 +70,7 @@ export default function Login() {
                     <img
                         alt="Logo"
                         src={logo}
-                        className="max-w-38"
+                        className="max-w-28 md:max-w-38"
                     />
                 </div>
                 <div className="bg-transparent p-6 rounded-xl w-80">

@@ -103,15 +103,15 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                     disabled={disabled}
                                     onClick={() => handleNavigation(item.path)}
                                     className={`
-                                        flex items-center cursor-pointer transition-all rounded-xl p-3 md:p-4 justify-center flex-col
+                                        flex items-center transition-all rounded-xl p-3 md:p-4 justify-center flex-col
                                     ${isActive
                                         ? "bg-primary-shadow text-primary ring-1 ring-primary/20"
-                                        : "hover:bg-gray-50 border border-transparent hover:border-gray-100 text-custom-black"
+                                        : "hover:bg-gray-50 border cursor-pointer border-transparent hover:border-gray-100 text-custom-black"
                                     }
                                     ${disabled ? "opacity-50 cursor-not-allowed" : ""}
                                 `}
                                 >
-                                    <div className={`mb-2 text-2xl md:text-3xl transition-transform ${isActive ? "text-primary scale-110" : "text-gray-400 group-hover:text-custom-black"}`}>
+                                    <div className={`mb-2 text-2xl md:text-3xl transition-transform ${isActive ? "text-primary scale-110" : "text-custom-black/50 group-hover:text-custom-black"}`}>
                                         {item.icon}
                                     </div>
                                     <p className="font-semibold text-[10px] md:text-xs text-center tracking-wide">{item.label}</p>
