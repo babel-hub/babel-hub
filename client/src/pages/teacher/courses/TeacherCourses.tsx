@@ -1,10 +1,9 @@
 import {Outlet, useNavigate, useParams} from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../../api/client.ts";
 import {LoadingPage} from "../../../components/Loadings.tsx";
 import {HiDotsVertical} from "react-icons/hi";
 import { GiBookAura } from "react-icons/gi";
-
 
 interface TeacherCourse {
     id: string;
@@ -21,11 +20,13 @@ interface TeacherClass {
 }
 
 function TeacherCourses() {
-    const navigate = useNavigate();
     const { id: activeCourseId } = useParams();
+    const navigate = useNavigate();
+    const ref = useRef<HTMLUListElement | null>(null);
 
     const [courseData, setCourseData] = useState<TeacherCourse | null>(null);
     const [classData, setClassData] = useState<TeacherClass[]>([]);
+    const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true); // Default to true
 
@@ -51,6 +52,25 @@ function TeacherCourses() {
 
         fetchCoursesAndClasses();
     }, []);
+
+    useEffect(() => {
+        const clickUlList = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)){
+                setOpenIndex(null)
+            }
+        }
+
+        document.addEventListener('mousedown', clickUlList);
+
+        return () => {
+            document.removeEventListener('mousedown', clickUlList);
+        }
+    }, [ref]);
+
+
+    const handleOpenMenu = (index: number) => {
+        setOpenIndex(openIndex === index ? null : index);
+    }
 
     if (loading) return <LoadingPage title="Cargando..."/>
 
@@ -102,7 +122,7 @@ function TeacherCourses() {
                             </div>
                         ) : (
                             <div>
-                                {classData.map((cls) => (
+                                {classData.map((cls, index) => (
                                     <div
                                         key={cls.class_id}
                                         className={`w-full group p-4 relative rounded-xl transition-colors flex items-center justify-between gap-3 border ${
@@ -128,10 +148,27 @@ function TeacherCourses() {
                                             </div>
                                         </button>
                                         <button
-                                            onClick={() => {}}
+                                            onClick={() => handleOpenMenu(index)}
                                             className="hover:bg-gray-100 cursor-pointer p-1.5 text-custom-black text-sm opacity-0 group-hover:opacity-100 transition-opacity md:text-base rounded-full ">
                                             <HiDotsVertical />
                                         </button>
+                                        {index === openIndex && (
+                                            <ul ref={ref} className="absolute z-40 w-48 h-fit p-2 text-sm md:text-base font-semibold right-0 lg:-right-[150px] top-3/4 bg-white text-custom-black shadow rounded-xl">
+                                                <li>
+                                                    <button
+                                                        onClick={() => navigate(`/teacher/clases/${cls.class_id}?button=see attendance`)}
+                                                        className="p-2 w-full text-left cursor-pointer hover:bg-gray-100 rounded-xl"
+                                                    >
+                                                        Ver asistencia
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <button className="p-2 cursor-not-allowed w-full text-left hover:bg-gray-100 rounded-xl">
+                                                        Ver notas
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -141,7 +178,7 @@ function TeacherCourses() {
             </div>
             <div className={`bg-white rounded-xl shadow-sm border border-gray-100 flex-1 overflow-y-auto ${!activeCourseId ? 'hidden lg:flex items-center justify-center' : 'flex flex-col'}`}>
                 {activeCourseId ? (
-                    <Outlet />
+                    <Outlet key={activeCourseId} />
                 ) : (
                     <div className="flex items-center justify-center flex-col text-gray-400 p-10">
                         <GiBookAura className="text-4xl" />

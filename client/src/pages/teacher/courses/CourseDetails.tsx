@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../../api/client.ts";
 import { LoadingContent } from "../../../components/Loadings.tsx";
 import ButtonChevronBack from "../../../components/ButtonChevrowBack.tsx";
@@ -29,6 +29,9 @@ interface ClassDetailsData {
 
 export default function TeacherCourseDetails() {
     const { id: classId } = useParams();
+    const  [params] = useSearchParams();
+    const menuAttendance = params.get("button");
+
     const navigate = useNavigate();
     const [classDetails, setClassDetails] = useState<ClassDetailsData | null>(null);
     const [classAttendance, setClassAttendance] = useState<Record<string, string>>({})
@@ -39,21 +42,18 @@ export default function TeacherCourseDetails() {
     const [calendarDates, setCalendarDates] = useState<string[]>([]);
     const [attendanceGrid, setAttendanceGrid] = useState<any[]>([]);
     const [periods, setPeriods] = useState<Period[]>([]);
-    const [activeTab, setActiveTab] = useState<"students" | "register attendance" | "see attendance" | "assignments">("students");
+    const [activeTab, setActiveTab] = useState<"students" | "register attendance" | "see attendance" | "assignments" | string>( menuAttendance || "students" );
 
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [loadingAttendance, setLoadingAttendance] = useState(false);
     const [loadingAttendancePeriod, setLoadingAttendancePeriod] = useState(false);
     const [savingAttendance, setSavingAttendance] = useState(false);
     const [error, setError] = useState("");
 
-
     useEffect(() => {
         const fetchClass= async () => {
             try {
-                setLoading(true);
-
                 const classInfo = await api.get(`/classes/teacher/class/${classId}`)
                 setClassDetails(classInfo.data.teacherClass || classInfo.data);
             } catch (error) {
@@ -108,7 +108,10 @@ export default function TeacherCourseDetails() {
                 setCalendarDates([]);
                 return;
             }
-            const todayStr = today.toISOString().split('T')[0];
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
             const periodEndStr = selectedPeriod.end_date.split('T')[0];
             const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
 
@@ -242,28 +245,28 @@ export default function TeacherCourseDetails() {
                         </select>
                     )}
                 </div>
-                <div className="flex overflow-x-auto bg-white w-full rounded-xl p-1 custom-scrollbar">
+                <div className="flex overflow-x-auto bg-white w-full rounded-xl p-1 no-scrollbar">
                     <button
                         onClick={() => setActiveTab('students')}
-                        className={`flex-1 cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineUsers className="text-lg" /> Estudiantes
                     </button>
                     <button
                         onClick={() => setActiveTab('register attendance')}
-                        className={`flex-1 cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineClipboardList className="text-lg" /> Tomar Asistencia
                     </button>
                     <button
                         onClick={() => setActiveTab('see attendance')}
-                        className={`flex-1 cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineCalendar className="text-lg" /> Ver Asistencia
                     </button>
                     <button
                         onClick={() => setActiveTab('assignments')}
-                        className={`flex-1 cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineDocumentText className="text-lg" /> Calificaciones
                     </button>
@@ -415,7 +418,6 @@ export default function TeacherCourseDetails() {
                         )}
                     </div>
                 )}
-
                 {activeTab === 'assignments' && (
                     <div className="text-center p-5 animate-fade-in">
                         <p className="text-gray-500">Módulo de calificaciones</p>

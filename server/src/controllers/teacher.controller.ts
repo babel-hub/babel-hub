@@ -17,7 +17,17 @@ export async function registerTeacher(
             email_confirm: true
         })
 
-        if (supabaseError) return response.status(400).json({ "message": supabaseError.message });
+        if (supabaseError) {
+            if (supabaseError.code === 'email_exists') {
+                return response.status(409).json({
+                    message: "Ya existe un usuario registrado con esta dirección de correo electrónico."
+                });
+            }
+
+            return response.status(supabaseError.status || 400).json({
+                message: supabaseError.message
+            });
+        }
 
         const authUserId = data.user?.id;
 

@@ -189,8 +189,8 @@ export default function AttendanceCenter() {
                                                             <div className="flex items-center gap-5">
                                                                 {lates > 0 ? (
                                                                     <span className="inline-flex text-xs md:text-sm items-center justify-center px-2 md:px-2.5 py-1 rounded-full font-bold bg-yellow-100 text-yellow-700">
-                                                                {lates}
-                                                                </span>
+                                                                        {lates}
+                                                                    </span>
                                                                 ) : (
                                                                     <span className="text-gray-700 bg-gray-100 text-xs md:text-sm px-2.5 md:px-3 py-1 rounded-full font-medium">-</span>
                                                                 )}
@@ -201,8 +201,8 @@ export default function AttendanceCenter() {
                                                                             ? 'bg-red-300 text-red-700 animate-pulse'
                                                                             : 'bg-red-100 text-red-700'
                                                                     }`}>
-                                                                    {absences}
-                                                                </span>
+                                                                        {absences}
+                                                                    </span>
                                                                 ) : (
                                                                     <span className="text-gray-700 bg-gray-100 text-xs md:text-sm px-2.5 md:px-3 py-1 rounded-full font-medium">-</span>
                                                                 )}
