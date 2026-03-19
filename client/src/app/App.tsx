@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/login.tsx";
-import StudentDashboard from "../pages/student/home.tsx";
 import TeacherDashboard from "../pages/teacher/dashboard/TeacherDashboard.tsx";
 import PrincipalDashboard from "../pages/principal/dashboard/PrincipalDashboard.tsx";
 import ProtectedRoute from "../auth/Route.tsx";
@@ -21,6 +20,8 @@ import TeacherCourses from "../pages/teacher/courses/TeacherCourses.tsx";
 import NotificationCenter from "../pages/principal/notifications/NotificationCenter.tsx";
 import AttendanceNotification from "../pages/principal/notifications/attendance/AttendanceNotification.tsx";
 import TeacherCourseDetails from "../pages/teacher/courses/CourseDetails.tsx";
+import StudentLayout from "../pages/student/StudentLayout.tsx";
+import StudentDashboard from "../pages/student/dashboard/StudentDashboard.tsx";
 
 function App() {
     return (
@@ -76,10 +77,14 @@ function App() {
                     path="/student"
                     element={
                         <ProtectedRoute>
-                            <StudentDashboard />
+                            <StudentLayout />
                         </ProtectedRoute>
+
                     }
-                />
+                >
+                    <Route path="dashboard" index element={<StudentDashboard />}/>
+                </Route>
+
 
                 { /* Not Found Pages section */ }
                 <Route
