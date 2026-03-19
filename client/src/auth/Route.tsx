@@ -6,7 +6,9 @@ export default function ProtectedRoute({ children, role }: {
     children: JSX.Element;
     role?: string;
 }) {
-    const { token, role: userRole } = useAuth();
+    const { token, user } = useAuth();
+
+    const userRole = user?.role;
 
     if (!token) {
         return <Navigate to="/login" />;
