@@ -58,13 +58,12 @@ const ListTeacher = () => {
         fetchTeachers();
     }, []);
 
-    // 🌟 NEW: Open Edit Modal
     const openEditModal = (teacher: Teacher) => {
         setSelectedTeacherId(teacher.id);
         setFormData({
             fullName: teacher.full_name,
-            email: "", // Not used in edit
-            password: "" // Not used in edit
+            email: "",
+            password: ""
         });
         setModalMode('edit');
     };
