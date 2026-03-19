@@ -8,3 +8,5 @@ A full-stack, production-ready school management platform designed to handle dai
 * **Attendance Tracking:** Custom-built attendance modules featuring a dynamic, 70-day historical grid with intelligent date-capping to prevent empty future data.
 * **Responsive UI:** Fully responsive design utilizing Tailwind CSS, featuring a sliding mobile drawer and fixed desktop sidebar for optimal user experience on any device.
 * **Backend:** RESTful Express API utilizing parameterized SQL queriesate
+
+<small>Copyright © 2026 Babel. All rights reserved. No part of this software may be used, shared, or reproduced without explicit permission..</small>

@@ -1,5 +1,3 @@
-import { pool } from "../db/index.js";
-
 interface AuditLogInputs {
     actorUserId: string;
     actorRole: string;
