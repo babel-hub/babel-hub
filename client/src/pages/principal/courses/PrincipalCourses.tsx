@@ -15,9 +15,11 @@ interface ClassData {
     created_at: string;
     year: string;
     director_id: string;
-    director_name: string;
+    director_name: string | null;
     student_count: string;
 }
+
+const regName = /^(?:\d{1,4}|\d{1,3}[A-Z])$/i;
 
 const PrincipalCourses = () => {
     const navigate = useNavigate();
@@ -140,6 +142,12 @@ const PrincipalCourses = () => {
 
     const handleCreateCourse = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!regName.test(formData.name)) {
+            toast.error("El nombre del curso debe ser alfanumerico. Ej 10A, 305, 407, 11B etc.");
+            return;
+        }
+
         setFormLoading(true);
         setFormError("");
 
@@ -217,8 +225,6 @@ const PrincipalCourses = () => {
             setMenuPosition('bottom');
         }
 
-        //modalMode === 'edit' ? {...formData, teacherId: courses.filter(item => item.director_id === formData.teacherId)[0].director_name} : formData
-
         setindexOption(index);
     };
 
@@ -256,14 +262,14 @@ const PrincipalCourses = () => {
                             <button
                                 onClick={() => navigate(`${course.id}`)}
                                 className="flex items-center cursor-pointer text-left gap-2">
-                                <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm ${
+                                <div className={`w-10 h-10 shrink-0 rounded-full flex uppercase items-center justify-center font-bold text-sm ${
                                     activeCourseId === course.id ? 'bg-primary text-white' : 'bg-primary-shadow text-primary'
                                 }`}>
                                     {course.course_name ? course.course_name.replace("-", "") : "CC"}
                                 </div>
                                 <div className="max-w-36 overflow-hidden">
                                     <h3 className={`font-bold text-base truncate ${activeCourseId === course.id ? 'text-primary-900' : 'text-custom-black'}`}>
-                                        Curso {course.course_name}
+                                        Curso <span className="uppercase">{course.course_name}</span>
                                     </h3>
                                     <p className="text-gray-500 text-xs truncate">
                                         {course.director_name || "Sin director"} • {course.student_count || 0} Est.
