@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { registerSchool } from "../controllers/school.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import {strictLimiter} from "../middleware/ratelimit.middleware.js";
+import { authorizedRoles } from "../middleware/role.middleware.js";
+import { strictLimiter } from "../middleware/ratelimit.middleware.js";
 
 const router = Router();
 
 router.post(
-  "/",
-  strictLimiter,
-  authMiddleware,
-  registerSchool,
+    "/",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["admin"]),
+    registerSchool,
 );
 
 export default router;

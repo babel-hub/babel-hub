@@ -1,14 +1,13 @@
 import Router from "express";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import {strictLimiter} from "../middleware/ratelimit.middleware.js";
+import { strictLimiter } from "../middleware/ratelimit.middleware.js";
 import { getArea, getAreas, deleteArea, insertArea, updateArea, getSubjectsByArea } from "../controllers/areas.controllers.js";
 
 const router = Router();
 
 router.get(
     '/',
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
     getAreas
@@ -16,7 +15,6 @@ router.get(
 
 router.get(
     '/:id',
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
     getArea
@@ -24,7 +22,6 @@ router.get(
 
 router.get(
     "/:areaId/subjects",
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
     getSubjectsByArea

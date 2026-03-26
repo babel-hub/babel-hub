@@ -39,9 +39,9 @@ function TeacherCourses() {
                     api.get("/courses/teacher/course"),
                     api.get("/classes/teacher/classes")
                 ]);
+
                 setCourseData(courseRes.data.teacherCourse || null);
                 setClassData(classesRes.data.teacherClasses || []);
-
             } catch (error: any) {
                 console.error("Error fetching teacher data:", error);
                 setError("Error al cargar el curso o las clases");

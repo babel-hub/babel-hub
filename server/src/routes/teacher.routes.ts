@@ -8,7 +8,6 @@ const router = Router();
 
 router.get(
     "/",
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     getTeachers
@@ -16,7 +15,6 @@ router.get(
 
 router.get(
     "/:id",
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     getTeacherById
@@ -43,7 +41,7 @@ router.delete(
     strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
-    registerTeacher
+    deleteTeacher
 );
 
 export default router;

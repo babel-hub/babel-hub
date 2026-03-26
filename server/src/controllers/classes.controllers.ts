@@ -63,7 +63,7 @@ export async function createClass(
     } catch (dbError) {
         await client.query("ROLLBACK");
         console.error("Database Error:", dbError);
-        response.status(500).json({ message: "Failed to create class" });
+        response.status(500).json({ message: "Error al crear la clase" });
     } finally {
         client.release();
     }
@@ -289,6 +289,61 @@ export async function getTeacherClassDetails(
     } catch (dbError) {
         console.error("Database Error:", dbError);
         response.status(500).json({ message: "Database error" });
+    } finally {
+        client.release();
+    }
+}
+
+export async function deleteClass(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { classId } = request.params;
+    const user = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const verifyOwnership = await client.query(`
+            SELECT cl.id
+            FROM classes cl
+            JOIN courses c ON cl.course_id = c.id
+            WHERE cl.id = $1 AND c.school_id = $2
+        `, [classId, user.schoolId]);
+
+        if (verifyOwnership.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Clase no encontrada o sin permisos." });
+        }
+
+        await client.query(`
+            DELETE FROM classes
+            WHERE id = $1
+        `, [classId]);
+
+        await createAuditLog(client, {
+            actorUserId: user.userId!,
+            actorRole: user.role!,
+            action: "DELETE_CLASS",
+            schoolId: user.schoolId!,
+            metadata: { classId: classId }
+        });
+
+        await client.query("COMMIT");
+        response.status(200).json({ message: "Clase eliminada correctamente." });
+    } catch (dbError: any) {
+        await client.query("ROLLBACK");
+
+        if (dbError.code === '23503') {
+            return response.status(409).json({
+                message: "No se puede eliminar la clase porque tiene registros asociados (estudiantes, notas o asistencias). Primero debes eliminar esa información."
+            });
+        }
+
+        console.error("Database Error deleting class:", dbError);
+        response.status(500).json({ message: "Ocurrió un error inesperado al eliminar la clase." });
     } finally {
         client.release();
     }

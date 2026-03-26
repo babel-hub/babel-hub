@@ -1,22 +1,42 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/client.ts";
 import ListData, { type ListItemProps } from "../../../components/List.tsx";
 import { LoadingContent } from "../../../components/Loadings.tsx";
 import DynamicModalForm, { type FormField } from "../../../components/ModalForm.tsx";
 import { DeleteButton, EditButton } from "../../../components/Buttons.tsx";
+import toast from "react-hot-toast";
+import {ConfirmModal} from "../../../components/ConfirmModal.tsx";
+
+interface AreaProps {
+    id: string;
+    school_id: string;
+    name: string;
+}
+
+interface PeriodsProps {
+    id: string,
+    name: string,
+    start_date: string,
+    end_date: string
+}
 
 export default function FilesDashboard() {
     const navigate = useNavigate();
 
-    const [areas, setAreas] = useState<any[]>([]);
-    const [periods, setPeriods] = useState<any[]>([]);
+    const [areas, setAreas] = useState<AreaProps[]>([]);
+    const [periods, setPeriods] = useState<PeriodsProps[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>("");
 
     const [isModalAreaOpen, setIsModalAreaOpen] = useState(false);
+    const [areaToDelete, setAreaToDelete] = useState<AreaProps | null>(null);
+    const [periodToDelete, setPeriodToDelete] = useState<PeriodsProps | null>(null);
     const [isModalPeriodOpen, setIsModalPeriodOpen] = useState(false);
+
     const [formLoading, setFormLoading] = useState(false);
+    const [loadingDeleteArea, setLoadingAreaDelete] = useState(false);
+    const [loadingDeletePeriod, setLoadingPeriodDelete] = useState(false);
     const [formError, setFormError] = useState<string>("");
 
     const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
@@ -40,7 +60,9 @@ export default function FilesDashboard() {
             setAreas(areasRes.data.areas || areasRes.data);
             setPeriods(periodsRes.data.periods || periodsRes.data);
         } catch (dbError: any) {
-            setError("Error cargando los datos: " + dbError.message);
+            const msg = "Error cargando los datos: " + dbError.message;
+            console.error(msg);
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -83,8 +105,11 @@ export default function FilesDashboard() {
             setAreaFormData({ name: "" });
             await fetchDashboardData();
 
+            toast.success(`Area ${editingAreaId === null ? "creada" : "editada" } correctamente`);
         } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al guardar el área.");
+            const msg = err.response?.data?.message || "Error al guardar el área."
+            console.error(msg);
+            setFormError(msg);
         } finally {
             setFormLoading(false);
         }
@@ -96,15 +121,39 @@ export default function FilesDashboard() {
         setIsModalAreaOpen(true);
     };
 
-    const handleDeleteArea = async (id: string, name: string) => {
-        const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar el área "${name}"?`);
-        if (!confirmDelete) return;
+    const handlePeriodDelete = async (id: string) => {
+        setLoadingPeriodDelete(true);
+
+        try {
+            await api.delete(`/periods/${id}`);
+            await fetchDashboardData();
+
+            setPeriodToDelete(null);
+            toast.success("Periodo eliminado correctamente.");
+        } catch (err: any) {
+            const msg = err.response?.data?.message || "Error al eliminar el periodo."
+            console.error(msg);
+            toast.error(msg);
+        } finally {
+            setLoadingPeriodDelete(false);
+        }
+    };
+
+    const handleAreaDelete = async (id: string) => {
+        setLoadingAreaDelete(true);
 
         try {
             await api.delete(`/areas/${id}`);
             await fetchDashboardData();
+
+            setAreaToDelete(null);
+            toast.success("Area eliminada correctamente.");
         } catch (err: any) {
-            alert(err.response?.data?.message || "Error al eliminar el área.");
+            const msg = err.response?.data?.message || "Error al eliminar el área."
+            console.error(msg);
+            toast.error(msg);
+        } finally {
+            setLoadingAreaDelete(false);
         }
     };
 
@@ -139,8 +188,11 @@ export default function FilesDashboard() {
             setPeriodFormData({ name: "", startDate: "", endDate: "" });
             await fetchDashboardData();
 
+            toast.success(`Periodo ${editingPeriodId === null ? "creado" : "editado"} correctamente`);
         } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al guardar el periodo.");
+            const msg = err.response?.data?.message || "Error al guardar el periodo."
+            console.error(msg);
+            setFormError(msg);
         } finally {
             setFormLoading(false);
         }
@@ -156,18 +208,6 @@ export default function FilesDashboard() {
         });
 
         setIsModalPeriodOpen(true);
-    };
-
-    const handleDeletePeriod = async (id: string, name: string) => {
-        const confirmDelete = window.confirm(`¿Estás seguro de que deseas eliminar "${name}"?`);
-        if (!confirmDelete) return;
-
-        try {
-            await api.delete(`/periods/${id}`);
-            await fetchDashboardData();
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Error al eliminar el periodo.");
-        }
     };
 
     const listItems: ListItemProps[] = [
@@ -189,7 +229,7 @@ export default function FilesDashboard() {
                                 </button>
                                 <div className="flex gap-2">
                                     <EditButton onClick={() => handleEditAreaClick(area)} />
-                                    <DeleteButton onClick={() => handleDeleteArea(area.id, area.name)} />
+                                    <DeleteButton onClick={() => setAreaToDelete(area)} />
                                 </div>
                             </div>
                         </li>
@@ -222,7 +262,7 @@ export default function FilesDashboard() {
                                 <p>{period.name} <span className="text-gray-500 text-xs font-normal ml-2">({period.start_date.split('T')[0]} - {period.end_date.split('T')[0]})</span></p>
                                 <div className="flex gap-2">
                                     <EditButton onClick={() => handleEditPeriodClick(period)} />
-                                    <DeleteButton onClick={() => handleDeletePeriod(period.id, period.name)} />
+                                    <DeleteButton onClick={() => setPeriodToDelete(period)} />
                                 </div>
                             </div>
                         </li>
@@ -253,6 +293,32 @@ export default function FilesDashboard() {
     return (
         <div>
             <ListData data={listItems} />
+
+            <ConfirmModal
+                isOpen={periodToDelete !== null}
+                onClose={() => setPeriodToDelete(null)}
+                onConfirm={async () => {
+                    if (periodToDelete) {
+                        await handlePeriodDelete(periodToDelete.id);
+                    }
+                }}
+                title="¿Estas seguro?"
+                loadingDelete={loadingDeletePeriod}
+                message={`De eliminar el periodo ${periodToDelete?.name}`}
+            />
+
+            <ConfirmModal
+                isOpen={areaToDelete !== null}
+                onClose={() => setAreaToDelete(null)}
+                onConfirm={async () => {
+                    if (areaToDelete) {
+                        await handleAreaDelete(areaToDelete.id);
+                    }
+                }}
+                title="¿Estas seguro?"
+                loadingDelete={loadingDeleteArea}
+                message={`De eliminar el area ${areaToDelete?.name}`}
+            />
 
             <DynamicModalForm
                 isOpen={isModalAreaOpen}

@@ -8,7 +8,6 @@ const router = Router();
 
 router.get(
     "/",
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
     getAllSubjects
@@ -16,7 +15,6 @@ router.get(
 
 router.get(
     "/:id",
-    strictLimiter,
     authMiddleware,
     authorizedRoles(["admin", "principal"]),
     getSubject

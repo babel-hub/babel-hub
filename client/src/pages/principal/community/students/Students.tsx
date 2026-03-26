@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import DynamicModalForm, {type FormField} from "../../../../components/ModalForm.tsx";
+import { ConfirmModal } from "../../../../components/ConfirmModal.tsx";
+import toast from "react-hot-toast";
 
 interface StudentProps {
     student_id: string;
@@ -32,7 +34,9 @@ const ListStudents = () => {
 
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+    const [studentToDelete, setStudentToDelete] = useState<StudentProps | null>(null);
 
+    const [loadingDeleteStudent, setLoadingDeleteStudent] = useState(false);
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
@@ -51,12 +55,16 @@ const ListStudents = () => {
             const response = await api.get("/student");
             setStudents(response.data);
         } catch (fetchError) {
-            console.log(fetchError);
+            console.error(fetchError);
             setError("Error fetching community");
         } finally {
             setLoading(false);
         }
     }
+
+    useEffect(() => {
+        fetchStudents();
+    }, []);
 
     useEffect(() => {
         const fetchCoursesForDropdown = async () => {
@@ -73,10 +81,6 @@ const ListStudents = () => {
         }
     }, [modalMode]);
 
-    useEffect(() => {
-        fetchStudents();
-    }, []);
-
     const openEditModal = (student: StudentProps) => {
         setSelectedStudentId(student.student_id);
 
@@ -91,14 +95,21 @@ const ListStudents = () => {
         setModalMode('edit');
     };
 
-    const handleDeleteStudent = async (id: string, name: string) => {
-        if (!window.confirm(`¿Estás seguro de que deseas eliminar al estudiante ${name}? Esta acción no se puede deshacer y borrará su acceso.`)) return;
+    const handleDeleteStudent = async (id: string) => {
+        setLoadingDeleteStudent(true);
 
         try {
             await api.delete(`/student/${id}`);
             await fetchStudents();
+
+            setStudentToDelete(null);
+            toast.success("Profesor eliminado correctamente");
         } catch (err: any) {
-            alert(err.response?.data?.message || "Error al eliminar el estudiante.");
+            const msg = err.response?.data?.message || "Error al eliminar el estudiante."
+            console.error(msg)
+            toast.error(msg);
+        } finally {
+            setLoadingDeleteStudent(false);
         }
     };
 
@@ -151,8 +162,11 @@ const ListStudents = () => {
             setSelectedStudentId(null);
             await fetchStudents();
 
+            toast.success(`Estudiante ${modalMode === 'create' ? 'creado' : 'editado'} correctamente`)
         } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al guardar el estudiante.");
+            const msg = err.response?.data?.message || "Error al guardar el estudiante."
+            console.error(msg);
+            setFormError(msg);
         } finally {
             setFormLoading(false);
         }
@@ -264,7 +278,7 @@ const ListStudents = () => {
                                         onClick={() => navigate(`${student.student_id}`)}
                                         className="overflow-hidden text-left cursor-pointer"
                                     >
-                                        <p className="font-bold text-custom-black truncate" title={student.full_name}>
+                                        <p className="font-bold capitalize text-custom-black truncate" title={student.full_name}>
                                             {reverseName(student.full_name)}
                                         </p>
                                         <p className="text-gray-500 text-xs truncate" title={student.email}>
@@ -296,13 +310,26 @@ const ListStudents = () => {
 
                             <td className="md:p-4 pr-3 text-right space-x-3">
                                 <EditButton onClick={() => openEditModal(student)} />
-                                <DeleteButton onClick={() => handleDeleteStudent(student.student_id, student.full_name)} />
+                                <DeleteButton onClick={() => setStudentToDelete(student)} />
                             </td>
                         </tr>
                     ))}
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={studentToDelete !== null}
+                onClose={() => setStudentToDelete(null)}
+                title="¿Estas seguro?"
+                message={`Que quieres eliminar el estudiante ${studentToDelete?.full_name}`}
+                onConfirm={async () => {
+                    if (studentToDelete) {
+                        await handleDeleteStudent(studentToDelete.student_id);
+                    }
+                }}
+                loadingDelete={loadingDeleteStudent}
+            />
 
             <DynamicModalForm
                 isOpen={modalMode !== 'none'}

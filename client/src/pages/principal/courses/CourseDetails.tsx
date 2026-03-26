@@ -4,7 +4,10 @@ import api from "../../../api/client.ts";
 import { LoadingContent } from "../../../components/Loadings.tsx";
 import { PrimaryButton } from "../../../components/Buttons.tsx";
 import DynamicModalForm, {type FormField} from "../../../components/ModalForm.tsx";
-import {formatterDate, getInitials, reverseName} from "../../../types";
+import {formatterDate, getInitials, getStatusDotColor, reverseName} from "../../../types";
+import toast from "react-hot-toast";
+import { HiOutlineTrash } from "react-icons/hi";
+import {ConfirmModal} from "../../../components/ConfirmModal.tsx";
 
 interface Student {
     student_id: string;
@@ -37,10 +40,12 @@ export default function CourseDetails() {
 
     const [data, setData] = useState<CourseData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [classToDelete, setClassToDelete] = useState<ClassItem | null>(null);
     const [error, setError] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [showClasses, setShowClasses] = useState<boolean>(false);
+    const [loadingDeleteClass, setLoadingDeleteClass] = useState<boolean>(false);
     const [subjects, setSubjects] = useState<any[]>([]);
     const [teachers, setTeachers] = useState<any[]>([]);
     const [formLoading, setFormLoading] = useState(false);
@@ -121,15 +126,6 @@ export default function CourseDetails() {
         }
     }, [id]);
 
-    const getStatusDotColor = (status: string) => {
-        switch(status) {
-            case 'absent': return 'bg-red-500';
-            case 'late': return 'bg-yellow-400';
-            case 'present': return 'bg-green-500';
-            default: return 'bg-gray-300';
-        }
-    };
-
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -163,6 +159,25 @@ export default function CourseDetails() {
         }
     }, [isModalOpen]);
 
+    const handleDeleteClass = async (classId: string) => {
+        setLoadingDeleteClass(true);
+
+        try {
+            await api.delete(`/classes/${classId}`);
+            await fetchCourseDetails();
+
+            setClassToDelete(null);
+            toast.success("Clase eliminada correctamente");
+        } catch (error: any) {
+            const msg = error?.response?.data?.message || "Error al eliminar la clase.";
+            console.log(error.response)
+            console.error(msg);
+            toast.error(msg);
+        } finally {
+            setLoadingDeleteClass(false);
+        }
+    }
+
     const handleAssignClass = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError("");
@@ -174,6 +189,7 @@ export default function CourseDetails() {
             setFormData({ courseId: id,  subjectId: "", teacherId: "" });
             await fetchCourseDetails();
 
+            toast.success("Clase asignada correctamente.");
         } catch (err: any) {
             setFormError(err.response?.data?.message || "Error al asignar la clase.");
         } finally {
@@ -214,15 +230,20 @@ export default function CourseDetails() {
 
                                 <ul className="divide-y w-full divide-gray-100 max-h-[300px] overflow-y-auto">
                                     {data.classes.map((cls) => (
-                                        <li key={cls.class_id}>
+                                        <li key={cls.class_id} className="flex w-full group p-3 items-center justify-between">
                                             <button
                                                 onClick={() => navigate(`clase/${cls.class_id}`)}
-                                                className="p-4 cursor-pointer flex w-full justify-between items-center hover:bg-gray-50 transition-colors"
+                                                className="cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors"
                                             >
                                                 <div className="text-left">
                                                     <p className="font-medium text-custom-black">{cls.subject_name}</p>
                                                     <p className="text-xs text-gray-500 mt-0.5">Prof: {cls.teacher_name}</p>
                                                 </div>
+                                            </button>
+                                            <button
+                                                onClick={() => setClassToDelete(cls)}
+                                                className="hover:text-red-500 cursor-pointer p-1.5 text-gray-300 text-base opacity-0 group-hover:opacity-100 transition-opacity md:text-lg rounded-full ">
+                                                <HiOutlineTrash />
                                             </button>
                                         </li>
                                     ))}
@@ -279,8 +300,21 @@ export default function CourseDetails() {
                         </ul>
                     </div>
                 </div>
-
             </div>
+
+            <ConfirmModal
+                isOpen={classToDelete !== null}
+                onClose={() => setClassToDelete(null)}
+                title="¿Estás seguro?"
+                message={`¿Que quieres eliminar la clase ${classToDelete?.subject_name}?`}
+                onConfirm={async () => {
+                    if (classToDelete) {
+                        await handleDeleteClass(classToDelete.class_id);
+                    }
+                }}
+                loadingDelete={loadingDeleteClass}
+            />
+
 
             <DynamicModalForm
                 isOpen={isModalOpen}

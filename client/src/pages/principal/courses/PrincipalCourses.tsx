@@ -6,6 +6,8 @@ import { FaSchool } from "react-icons/fa6";
 import { LoadingPage } from "../../../components/Loadings.tsx";
 import { HiDotsVertical } from "react-icons/hi";
 import DynamicModalForm, { type FormField } from "../../../components/ModalForm.tsx";
+import toast from "react-hot-toast";
+import {ConfirmModal} from "../../../components/ConfirmModal.tsx";
 
 interface ClassData {
     id: string;
@@ -23,8 +25,10 @@ const PrincipalCourses = () => {
     const ref = useRef<HTMLUListElement | null>(null);
 
     const [courses, setCourses] = useState<ClassData[]>([]);
+    const [courseToDelete, setCourseToDelete] = useState<ClassData | null>(null);
     const [indexOption, setindexOption] = useState<number | null>(null);
     const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
+    const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
 
     const [loading, setLoading] = useState(false);
     const [loadingDelete, setLoadingDelete] = useState<boolean>(false);
@@ -32,6 +36,7 @@ const PrincipalCourses = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+    const [teacherEditModal, setTeacherEditModal] = useState<string | null>(null);
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'none'>('none');
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
@@ -72,8 +77,9 @@ const PrincipalCourses = () => {
             const response = await api.get("/courses");
             setCourses(response.data.courses || response.data);
         } catch (loadError) {
-            console.error("Failed to load courses", loadError);
-            setError("No se pudieron cargar los cursos.");
+            const msg = `No se pudieron cargar los cursos. ${loadError}`;
+            console.error(msg);
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -84,19 +90,33 @@ const PrincipalCourses = () => {
     }, []);
 
     useEffect(() => {
-        const fetchTeachersForDropdown = async () => {
+        const controller = new AbortController();
+
+        const fetchTeachers = async (id?: string) => {
             try {
-                const response = await api.get('/teacher?available=true');
-                setAvailableTeachers(response.data.teachers || response.data);
-            } catch (error) {
-                console.error("Error fetching teachers:", error);
+                const url = id
+                    ? `/teacher?available=true&includeTeacherId=${id}`
+                    : '/teacher?available=true';
+
+                const response = await api.get(url, { signal: controller.signal });
+                setAvailableTeachers(response.data.teachers || []);
+            } catch (error : any) {
+                if (error.name !== 'AbortError') console.error(error);
             }
         };
 
-        if (isModalOpen && availableTeachers.length === 0) {
-            fetchTeachersForDropdown();
+
+        if (isModalOpen) {
+            if (modalMode === "edit" && teacherEditModal) {
+                fetchTeachers(teacherEditModal);
+            } else {
+                fetchTeachers();
+            }
         }
-    }, [isModalOpen, availableTeachers.length]);
+
+        return () => controller.abort();
+    }, [isModalOpen, teacherEditModal]);
+
 
 
     useEffect(() => {
@@ -106,10 +126,10 @@ const PrincipalCourses = () => {
             }
         }
 
-        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('click', handleClickOutside);
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('click', handleClickOutside);
         };
     }, [ref]);
 
@@ -137,12 +157,13 @@ const PrincipalCourses = () => {
 
             setIsModalOpen(false);
             setFormData({ name: "", year: new Date().getFullYear().toString(), teacherId: ""});
-
             await loadClasses();
 
+            toast.success(`Curso ${modalMode === "create" ? "creado" : "editado"} correctamente`);
         } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al crear el curso.");
-            console.error(err);
+            const msg = err.response?.data?.message || "Error al crear el curso.";
+            console.error(msg);
+            setFormError(msg);
         } finally {
             setFormLoading(false);
         }
@@ -150,6 +171,7 @@ const PrincipalCourses = () => {
 
     const handleUpdateCourse = (course: ClassData) => {
         setSelectedCourse(course.id);
+        setTeacherEditModal(course.director_id)
 
         setFormData({
             name: course.course_name,
@@ -170,17 +192,35 @@ const PrincipalCourses = () => {
             await api.delete(`/courses/${id}`);
             await loadClasses();
 
+            setCourseToDelete(null);
+            toast.success("Curso eliminado correctamente.");
         } catch (dbError:any) {
             console.error("Error eliminando el curso", dbError);
-            alert(dbError.response?.data?.message || "Error al eliminar la materia.");
+            toast.error(dbError.response?.data?.message || "Error al eliminar el curso");
         } finally {
             setLoadingDelete(false);
         }
     }
 
-    const handleShowOptions = (index: number) => {
-        setindexOption(indexOption === index ? null : index);
-    }
+    const handleShowOptions = (index: number, e: React.MouseEvent) => {
+        if (indexOption === index) {
+            setindexOption(null);
+            return;
+        }
+
+        const clickY = e.clientY;
+        const windowHeight = window.innerHeight;
+
+        if (windowHeight - clickY < 250) {
+            setMenuPosition('top');
+        } else {
+            setMenuPosition('bottom');
+        }
+
+        //modalMode === 'edit' ? {...formData, teacherId: courses.filter(item => item.director_id === formData.teacherId)[0].director_name} : formData
+
+        setindexOption(index);
+    };
 
     if (loading && courses.length === 0) return <LoadingPage title="Cargando cursos..." />
 
@@ -203,7 +243,7 @@ const PrincipalCourses = () => {
 
                 {error && <p className="text-red-500 m-4 text-sm">{error}</p>}
 
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2 flex-1 overflow-y-auto overflow-x-hidden">
                     {courses.map((course, index) => (
                         <div
                             key={course.id}
@@ -231,12 +271,20 @@ const PrincipalCourses = () => {
                                 </div>
                             </button>
                             <button
-                                onClick={() => handleShowOptions(index)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleShowOptions(index, e);
+                                }}
                                 className="hover:bg-gray-100 cursor-pointer p-1.5 text-custom-black text-sm opacity-0 group-hover:opacity-100 transition-opacity md:text-base rounded-full ">
                                 <HiDotsVertical />
                             </button>
                             {indexOption === index && (
-                                <ul ref={ref} className="absolute z-40 w-48 h-fit p-2 text-sm md:text-base font-semibold right-0 lg:-right-[150px] top-3/4 bg-white text-custom-black shadow rounded-xl">
+                                <ul
+                                    ref={ref}
+                                    className={`absolute z-50 w-48 h-fit p-2 text-sm md:text-base font-semibold right-4 bg-white text-custom-black shadow-lg border border-gray-100 rounded-xl ${
+                                        menuPosition === 'top' ? 'bottom-12' : 'top-12'
+                                    }`}
+                                >
                                     <li>
                                         <button
                                             onClick={() => navigate(`/principal/notificaciones/asistencia?course=${course.course_name}`)}
@@ -260,7 +308,7 @@ const PrincipalCourses = () => {
                                     <hr className="border border-gray-100 rounded-xl my-2" />
                                     <li>
                                         <button
-                                            onClick={() => handleDeleteCourse(course.id)}
+                                            onClick={() => setCourseToDelete(course)}
                                             disabled={loadingDelete}
                                             className="p-2 w-full text-left cursor-pointer hover:bg-red-shadow text-red-error rounded-xl">
                                             {loadingDelete ? "Cargando..." : "Eliminar"}
@@ -285,6 +333,19 @@ const PrincipalCourses = () => {
                 )}
             </div>
 
+            <ConfirmModal
+                isOpen={courseToDelete !== null}
+                onClose={() => setCourseToDelete(null)}
+                onConfirm={async () => {
+                    if (courseToDelete) {
+                        await handleDeleteCourse(courseToDelete.id);
+                    }
+                }}
+                title="¿Estas seguro?"
+                loadingDelete={loadingDelete}
+                message={`De eliminar el curso ${courseToDelete?.course_name}`}
+            />
+
             <DynamicModalForm
                 isOpen={isModalOpen}
                 title={modalMode === 'edit' ? "Editar Curso" : "Crear Nuevo Curso"}
@@ -299,6 +360,7 @@ const PrincipalCourses = () => {
                     setModalMode('none');
                     setSelectedCourse(null);
                     setFormError("");
+                    setTeacherEditModal(null);
                     setFormData({ name: "", year: new Date().getFullYear().toString(), teacherId: "" });
                 }}
             />

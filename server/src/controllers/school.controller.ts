@@ -17,7 +17,8 @@ interface BodyReq {
 
 export async function registerSchool(
     request: AuthenticatedRequest,
-    response: Response): Promise<void> {
+    response: Response
+): Promise<void> {
     const { schoolName, principal } = request.body as BodyReq;
     const creator = request.user!;
 
@@ -32,10 +33,10 @@ export async function registerSchool(
     try {
         await client.query("BEGIN");
 
-        const school = await client.query(`
-            INSERT INTO schools (name) VALUES ($1)
-            `, [schoolName]);
-        const schoolId = school.rows[0].id;
+        const schoolResult = await client.query(`
+            INSERT INTO schools (name) VALUES ($1) RETURNING id
+        `, [schoolName]);
+        const schoolId = schoolResult.rows[0].id;
 
         const { data, error: supaError } = await supabase.auth.admin.createUser({
             email: principal.email,
@@ -44,22 +45,21 @@ export async function registerSchool(
         });
 
         if (supaError) throw supaError;
-
-        authUserId = data.user?.id
+        authUserId = data.user?.id;
 
         await client.query(`
-            INSERT INTO users (supabase_user_id, role, shool_id, email, full_name)
+            INSERT INTO users (supabase_user_id, role, school_id, email, full_name)
             VALUES ($1, $2, $3, $4, $5)
-            `, [authUserId, 'principal', schoolId, principal.email, principal.fullName]);
+        `, [authUserId, 'principal', schoolId, principal.email, principal.fullName]);
 
         await createAuditLog(client, {
             actorUserId: creator.userId as string,
             actorRole: creator.role,
-            action: "CREATE_SHOOL",
+            action: "CREATE_SCHOOL",
             targetUserId: authUserId,
             schoolId,
             metadata: { schoolName }
-        })
+        });
 
         await client.query("COMMIT");
 
@@ -69,12 +69,16 @@ export async function registerSchool(
         });
     } catch (dbError) {
         await client.query("ROLLBACK");
-        if (authUserId) await supabase.auth.admin.deleteUser(authUserId);
 
+        if (authUserId) {
+            await supabase.auth.admin.deleteUser(authUserId);
+        }
+
+        console.error("Register School Error:", dbError);
         response.status(500).json({
             message: "Failed to create school",
         });
     } finally {
-        client.release()
+        client.release();
     }
 }

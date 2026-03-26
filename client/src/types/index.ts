@@ -8,6 +8,15 @@ export function formateDate(date: string) {
     });
 }
 
+export const getStatusDotColor = (status: string) => {
+    switch(status) {
+        case 'absent': return 'bg-red-500';
+        case 'late': return 'bg-yellow-400';
+        case 'present': return 'bg-green-500';
+        default: return 'bg-gray-300';
+    }
+};
+
 export const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return {

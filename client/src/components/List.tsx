@@ -26,12 +26,12 @@ export default function ListData({ data }: ListProps) {
     };
 
     return (
-        <ul className="space-y-3">
+        <ul className="space-y-1">
             {data.map((item, index) => (
                 <li key={item.label}>
                     <button
                         onClick={() => handleToggle(index, item)}
-                        className="bg-primary-shadow hover:text-primary-darker transition-colors text-sm sm:text-base cursor-pointer rounded-xl text-primary font-medium w-full p-5 flex justify-between items-center"
+                        className="bg-primary-shadow hover:text-primary-darker transition-colors text-sm md:text-base cursor-pointer rounded-xl text-primary font-medium w-full p-5 flex justify-between items-center"
                     >
                         <span>{item.label}</span>
                         {item.content && (

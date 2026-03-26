@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from "../../../../api/client.ts"; // Adjust path as needed
+import api from "../../../../api/client.ts";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import {formateDate, getInitials} from "../../../../types";
@@ -119,7 +119,7 @@ export default function TeacherDetails() {
                                         <button
                                             disabled={true}
                                             onClick={() => navigate(`/principal/clase/${cls.class_id}`)}
-                                            className="text-sm font-semibold text-primary-600 hover:text-primary-800 transition-colors"
+                                            className="text-sm font-semibold text-gray-300 cursor-not-allowed transition-colors"
                                         >
                                             Ver Clase
                                         </button>

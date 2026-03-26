@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getAcademicPeriods, postAcademicPeriods, updateAcademicPeriod, deleteAcademicPeriod } from "../controllers/periods.controllers.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
+import { strictLimiter } from "../middleware/ratelimit.middleware.js";
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.get(
 
 router.post(
     "/",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     postAcademicPeriods
@@ -21,6 +23,7 @@ router.post(
 
 router.put(
     "/:id",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     updateAcademicPeriod
@@ -28,6 +31,7 @@ router.put(
 
 router.delete(
     "/:id",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     deleteAcademicPeriod

@@ -4,10 +4,6 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.get(
-    "/",
-    authMiddleware,
-    getUserRole
-);
+router.get("/", authMiddleware, getUserRole);
 
 export default router;

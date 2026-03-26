@@ -1,14 +1,8 @@
 import Router  from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
-import {
-    createCourse,
-    getAllCourses,
-    getCourseDetails,
-    deleteCourse,
-    updateCourse,
-    getAvailableSubjectsForCourse,
-    getTeacherCourse } from "../controllers/courses.controller.js";
+import { strictLimiter } from "../middleware/ratelimit.middleware.js";
+import { createCourse, getAllCourses, getCourseDetails, deleteCourse, updateCourse, getAvailableSubjectsForCourse, getTeacherCourse } from "../controllers/courses.controller.js";
 
 const router = Router();
 
@@ -42,6 +36,7 @@ router.get(
 
 router.post(
     "/",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     createCourse
@@ -49,6 +44,7 @@ router.post(
 
 router.put(
     "/:id",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     updateCourse
@@ -56,10 +52,10 @@ router.put(
 
 router.delete(
     "/:id",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     deleteCourse
 )
-
 
 export default router;

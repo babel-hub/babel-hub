@@ -1,11 +1,13 @@
 import api from "../../../../api/client.ts";
-import React, { useEffect, useState } from "react";
+import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
 import {formateDate, getInitials} from "../../../../types";
 import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import DynamicModalForm, {type FormField} from "../../../../components/ModalForm.tsx";
+import { ConfirmModal } from "../../../../components/ConfirmModal.tsx";
 
 interface Teacher {
     id: string;
@@ -32,6 +34,8 @@ const ListTeacher = () => {
     const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
 
     const [formLoading, setFormLoading] = useState(false);
+    const [loadingDeleteTeacher, setLoadingDeleteTeacher] = useState(false);
+    const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
         fullName: "",
@@ -47,7 +51,7 @@ const ListTeacher = () => {
             const response = await api.get("/teacher");
             setTeachers(response.data.teachers || response.data);
         } catch (fetchError) {
-            console.log(fetchError);
+            console.error(fetchError);
             setError("Error fetching teachers");
         } finally {
             setLoading(false);
@@ -68,14 +72,21 @@ const ListTeacher = () => {
         setModalMode('edit');
     };
 
-    const handleDeleteTeacher = async (id: string, name: string) => {
-        if (!window.confirm(`¿Estás seguro de que deseas eliminar al profesor ${name}? Se revocará su acceso al sistema.`)) return;
+    const handleDeleteTeacher = async (id: string) => {
+        setLoadingDeleteTeacher(true);
 
         try {
             await api.delete(`/teacher/${id}`);
             await fetchTeachers();
+
+            setTeacherToDelete(null);
+            toast.success("Profesor eliminado correctamente");
         } catch (err: any) {
-            alert(err.response?.data?.message || "Error al eliminar el profesor.");
+            const msg = err?.response?.data?.message || "Error al eliminar el profesor.";
+            console.error(msg);
+            toast.error(msg);
+        } finally {
+            setLoadingDeleteTeacher(false);
         }
     };
 
@@ -122,8 +133,11 @@ const ListTeacher = () => {
             setSelectedTeacherId(null);
             await fetchTeachers();
 
+            toast.success(`Profesor ${modalMode === 'create' ? 'creado' : 'editado'} correctamente`)
         } catch (err: any) {
-            setFormError(err.response?.data?.message || "Error al guardar el profesor.");
+            const msg = err.response?.data?.message || "Error al guardar el profesor."
+            console.error(msg);
+            setFormError(msg);
         } finally {
             setFormLoading(false);
         }
@@ -219,7 +233,7 @@ const ListTeacher = () => {
                                         onClick={() => navigate(`${teacher.id}`)}
                                         className="overflow-hidden text-left cursor-pointer"
                                     >
-                                        <p className="font-bold text-custom-black truncate" title={teacher.full_name}>
+                                        <p className="font-bold capitalize text-custom-black truncate" title={teacher.full_name}>
                                             {teacher.full_name}
                                         </p>
                                         <p className="text-gray-500 text-xs truncate" title={teacher.email}>
@@ -241,13 +255,26 @@ const ListTeacher = () => {
 
                             <td className="md:p-4 pr-3 text-right space-x-3">
                                 <EditButton onClick={() => openEditModal(teacher)} />
-                                <DeleteButton onClick={() => handleDeleteTeacher(teacher.id, teacher.full_name)}/>
+                                <DeleteButton onClick={() => setTeacherToDelete(teacher)}/>
                             </td>
                         </tr>
                     ))}
                     </tbody>
                 </table>
             </div>
+
+            <ConfirmModal
+                isOpen={teacherToDelete !== null}
+                onClose={() => setTeacherToDelete(null)}
+                title="¿Estás seguro?"
+                message={`¿Que quieres eliminar al profesor ${teacherToDelete?.full_name}?`}
+                onConfirm={async () => {
+                    if (teacherToDelete) {
+                        await handleDeleteTeacher(teacherToDelete.id);
+                    }
+                }}
+                loadingDelete={loadingDeleteTeacher}
+            />
 
             <DynamicModalForm
                 isOpen={modalMode !== 'none'}

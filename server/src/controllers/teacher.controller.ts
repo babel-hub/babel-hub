@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import type { AuthenticatedRequest } from "../middleware/auth.middleware.js";
 import { pool } from "../db/index.js"
 import { supabase } from "../services/index.js";
@@ -87,41 +87,42 @@ export async function getTeachers(
     request: AuthenticatedRequest,
     response: Response
 ) {
-    const { available } = request.query;
+    const { available, includeTeacherId } = request.query;
     const client = await pool.connect();
 
     try {
         let queryText = `
             SELECT
                 t.id,
-                t.user_id,
                 t.created_at,
                 u.full_name,
                 u.email,
-                COUNT(cl.id)::int AS total_classes
+                COUNT(DISTINCT cl.id)::int AS total_classes
             FROM teachers t
             JOIN users u ON t.user_id = u.id
             LEFT JOIN classes cl ON cl.teacher_id = t.id
         `;
 
+        const values = [];
+
         if (available === 'true') {
-            queryText += `
-                LEFT JOIN courses co ON t.id = co.teacher_id
-                WHERE co.teacher_id IS NULL
-            `;
+            queryText += ` LEFT JOIN courses co ON t.id = co.teacher_id `;
+
+            if (includeTeacherId) {
+                queryText += ` WHERE (co.teacher_id IS NULL OR t.id = $1) `;
+                values.push(includeTeacherId);
+            } else {
+                queryText += ` WHERE co.teacher_id IS NULL `;
+            }
         }
 
         queryText += `
-            GROUP BY t.id, t.user_id, t.created_at, u.full_name, u.email
+            GROUP BY t.id, u.full_name, t.created_at, u.email
             ORDER BY u.full_name ASC;
         `;
 
-        const result = await client.query(queryText);
-
-        response.status(200).json({
-            teachers: result.rows
-        });
-
+        const result = await client.query(queryText, values);
+        response.status(200).json({ teachers: result.rows });
     } catch (dbError) {
         console.error("Database Error - GET Teachers failed:", dbError);
         response.status(500).json({ message: "Database error: GET Teachers failed" });
@@ -279,23 +280,23 @@ export async function deleteTeacher(
         const { error: supabaseError } = await supabase.auth.admin.deleteUser(supabase_user_id);
 
         if (supabaseError) {
-            throw new Error(`Supabase deletion failed: ${supabaseError.message}`);
+            throw new Error(`Eliminacion de supabase fallo: ${supabaseError.message}`);
         }
 
         await client.query("COMMIT");
-        response.status(200).json({ message: "Teacher deleted successfully" });
+        response.status(200).json({ message: "El profesor fue eliminado correctamente." });
 
     } catch (error: any) {
         await client.query("ROLLBACK");
 
         if (error.code === '23503') {
             return response.status(409).json({
-                message: "Cannot delete teacher because they are currently assigned to active classes or act as a course director."
+                message: "No se puede eliminar al profesor porque actualmente está asignado a clases activas o actúa como director de curso."
             });
         }
 
         console.error("Error deleting teacher:", error);
-        response.status(500).json({ message: "Failed to delete teacher" });
+        response.status(500).json({ message: "No se pudo eliminar el profesor" });
     } finally {
         client.release();
     }

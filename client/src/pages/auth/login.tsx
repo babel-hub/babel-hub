@@ -5,11 +5,13 @@ import { useAuth } from "../../auth/useAuth.ts";
 import { useNavigate } from "react-router-dom";
 import { LoadingPage } from "../../components/Loadings.tsx";
 import logo from "../../assets/images/logo.png";
+import { LuEye, LuEyeClosed } from "react-icons/lu";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [passwordEye, setPasswordEye] = useState<boolean>(false);
     const [loading, setLoading] = useState(false);
 
     const setAuth = useAuth((s) => s.setAuth);
@@ -47,15 +49,15 @@ export default function Login() {
 
             setAuth(token, userData);
 
-            if (role === "principal") navigate("/principal");
-            else if (role === "teacher") navigate("/teacher");
-            else if (role === "student") navigate("/student");
-            else if (role === "admin") navigate("/admin");
+            if (role === "principal") navigate("/principal/dashboard");
+            else if (role === "teacher") navigate("/teacher/dashboard");
+            else if (role === "student") navigate("/student/dashboard");
+            else if (role === "admin") navigate("/admin/dashboard");
 
         } catch (err: any) {
             console.error("Login Error:", err);
             localStorage.removeItem("token");
-            setError("Login failed. Please try again.");
+            setError("El login fallo, vuelve a intentarlo.");
         } finally {
             setLoading(false);
         }
@@ -84,19 +86,30 @@ export default function Login() {
 
                     <input
                         className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 mb-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                        placeholder="Email"
+                        placeholder="email@ejemplo.com"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
 
-                    <input
-                        className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                        placeholder="Password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
+                    <div className="w-full relative">
+                        <input
+                            className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 mb-6 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                            placeholder="Contraseña"
+                            type={passwordEye ? "text" : "password"}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <div className="absolute right-4 top-4">
+                            <button
+                                type="button"
+                                className="text-xl text-gray-500"
+                                onClick={() => setPasswordEye(!passwordEye)}
+                            >
+                                {passwordEye ? <LuEye /> : <LuEyeClosed />}
+                            </button>
+                        </div>
+                    </div>
 
                     <button
                         onClick={handleLogin}

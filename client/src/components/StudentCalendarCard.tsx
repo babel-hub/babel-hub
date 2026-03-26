@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
 import api from "../api/client.ts";
+import {getStatusDotColor} from "../types";
 
 interface Period {
     id: string;
@@ -35,15 +36,6 @@ export default function StudentCalendarCard({ studentId, period }: { studentId: 
         fetchCalendar();
     }, [studentId, period]);
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'present': return 'bg-green-500 border-green-600';
-            case 'absent': return 'bg-red-500 border-red-600';
-            case 'late': return 'bg-yellow-300 border-yellow-300';
-            default: return 'bg-gray-100 border-gray-200';
-        }
-    };
-
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return {
@@ -60,7 +52,7 @@ export default function StudentCalendarCard({ studentId, period }: { studentId: 
         <div className="py-2 px-3 bg-white rounded-xl no-scrollbar mr-3 overflow-x-auto">
             <div className="flex gap-1.5">
                 {[...calendarData].reverse().map(day => {
-                    const statusColor = getStatusColor(day.daily_status);
+                    const statusColor = getStatusDotColor(day.daily_status);
                     const { dayNum, month, weekday } = formatDate(day.date);
 
                     return (

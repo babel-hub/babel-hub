@@ -296,19 +296,19 @@ export async function deleteStudent(
         }
 
         await client.query("COMMIT");
-        response.status(200).json({ message: "Student deleted successfully" });
+        response.status(200).json({ message: "Estudiante eliminado correctamente." });
 
     } catch (error: any) {
         await client.query("ROLLBACK");
 
         if (error.code === '23503') {
             return response.status(409).json({
-                message: "Cannot delete student because they have assigned grades or active records."
+                message: "No se puede eliminar el estudiante por que tiene notas o informacion guardada."
             });
         }
 
         console.error("Error deleting student:", error);
-        response.status(500).json({ message: "Failed to delete student" });
+        response.status(500).json({ message: "No se pudo eliminar el estudiante" });
     } finally {
         client.release();
     }

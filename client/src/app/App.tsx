@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Login from "../pages/auth/login.tsx";
 import TeacherDashboard from "../pages/teacher/dashboard/TeacherDashboard.tsx";
 import PrincipalDashboard from "../pages/principal/dashboard/PrincipalDashboard.tsx";
@@ -25,76 +26,102 @@ import StudentDashboard from "../pages/student/dashboard/StudentDashboard.tsx";
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={ <Navigate to="/login" replace /> } />
-                <Route path="/login" element={ <Login /> } />
-                <Route
-                    path="/principal"
-                    element={
-                        <ProtectedRoute>
-                            <PrincipalLayout />
-                        </ProtectedRoute>
-                    }
-                >
-                    <Route path="dashboard" index element={<PrincipalDashboard />} />
+        <>
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    duration: 3000,
+                    style: {
+                        background: '#fff',
+                        color: '#333333',
+                        borderRadius: '8px',
+                    },
+                    success: {
+                        style: {
+                            background: '#ffffff',
+                            color: '#333333'
+                        },
+                    },
+                    error: {
+                        style: {
+                            background: '#ffffff',
+                            color: '#333333'
+                        },
+                    },
+                }}
+            />
 
-                    <Route path="cursos" element={<PrincipalCourses />}>
-                        <Route path=":id" element={<CourseDetails />} />
-                        <Route path=":courseId/clase/:id" element={<ClassDetails />} />
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={ <Navigate to="/login" replace /> } />
+                    <Route path="/login" element={ <Login /> } />
+                    <Route
+                        path="/principal"
+                        element={
+                            <ProtectedRoute>
+                                <PrincipalLayout />
+                            </ProtectedRoute>
+                        }
+                    >
+                        <Route path="dashboard" index element={<PrincipalDashboard />} />
+
+                        <Route path="cursos" element={<PrincipalCourses />}>
+                            <Route path=":id" element={<CourseDetails />} />
+                            <Route path=":courseId/clase/:id" element={<ClassDetails />} />
+                        </Route>
+
+                        <Route path="comunidad" element={<Community />} />
+                        <Route path="comunidad/profesores" element={<ListTeacher />} />
+                        <Route path="comunidad/profesores/:id" element={<TeacherDetails />} />
+                        <Route path="comunidad/estudiantes" element={<ListStudents />} />
+                        <Route path="comunidad/estudiantes/:id" element={<StudentProfile />} />
+
+                        <Route path="formatos" element={<FilesDashboard />} />
+                        <Route path="formatos/areas/:areaId" element={<AreaDetails />} />
+
+                        <Route path="notificaciones" element={<NotificationCenter />} />
+                        <Route path="notificaciones/asistencia" element={<AttendanceNotification />} />
+
                     </Route>
 
-                    <Route path="comunidad" element={<Community />} />
-                    <Route path="comunidad/profesores" element={<ListTeacher />} />
-                    <Route path="comunidad/profesores/:id" element={<TeacherDetails />} />
-                    <Route path="comunidad/estudiantes" element={<ListStudents />} />
-                    <Route path="comunidad/estudiantes/:id" element={<StudentProfile />} />
+                    <Route
+                        path="/teacher"
+                        element={
+                            <ProtectedRoute>
+                                <TeacherLayout />
+                            </ProtectedRoute>
+                        }
+                    >
+                        <Route path="dashboard" index element={<TeacherDashboard />}/>
 
-                    <Route path="formatos" element={<FilesDashboard />} />
-                    <Route path="formatos/areas/:areaId" element={<AreaDetails />} />
-
-                    <Route path="notificaciones" element={<NotificationCenter />} />
-                    <Route path="notificaciones/asistencia" element={<AttendanceNotification />} />
-
-                </Route>
-
-                <Route
-                    path="/teacher"
-                    element={
-                        <ProtectedRoute>
-                            <TeacherLayout />
-                        </ProtectedRoute>
-                    }
-                >
-                    <Route path="dashboard" index element={<TeacherDashboard />}/>
-
-                    <Route path="clases" element={<TeacherCourses />}>
-                        <Route path=":id" element={<TeacherCourseDetails />}/>
+                        <Route path="clases" element={<TeacherCourses />}>
+                            <Route path=":id" element={<TeacherCourseDetails />}/>
+                        </Route>
                     </Route>
-                </Route>
 
-                <Route
-                    path="/student"
-                    element={
-                        <ProtectedRoute>
-                            <StudentLayout />
-                        </ProtectedRoute>
+                    <Route
+                        path="/student"
+                        element={
+                            <ProtectedRoute>
+                                <StudentLayout />
+                            </ProtectedRoute>
 
-                    }
-                >
-                    <Route path="dashboard" index element={<StudentDashboard />}/>
-                </Route>
+                        }
+                    >
+                        <Route path="dashboard" index element={<StudentDashboard />}/>
+                    </Route>
 
 
-                { /* Not Found Pages section */ }
-                <Route
-                    path="*"
-                    element={
-                        <NotFoundPage />
-                    }
-                />
-            </Routes>
-        </BrowserRouter>
+                    { /* Not Found Pages section */ }
+                    <Route
+                        path="*"
+                        element={
+                            <NotFoundPage />
+                        }
+                    />
+                </Routes>
+            </BrowserRouter>
+        </>
     )
 }
 

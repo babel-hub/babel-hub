@@ -5,6 +5,7 @@ import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { PrimaryButton } from "../../../../components/Buttons.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import {formatDate, formatterDate, getInitials, reverseName} from "../../../../types";
+import toast from "react-hot-toast";
 
 interface Assignment {
     id: string;
@@ -77,7 +78,7 @@ export default function ClassDetails() {
 
     useEffect(() => {
         const fetchAttendance = async () => {
-            if (!data) return;
+            if (!data || activeTab !== 'register attendance') return;
 
             try {
                 setLoadingAttendance(true);
@@ -99,9 +100,7 @@ export default function ClassDetails() {
             }
         };
 
-        if (activeTab === 'register attendance') {
-            fetchAttendance();
-        }
+        fetchAttendance();
     }, [activeTab, attendanceDate, id, data]);
 
     useEffect(() => {
@@ -163,7 +162,6 @@ export default function ClassDetails() {
 
                 setCalendarDates(Array.from(datesSet).sort());
                 setAttendanceGrid(Array.from(studentMap.values()));
-
             } catch (dbError) {
                 console.error(dbError);
             } finally {
@@ -175,9 +173,14 @@ export default function ClassDetails() {
     }, [selectedPeriod, activeTab, courseId, id]);
 
     const handleSaveAttendance = async () => {
-        try {
-            setSavingAttendance(true);
+        if (data?.students.length === 0) {
+            toast.error("La clase no tiene estudiantes.");
+            return;
+        }
 
+        setSavingAttendance(true);
+
+        try {
             const recordsArray = Object.entries(attendanceRecords).map(([studentId, status]) => ({
                 studentId,
                 status
@@ -188,10 +191,11 @@ export default function ClassDetails() {
                 records: recordsArray
             });
 
-            alert("Asistencia guardada correctamente.");
+            toast.success("Asistencia guardada correctamente.");
         } catch (error) {
-            console.error("Error saving attendance:", error);
-            alert("Error al guardar la asistencia.");
+            const msg = "Error al guardar la asistencia."
+            console.error(msg, error);
+            toast.error(msg);
         } finally {
             setSavingAttendance(false);
         }

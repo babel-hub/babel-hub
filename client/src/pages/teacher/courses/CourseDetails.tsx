@@ -6,6 +6,7 @@ import ButtonChevronBack from "../../../components/ButtonChevrowBack.tsx";
 import {HiOutlineCalendar, HiOutlineClipboardList, HiOutlineDocumentText, HiOutlineUsers} from "react-icons/hi";
 import {formatDate, formatterDate, getInitials, reverseName} from "../../../types";
 import {PrimaryButton} from "../../../components/Buttons.tsx";
+import toast from "react-hot-toast";
 
 interface Student {
     student_id: string;
@@ -172,6 +173,11 @@ export default function TeacherCourseDetails() {
 
 
     const handleSaveAttendance = async () => {
+        if (classDetails?.students.length === 0) {
+            toast.error("La clase no tiene estudiantes");
+            return;
+        }
+
         try {
             setSavingAttendance(true);
 
@@ -185,10 +191,11 @@ export default function TeacherCourseDetails() {
                 records: recordsArr
             });
 
-            alert("Asistencia guardada correctamente.");
+            toast.success("Asistencia guardada correctamente.");
         } catch (error: any) {
-            console.error(error);
-            alert("Error saving attendance");
+            const msg = "Error al guardar la asistencia."
+            console.error(msg, error);
+            toast.error(msg);
         } finally {
             setSavingAttendance(false);
         }
@@ -196,7 +203,7 @@ export default function TeacherCourseDetails() {
     }
 
     const updateStudentStatus = (id:string, status:'present' | 'absent' | 'late') => {
-           setClassAttendance(prev => ({...prev, [id]: status }));
+        setClassAttendance(prev => ({...prev, [id]: status }));
     }
 
     if (loading) return <LoadingContent title="Cargando clase..."/>;

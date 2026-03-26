@@ -25,6 +25,7 @@ const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
+app.set("trust proxy", 1);
 app.use(defaultLimiter);
 
 app.use("/healthcheck", healthcheckRoutes);

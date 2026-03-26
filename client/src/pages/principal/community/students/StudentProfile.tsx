@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
+import {getInitials} from "../../../../types";
 
 interface GradeRecord {
     assignment_id: string;
@@ -19,7 +20,6 @@ interface StudentProfileData {
     course_name: string;
     enrollment_code: string;
     recent_grades: GradeRecord[];
-    // You can add attendance stats here later
 }
 
 export default function StudentProfile() {
@@ -50,7 +50,7 @@ export default function StudentProfile() {
                 <div className="flex items-center gap-4">
                     <ButtonChevronBack onClick={() => navigate(-1)} />
                     <div className="w-16 h-16 bg-primary-shadow text-primary rounded-full flex items-center justify-center text-2xl font-bold">
-                        {data.full_name.charAt(0)}
+                        {getInitials(data.full_name)}
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-custom-black">{data.full_name}</h1>

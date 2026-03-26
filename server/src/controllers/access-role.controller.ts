@@ -28,7 +28,6 @@ export async function getUserRole(
             return response.status(404).json({ message: "User not found in local database" });
         }
 
-        // This is the ID you need for the rest of your tables!
         const internalUserId = userResult.rows[0].id;
         const dbSchoolId = userResult.rows[0].school_id;
         const email = userResult.rows[0].email;

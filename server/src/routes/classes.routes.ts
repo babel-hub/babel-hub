@@ -1,12 +1,8 @@
 import Router from "express";
-import {
-    createClass,
-    getClassInfo,
-    getAllClasses,
-    getTeacherClasses,
-    getTeacherClassDetails } from "../controllers/classes.controllers.js";
+import { createClass, getClassInfo, getAllClasses, getTeacherClasses, getTeacherClassDetails, deleteClass } from "../controllers/classes.controllers.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { strictLimiter } from "../middleware/ratelimit.middleware.js";
 
 const router = Router();
 
@@ -40,9 +36,18 @@ router.get(
 
 router.post(
     "/",
+    strictLimiter,
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     createClass
+);
+
+router.delete(
+    "/:classId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["principal", "admin", "teacher"]),
+    deleteClass
 );
 
 export default router;
