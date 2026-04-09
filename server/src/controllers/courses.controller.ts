@@ -81,7 +81,7 @@ export async function getAllCourses(
                 c.year,
                 c.teacher_id,
                 u.full_name
-            ORDER BY c.name ASC;
+            ORDER BY c.name::integer ASC;
         `;
 
         const result = await client.query(query, [schoolId]);
