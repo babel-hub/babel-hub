@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { UserRole } from "../types/types.js";
-import {supabase} from "../services/index.js";
+import jwt from "jsonwebtoken";
+import jwksClient from "jwks-rsa";
 
 export interface AuthenticatedRequest extends Request {
     user?: {
@@ -12,40 +13,94 @@ export interface AuthenticatedRequest extends Request {
     };
 }
 
+interface SupabaseJwtPayload {
+    sub: string;
+    email?: string;
+    app_metadata?: { role?: string; [key: string]: any };
+    user_metadata?: { role?: string; [key: string]: any };
+    exp: number;
+}
+
+let client: jwksClient.JwksClient | null = null;
+
+function getJwksClient() {
+    if (!client) {
+        if (!process.env.SUPABASE_URL) {
+            throw new Error("SUPABASE_URL is not defined in your .env file");
+        }
+        const jwksUri = `${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
+
+        client = jwksClient({
+            jwksUri: jwksUri,
+            cache: true,
+            cacheMaxAge: 60 * 60 * 1000,
+            rateLimit: true,
+        });
+    }
+    return client;
+}
+
+function getKey(header: jwt.JwtHeader, callback: any) {
+    if (!header.kid) {
+        callback(new Error("Missing kid in JWT header"));
+        return;
+    }
+
+    getJwksClient().getSigningKey(header.kid, (err, key) => {
+        if (err) {
+            callback(err);
+            return;
+        }
+        const signingKey = key?.getPublicKey();
+        callback(null, signingKey);
+    });
+
+}
+
 export async function authMiddleware(
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
-) {
+): Promise<void> {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "Missing or invalid authorization token" });
+        res.status(401).json({ message: "Missing or invalid authorization token" });
+        return;
     }
 
     const token = authHeader.split(" ")[1];
 
+    if (!token) {
+        res.status(401).json({ message: "Missing or invalid token" });
+        return;
+    }
+
     try {
-        const { data: { user }, error } = await supabase.auth.getUser(token);
+        const decoded = await new Promise<SupabaseJwtPayload>((resolve, reject) => {
+            jwt.verify(token, getKey, {
+                algorithms: ["ES256"],
+                audience: "authenticated",
+                issuer: `${process.env.SUPABASE_URL}/auth/v1`
+            }, (err, decoded) => {
+                if (err) reject(err);
+                else resolve(decoded as SupabaseJwtPayload);
+            });
+        });
 
-        if (error || !user) {
-            console.error("Supabase Auth Failed:", error?.message);
-            return res.status(401).json({ message: "Invalid or expired token" });
-        }
-
-
-        const realRole = user.app_metadata?.role || user.user_metadata?.role || "authenticated";
-
-        // 4. Attach to Request
         req.user = {
-            supabaseUserId: user.id,
-            email: user.email,
-            role: realRole as UserRole,
+            supabaseUserId: decoded.sub,
         };
 
         next();
-    } catch (err) {
-        console.error("Middleware Logic Error:", err);
-        return res.status(500).json({ message: "Internal Server Error" });
+    } catch (err: any) {
+        if (err.name === 'TokenExpiredError') {
+            res.status(401).json({ message: "El token expiro." });
+            return;
+        }
+
+        console.error("JWT Verification Error:", err.message);
+        res.status(401).json({ message: "Token invalido." });
+        return;
     }
 }

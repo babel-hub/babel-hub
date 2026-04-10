@@ -13,19 +13,19 @@ export function authorizedRoles (
 
         try {
             const result = await pool.query(
-                `SELECT * FROM users WHERE supabase_user_id = $1`,
-                [req.user.supabaseUserId]
-            );
+                `SELECT id, email, role, school_id FROM users WHERE supabase_user_id = $1`
+                , [req.user.supabaseUserId]);
 
 
             if (result.rows.length === 0) {
-                return res.status(403).json({ message: "User not registered" });
+                return res.status(403).json({ message: "Usuario no registrado" });
             }
 
             const user = result.rows[0];
 
             if (!allow.includes(user.role)) {
-                return res.status(403).send("Forbidden");
+                res.status(403).json({ message: "No tienes permisos para realizar esta acción" });
+                return;
             }
 
             req.user.userId = user.id;
@@ -35,11 +35,9 @@ export function authorizedRoles (
 
             next()
         } catch (error) {
-            console.error("DEBUG - Full Database Error:", error);
-            return res.status(500).json({
-                message: "Authorization error",
-                details: error instanceof Error ? error.message : "Unknown error"
-            });
+            console.error("Authorization Database Error:", error);
+            res.status(500).json({ message: "Error interno del servidor al verificar permisos" });
+            return;
         }
     }
 }

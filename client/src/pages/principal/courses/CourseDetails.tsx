@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../api/client.ts";
 import { LoadingContent } from "../../../components/Loadings.tsx";
@@ -8,6 +8,7 @@ import {formatterDate, getInitials, getStatusDotColor, reverseName} from "../../
 import toast from "react-hot-toast";
 import { HiOutlineTrash } from "react-icons/hi";
 import {ConfirmModal} from "../../../components/ConfirmModal.tsx";
+import axios from "axios";
 
 interface Student {
     student_id: string;
@@ -61,6 +62,43 @@ export default function CourseDetails() {
         teacherId: ""
     });
 
+    const fetchCourseDetails = useCallback(async (courseId: string, signal?: AbortSignal) => {
+        try {
+            setLoading(true);
+            setError("");
+            console.log(signal);
+
+            const response = await api.get(`/courses/${courseId}`, { signal });
+            setData(response.data);
+
+            await fetchAttendanceSummary(response.data, signal);
+        } catch (err: any) {
+            if (axios.isCancel(err)) {
+                console.log("Request canceled by user clicking away.");
+                return;
+            }
+
+            console.error(err);
+            setError(err.message);
+        } finally {
+            if (!signal?.aborted) {
+                setLoading(false);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const controller = new AbortController();
+
+        fetchCourseDetails(id, controller.signal);
+
+        setFormData(prev => ({ ...prev, courseId: id }));
+
+        return () => controller.abort();
+    }, [id, fetchCourseDetails]);
+
     const assignClassFields: FormField[] = [
         {
             name: "courseId",
@@ -84,25 +122,13 @@ export default function CourseDetails() {
         }
     ];
 
-    const fetchCourseDetails = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get(`/courses/${id}`);
-            setData(response.data);
-            await fetchAttendanceSummary(response.data);
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchAttendanceSummary = async (courseData: CourseData) => {
+    const fetchAttendanceSummary = async (courseData: CourseData, signal?: AbortSignal) => {
         if (!courseData?.students || courseData.students.length === 0) return;
 
         try {
             setLoadingAttendance(true);
-            const response = await api.get(`/attendance/course/${id}/summary?date=${date}`);
+            const response = await api.get(`/attendance/course/${id}/summary?date=${date}`, { signal });
+
             const fetchedRecords = response.data.records;
             const newRecordsMap: Record<string, string> = {};
 
@@ -112,19 +138,16 @@ export default function CourseDetails() {
             });
 
             setAttendanceRecords(newRecordsMap);
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'AbortError') return;
+
             console.error("Error fetching attendance summary:", error);
         } finally {
-            setLoadingAttendance(false);
+            if (!signal?.aborted) {
+                setLoadingAttendance(false);
+            }
         }
     };
-
-    useEffect(() => {
-        if (id) {
-            fetchCourseDetails();
-            setFormData(prev => ({ ...prev, courseId: id }));
-        }
-    }, [id]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -164,7 +187,7 @@ export default function CourseDetails() {
 
         try {
             await api.delete(`/classes/${classId}`);
-            await fetchCourseDetails();
+            await fetchCourseDetails(id as string);
 
             setClassToDelete(null);
             toast.success("Clase eliminada correctamente");
@@ -187,7 +210,7 @@ export default function CourseDetails() {
             await api.post("/classes", formData);
             setIsModalOpen(false);
             setFormData({ courseId: id,  subjectId: "", teacherId: "" });
-            await fetchCourseDetails();
+            await fetchCourseDetails(id as string);
 
             toast.success("Clase asignada correctamente.");
         } catch (err: any) {

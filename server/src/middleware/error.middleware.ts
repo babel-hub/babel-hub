@@ -6,7 +6,7 @@ export const errorHandler = (
     res: Response,
     next: NextFunction
 ) => {
-    // 1. Log the error for the developer (you)
+    // 1. Log the error for the developer
     console.error("[SERVER ERROR]:", err.stack || err);
 
     // 2. Determine the status code
@@ -17,7 +17,6 @@ export const errorHandler = (
     res.status(statusCode).json({
         error: {
             message: `Error middleware: ${err.message}` || "An unexpected error occurred",
-            // Only show the stack trace if we are NOT in production
             stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
         },
     });

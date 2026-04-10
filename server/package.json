@@ -19,6 +19,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.0.1",
     "pg": "^8.17.2",
     "tsx": "^4.21.0"
   },

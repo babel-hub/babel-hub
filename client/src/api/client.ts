@@ -1,7 +1,20 @@
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useAuth } from "../auth/useAuth.ts";
+import {supabase} from "../auth/supabase.ts";
 
 const DYNAMIC_URL = import.meta.env.VITE_API_URL;
+
+const handleExpiredToken = async () => {
+    try {
+        await supabase.auth.signOut();
+    } catch (error) {
+        console.error("Error signing out of Supabase:", error);
+    } finally {
+        useAuth.getState().logout();
+        window.location.href = ('/login');
+    }
+};
 
 const api = axios.create({
     baseURL: DYNAMIC_URL || "http://localhost:4000"
@@ -27,8 +40,7 @@ api.interceptors.response.use(
 
         if (error.response && error.response.status === 401) {
             if (window.location.pathname !== "/login") {
-                localStorage.removeItem("token");
-                window.location.href = "/login";
+                handleExpiredToken();
             }
         }
 
@@ -41,19 +53,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-
-//fetch
-export async function apiFetch(
-    url: string,
-    options: RequestInit = {}
-) {
-    const response = await fetch(url, {
-        credentials: 'include',
-        ...options,
-    });
-
-    if (!response.ok) throw new Error('API error');
-
-    return response.json();
-}
