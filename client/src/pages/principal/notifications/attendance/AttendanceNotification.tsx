@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {Fragment, useEffect, useMemo, useState} from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import {LoadingPage} from "../../../../components/Loadings.tsx";
@@ -65,6 +65,7 @@ export default function AttendanceCenter() {
             if (!selectedPeriod) return;
 
             const today = new Date();
+
             const initialDate = new Date(selectedPeriod.start_date);
 
             if (today < initialDate) {
@@ -179,10 +180,9 @@ export default function AttendanceCenter() {
 
                                             return (
                                                 (student.course_name === course) && (
-                                                    <>
+                                                    <Fragment key={student.student_id}>
                                                         <button
                                                             onClick={() => handleToggle(student, index)}
-                                                            key={student.student_id}
                                                             className="py-2 px-3 cursor-pointer w-full border border-gray-200 flex items-center justify-between bg-white rounded-xl"
                                                         >
                                                             <p className="text-sm md:text-base">{student.student_name}</p>
@@ -216,7 +216,7 @@ export default function AttendanceCenter() {
                                                                 />
                                                             </div>
                                                         )}
-                                                    </>
+                                                    </Fragment>
                                                 )
                                             )
                                         })

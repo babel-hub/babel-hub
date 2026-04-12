@@ -1,6 +1,7 @@
-import {useEffect, useState} from "react";
+import {memo, useCallback, useEffect, useState} from "react";
 import api from "../api/client.ts";
 import {getStatusDotColor} from "../types";
+import axios from "axios";
 
 interface Period {
     id: string;
@@ -14,36 +15,48 @@ interface AttendanceByCalendar {
     daily_status: string;
 }
 
-export default function StudentCalendarCard({ studentId, period }: { studentId: string, period: Period }) {
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+        dayNum: date.getUTCDate(),
+        month: date.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
+        weekday: date.toLocaleString('es-ES', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()
+    };
+};
+
+const StudentCalendarCardComponent = ({ studentId, period }: { studentId: string, period: Period }) => {
     const [calendarData, setCalendarData] = useState<AttendanceByCalendar[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        const fetchCalendar = async () => {
-            try {
-                setLoading(true);
-                const response = await api.get(`/attendance/summary/calendar?startDate=${period.start_date}&endDate=${period.end_date}&studentId=${studentId}`);
-                setCalendarData(response.data.attendanceByCalendar || response.data);
-            } catch (err: any) {
-                console.error(err);
-                setError("Error al cargar el calendario.");
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchCalendar = useCallback(async (signal?: AbortSignal) => {
+        setLoading(true);
 
-        fetchCalendar();
+        try {
+            const response = await api.get(
+                `/attendance/summary/calendar?startDate=${period.start_date}&endDate=${period.end_date}&studentId=${studentId}`,
+                { signal }
+            );
+
+            setCalendarData(response.data.attendanceByCalendar || response.data);
+            setLoading(false);
+        } catch (error: any) {
+            if (axios.isCancel(error) || (error as Error).name === 'AbortError') return;
+
+            console.error(error);
+            setError(error.response?.data?.message || error.message || "Error al cargar...");
+
+            setLoading(false);
+        }
     }, [studentId, period]);
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return {
-            dayNum: date.getUTCDate(),
-            month: date.toLocaleString('es-ES', { month: 'short', timeZone: 'UTC' }).toUpperCase(),
-            weekday: date.toLocaleString('es-ES', { weekday: 'short', timeZone: 'UTC' }).toUpperCase()
-        };
-    };
+    useEffect(() => {
+        const controller = new AbortController()
+
+        fetchCalendar(controller.signal);
+
+        return () => controller.abort();
+    }, [fetchCalendar]);
 
     if (loading) return <div className="p-4 text-center text-sm text-gray-500">Cargando...</div>;
     if (error) return <div className="p-4 text-center text-sm text-red-500">{error}</div>;
@@ -73,4 +86,8 @@ export default function StudentCalendarCard({ studentId, period }: { studentId: 
             </div>
         </div>
     );
-}
+};
+
+const StudentCalendarCard = memo(StudentCalendarCardComponent);
+
+export default StudentCalendarCard;

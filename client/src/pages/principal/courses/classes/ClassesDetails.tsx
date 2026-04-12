@@ -62,8 +62,9 @@ export default function ClassDetails() {
 
     useEffect(() => {
         const fetchClass = async () => {
+            setLoading(true);
+
             try {
-                setLoading(true);
                 const response = await api.get(`/classes/${id}`);
                 setData(response.data);
             } catch (error) {
@@ -414,8 +415,11 @@ export default function ClassDetails() {
                                     <tbody className="divide-y divide-gray-100">
                                     {attendanceGrid.map((student) => (
                                         <tr key={student.student_id} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="sticky left-0 bg-white p-4 border-r border-gray-100 z-10 font-medium text-custom-black text-sm truncate max-w-[200px]" title={reverseName(student.name)}>
-                                                {reverseName(student.name)}
+                                            <td className="sticky left-0 bg-white p-4 border-r border-gray-100 z-10">
+                                                <div className="truncate max-w-[200px] font-medium text-custom-black text-sm"
+                                                     title={reverseName(student.name)}>
+                                                    {reverseName(student.name)}
+                                                </div>
                                             </td>
                                             {student.records.map((record: any, idx: number) => {
 

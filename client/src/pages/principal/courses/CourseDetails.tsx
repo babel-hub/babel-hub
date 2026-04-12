@@ -63,27 +63,24 @@ export default function CourseDetails() {
     });
 
     const fetchCourseDetails = useCallback(async (courseId: string, signal?: AbortSignal) => {
+        setLoading(true);
+
         try {
-            setLoading(true);
             setError("");
-            console.log(signal);
 
             const response = await api.get(`/courses/${courseId}`, { signal });
             setData(response.data);
+            await fetchAttendanceSummary(response.data, date, signal);
 
-            await fetchAttendanceSummary(response.data, signal);
-        } catch (err: any) {
-            if (axios.isCancel(err)) {
-                console.log("Request canceled by user clicking away.");
-                return;
-            }
+            setLoading(false);
 
-            console.error(err);
-            setError(err.message);
-        } finally {
-            if (!signal?.aborted) {
-                setLoading(false);
-            }
+        } catch (error: any) {
+            if (axios.isCancel(error) || (error as Error).name === 'AbortError') return;
+
+            console.error(error);
+            setError(error.message || "Error al cargar la informacion del curso.");
+
+            setLoading(false);
         }
     }, []);
 
@@ -96,7 +93,7 @@ export default function CourseDetails() {
 
         setFormData(prev => ({ ...prev, courseId: id }));
 
-        return () => controller.abort();
+        return () => controller.abort()
     }, [id, fetchCourseDetails]);
 
     const assignClassFields: FormField[] = [
@@ -122,12 +119,17 @@ export default function CourseDetails() {
         }
     ];
 
-    const fetchAttendanceSummary = async (courseData: CourseData, signal?: AbortSignal) => {
+    const fetchAttendanceSummary = async (courseData: CourseData, currentDate: string, signal?: AbortSignal) => {
         if (!courseData?.students || courseData.students.length === 0) return;
 
+        setLoadingAttendance(true);
+
         try {
-            setLoadingAttendance(true);
-            const response = await api.get(`/attendance/course/${id}/summary?date=${date}`, { signal });
+
+            const response = await api.get(
+                `/attendance/course/${courseData.course.id}/summary?date=${currentDate}`,
+                { signal }
+            );
 
             const fetchedRecords = response.data.records;
             const newRecordsMap: Record<string, string> = {};
@@ -138,14 +140,12 @@ export default function CourseDetails() {
             });
 
             setAttendanceRecords(newRecordsMap);
+            setLoadingAttendance(false);
         } catch (error: any) {
-            if (error.name === 'AbortError') return;
+            if (axios.isCancel(error) || (error as Error).name === 'AbortError') return;
 
-            console.error("Error fetching attendance summary:", error);
-        } finally {
-            if (!signal?.aborted) {
-                setLoadingAttendance(false);
-            }
+            console.error("Error fetching attendance:", error);
+            setLoadingAttendance(false);
         }
     };
 
@@ -285,7 +285,7 @@ export default function CourseDetails() {
                     <h2 className="text-lg font-bold text-primary">
                         Estudiantes
                     </h2>
-                    <h2 className="text-xs pr-9 text-primary">
+                    <h2 className="text-xs pr-4 text-primary">
                         Asistencia
                     </h2>
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect, useCallback} from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../../api/client.ts";
 import { LoadingContent } from "../../../components/Loadings.tsx";
@@ -7,6 +7,7 @@ import {HiOutlineCalendar, HiOutlineClipboardList, HiOutlineDocumentText, HiOutl
 import {formatDate, formatterDate, getInitials, reverseName} from "../../../types";
 import {PrimaryButton} from "../../../components/Buttons.tsx";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 interface Student {
     student_id: string;
@@ -46,46 +47,54 @@ export default function TeacherCourseDetails() {
     const [activeTab, setActiveTab] = useState<"students" | "register attendance" | "see attendance" | "assignments" | string>( menuAttendance || "students" );
 
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [loadingAttendance, setLoadingAttendance] = useState(false);
     const [loadingAttendancePeriod, setLoadingAttendancePeriod] = useState(false);
     const [savingAttendance, setSavingAttendance] = useState(false);
-    const [error, setError] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchClass= async () => {
-            try {
-                const classInfo = await api.get(`/classes/teacher/class/${classId}`)
-                setClassDetails(classInfo.data.teacherClass || classInfo.data);
-            } catch (error) {
-                setError("Error fetching los detalles de la clase");
-            } finally {
-                setLoading(false);
+    const fetchClass = useCallback(async (id: string, signal?: AbortSignal) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const [classInfo, periodsRes] = await Promise.all([
+                api.get(`/classes/teacher/class/${id}`, { signal }),
+                api.get('/periods', { signal })
+            ]);
+
+            const fetchedClass = classInfo.data.teacherClass || classInfo.data;
+            const fetchedPeriods = periodsRes.data.periods || periodsRes.data;
+
+            setClassDetails(fetchedClass);
+            setPeriods(fetchedPeriods);
+
+            if (Array.isArray(fetchedPeriods) && fetchedPeriods.length > 0) {
+                setSelectedPeriod(fetchedPeriods[0]);
             }
+
+            setLoading(false);
+        } catch (error) {
+            if (axios.isCancel(error) || (error as Error).name === 'AbortError') {
+                return;
+            }
+
+            console.error(error);
+            setError("Error fetching los detalles de la clase");
+            setLoading(false);
         }
+    }, []);
 
-        if (classId) fetchClass();
-    }, [classId]);
 
     useEffect(() => {
-        const fetchPeriods = async () => {
-            try {
-                const response = await api.get('/periods');
-                const fetchedPeriods = response.data.periods || response.data;
-                setPeriods(fetchedPeriods);
+        if (!classId) return;
 
-                if (fetchedPeriods.length > 0) {
-                    setSelectedPeriod(fetchedPeriods[0]);
-                }
-            } catch (err: any) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const controller = new AbortController();
 
-        fetchPeriods();
-    }, []);
+        fetchClass(classId, controller.signal);
+
+        return () => controller.abort();
+    }, [classId, fetchClass]);
 
     useEffect(() => {
         const fetchAttendance = async () => {

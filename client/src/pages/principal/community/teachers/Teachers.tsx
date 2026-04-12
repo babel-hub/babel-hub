@@ -1,6 +1,6 @@
 import api from "../../../../api/client.ts";
 import toast from 'react-hot-toast';
-import { useEffect, useState } from "react";
+import {memo, useCallback, useEffect, useState} from "react";
 import {formateDate, getInitials} from "../../../../types";
 import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
@@ -17,12 +17,58 @@ interface Teacher {
     email: string;
     total_classes: number;
 }
+interface TeacherRowProps {
+    teacher: Teacher;
+    onEdit: (teacher: Teacher) => void;
+    onDelete: (teacher: Teacher) => void;
+    onNavigate: (id: string) => void;
+}
 
 const formRegExp = [
     { label: "name", regExp: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-']{2,50}$/ },
     { label: "email", regExp: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ },
     { label: "password", regExp: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/ },
 ];
+
+const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate }: TeacherRowProps) {
+    return (
+        <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+            <td className="p-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary-darker font-bold text-sm">
+                        {getInitials(teacher.full_name)}
+                    </div>
+                    <button
+                        onClick={() => onNavigate(`${teacher.id}`)}
+                        className="overflow-hidden text-left cursor-pointer"
+                    >
+                        <p className="font-bold capitalize text-custom-black truncate" title={teacher.full_name}>
+                            {teacher.full_name}
+                        </p>
+                        <p className="text-gray-500 text-xs truncate" title={teacher.email}>
+                            {teacher.email}
+                        </p>
+                    </button>
+                </div>
+            </td>
+
+            <td className="p-4">
+                <span className="bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full text-xs border border-indigo-100">
+                    {teacher.total_classes || 0} Clases
+                </span>
+            </td>
+
+            <td className="p-4 text-gray-500 text-sm font-medium">
+                {formateDate(teacher.created_at)}
+            </td>
+
+            <td className="md:p-4 pr-3 text-right space-x-3">
+                <EditButton onClick={() => onEdit(teacher)} />
+                <DeleteButton onClick={() => onDelete(teacher)} />
+            </td>
+        </tr>
+    );
+});
 
 const ListTeacher = () => {
     const [loading, setLoading] = useState(true);
@@ -177,6 +223,18 @@ const ListTeacher = () => {
         teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleEdit = useCallback((teacher: Teacher) => {
+        openEditModal(teacher);
+    }, []);
+
+    const handleDelete = useCallback((teacher: Teacher) => {
+        setTeacherToDelete(teacher);
+    }, []);
+
+    const handleNavigate = useCallback((id: string) => {
+        navigate(`${id}`);
+    }, [navigate]);
+
     if (loading) return <LoadingContent title="Cargando profesores..." />;
     if (error) return <p className="text-red-500 font-semibold p-6 bg-red-50 rounded-xl">{error}</p>;
 
@@ -223,41 +281,13 @@ const ListTeacher = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                     {filteredTeachers.map((teacher) => (
-                        <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary-darker font-bold text-sm">
-                                        {getInitials(teacher.full_name)}
-                                    </div>
-                                    <button
-                                        onClick={() => navigate(`${teacher.id}`)}
-                                        className="overflow-hidden text-left cursor-pointer"
-                                    >
-                                        <p className="font-bold capitalize text-custom-black truncate" title={teacher.full_name}>
-                                            {teacher.full_name}
-                                        </p>
-                                        <p className="text-gray-500 text-xs truncate" title={teacher.email}>
-                                            {teacher.email}
-                                        </p>
-                                    </button>
-                                </div>
-                            </td>
-
-                            <td className="p-4">
-                                    <span className="bg-indigo-50 text-indigo-700 font-semibold px-3 py-1 rounded-full text-xs border border-indigo-100">
-                                        {teacher.total_classes || 0} Clases
-                                    </span>
-                            </td>
-
-                            <td className="p-4 text-gray-500 text-sm font-medium">
-                                {formateDate(teacher.created_at)}
-                            </td>
-
-                            <td className="md:p-4 pr-3 text-right space-x-3">
-                                <EditButton onClick={() => openEditModal(teacher)} />
-                                <DeleteButton onClick={() => setTeacherToDelete(teacher)}/>
-                            </td>
-                        </tr>
+                        <TeacherRow
+                            key={teacher.id}
+                            teacher={teacher}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onNavigate={handleNavigate}
+                        />
                     ))}
                     </tbody>
                 </table>

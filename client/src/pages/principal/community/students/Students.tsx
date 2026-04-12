@@ -1,5 +1,5 @@
 import api from "../../../../api/client.ts";
-import React, { useEffect, useState } from "react";
+import React, {memo, useCallback, useEffect, useState} from "react";
 import {formateDate, getInitials, reverseName} from "../../../../types";
 import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
@@ -19,11 +19,68 @@ interface StudentProps {
     email: string;
 }
 
+interface StudentRowProps {
+    student: StudentProps;
+    onEdit: (student: StudentProps) => void;
+    onDelete: (id: string) => void;
+    onNavigate: (id: string) => void;
+}
+
 const formRegExp = [
     { label: "name", regExp: /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-']{2,50}$/ },
     { label: "email", regExp: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ },
     { label: "password", regExp: /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{7,}$/ },
 ];
+
+const StudentsRows = memo(function ({ student, onEdit, onDelete, onNavigate }: StudentRowProps){
+    return (
+        <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
+            <td className="p-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary font-bold text-sm">
+                        {getInitials(student.full_name)}
+                    </div>
+                    <button
+                        onClick={() => onNavigate(`${student.student_id}`)}
+                        className="overflow-hidden text-left cursor-pointer"
+                    >
+                        <p className="font-bold capitalize text-custom-black truncate" title={student.full_name}>
+                            {reverseName(student.full_name)}
+                        </p>
+                        <p className="text-gray-500 text-xs truncate" title={student.email}>
+                            {student.email}
+                        </p>
+                    </button>
+                </div>
+            </td>
+
+            <td className="p-4">
+                {student.enrollment_code ? (
+                    <span className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded text-xs">
+                        {student.enrollment_code}
+                    </span>
+                ) : (
+                    <span className="bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded text-xs">
+                        Pendiente
+                    </span>
+                )}
+            </td>
+
+            <td className="p-4 font-medium text-gray-700">
+                {student.course_name}
+            </td>
+
+            <td className="p-4 text-gray-500 text-sm">
+                {formateDate(student.created_at)}
+            </td>
+
+            <td className="md:p-4 pr-3 text-right space-x-3">
+                <EditButton onClick={() => onEdit(student)} />
+                <DeleteButton onClick={() => onDelete(student.student_id)} />
+            </td>
+        </tr>
+    );
+});
 
 const ListStudents = () => {
     const [loading, setLoading] = useState(false);
@@ -103,7 +160,7 @@ const ListStudents = () => {
             await fetchStudents();
 
             setStudentToDelete(null);
-            toast.success("Profesor eliminado correctamente");
+            toast.success("Estudiante eliminado correctamente");
         } catch (err: any) {
             const msg = err.response?.data?.message || "Error al eliminar el estudiante."
             console.error(msg)
@@ -221,7 +278,19 @@ const ListStudents = () => {
         (student.enrollment_code && student.enrollment_code.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    if(loading) return <LoadingContent title="Cargando estudiantes..."/>;
+    const handleEdit = useCallback((student: StudentProps) => {
+        openEditModal(student);
+    }, []);
+
+    const handleDelete = useCallback((id: string) => {
+        handleDeleteStudent(id);
+    }, []);
+
+    const handleNavigate = useCallback((id: string) => {
+        navigate(`${id}`);
+    }, [navigate]);
+
+    if (loading) return <LoadingContent title="Cargando estudiantes..."/>;
     if (error) return <p className="text-red-500 font-semibold p-6">{error || "Error al cargar datos"}</p>;
 
     return (
@@ -268,51 +337,13 @@ const ListStudents = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                     {filteredStudents.map((student) => (
-                        <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
-                            <td className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary font-bold text-sm">
-                                        {getInitials(student.full_name)}
-                                    </div>
-                                    <button
-                                        onClick={() => navigate(`${student.student_id}`)}
-                                        className="overflow-hidden text-left cursor-pointer"
-                                    >
-                                        <p className="font-bold capitalize text-custom-black truncate" title={student.full_name}>
-                                            {reverseName(student.full_name)}
-                                        </p>
-                                        <p className="text-gray-500 text-xs truncate" title={student.email}>
-                                            {student.email}
-                                        </p>
-                                    </button>
-                                </div>
-                            </td>
-
-                            <td className="p-4">
-                                {student.enrollment_code ? (
-                                    <span className="bg-green-100 text-green-700 font-semibold px-2 py-1 rounded text-xs">
-                                            {student.enrollment_code}
-                                        </span>
-                                ) : (
-                                    <span className="bg-yellow-100 text-yellow-700 font-semibold px-2 py-1 rounded text-xs">
-                                            Pendiente
-                                    </span>
-                                )}
-                            </td>
-
-                            <td className="p-4 font-medium text-gray-700">
-                                {student.course_name}
-                            </td>
-
-                            <td className="p-4 text-gray-500 text-sm">
-                                {formateDate(student.created_at)}
-                            </td>
-
-                            <td className="md:p-4 pr-3 text-right space-x-3">
-                                <EditButton onClick={() => openEditModal(student)} />
-                                <DeleteButton onClick={() => setStudentToDelete(student)} />
-                            </td>
-                        </tr>
+                        <StudentsRows
+                            key={student.student_id}
+                            student={student}
+                            onDelete={handleDelete}
+                            onNavigate={handleNavigate}
+                            onEdit={handleEdit}
+                        />
                     ))}
                     </tbody>
                 </table>

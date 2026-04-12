@@ -10,10 +10,10 @@ export function formateDate(date: string) {
 
 export const getStatusDotColor = (status: string) => {
     switch(status) {
-        case 'absent': return 'bg-red-500';
-        case 'late': return 'bg-yellow-400';
-        case 'present': return 'bg-green-500';
-        default: return 'bg-gray-300';
+        case 'absent': return 'bg-red-500 border-red-500';
+        case 'late': return 'bg-yellow-400 border-yellow-400';
+        case 'present': return 'bg-green-500 border-green-500';
+        default: return 'bg-gray-300 border-gray-300';
     }
 };
 
