@@ -294,6 +294,64 @@ export async function getTeacherClassDetails(
     }
 }
 
+export async function updateClass(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const { classId } = request.params;
+    const { newTeacher } = request.body;
+    const user = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const classData = await client.query(`
+            SELECT cl.id, cl.teacher_id
+            FROM classes cl
+            JOIN courses c ON cl.course_id = c.id
+            WHERE cl.id = $1 AND c.school_id = $2
+        `, [classId, user.schoolId]);
+
+        if (classData.rowCount === 0) {
+            await client.query("ROLLBACK");
+            return response.status(404).json({ message: "Clase no encontrada o sin permisos." });
+        }
+
+        const oldTeacherId = classData.rows[0].teacher_id;
+
+        await client.query(`
+            UPDATE classes
+            SET teacher_id = $1
+            WHERE id = $2
+        `, [newTeacher, classId]);
+
+        await createAuditLog(client, {
+            actorUserId: user.userId!,
+            actorRole: user.role!,
+            action: "UPDATE_CLASS_TEACHER",
+            schoolId: user.schoolId!,
+            metadata: {
+                classId: classId,
+                oldTeacherId: oldTeacherId,
+                newTeacherId: newTeacher
+            }
+        });
+
+        await client.query("COMMIT");
+
+        response.status(200).json({ message: "Class updated successfully" });
+    } catch (dbError) {
+        await client.query("ROLLBACK");
+
+        console.error("Error updating class:", dbError);
+        response.status(500).json({ message: "Internal server error" });
+    } finally {
+        client.release();
+    }
+}
+
 export async function deleteClass(
     request: AuthenticatedRequest,
     response: Response

@@ -6,6 +6,7 @@ import { PrimaryButton } from "../../../../components/Buttons.tsx";
 import { LoadingContent } from "../../../../components/Loadings.tsx";
 import {formatDate, formatterDate, getInitials, reverseName} from "../../../../types";
 import toast from "react-hot-toast";
+import {HiOutlineCalendar, HiOutlineClipboardList, HiOutlineDocumentText, HiOutlineUsers} from "react-icons/hi";
 
 interface Assignment {
     id: string;
@@ -211,8 +212,8 @@ export default function ClassDetails() {
 
     return (
         <div className="flex flex-col h-full w-full bg-gray-50">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-6 flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 flex flex-col gap-4">
+                <div className="flex flex-col p-5 md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex gap-4 items-center">
                         <ButtonChevronBack onClick={() => navigate(-1)} />
                         <div>
@@ -235,7 +236,7 @@ export default function ClassDetails() {
                     )}
                     {activeTab === 'see attendance' && (
                         <select
-                            className="bg-gray-50 text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                            className="bg-gray-50 self-end text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                             value={selectedPeriod?.id || ""}
                             onChange={(e) => {
                                 const period = periods.find(p => p.id === e.target.value);
@@ -250,30 +251,30 @@ export default function ClassDetails() {
                     )}
                 </div>
 
-                <div className="flex gap-6 mt-2 border-b border-gray-100">
+                <div className="flex overflow-x-auto bg-white w-full no-scrollbar">
                     <button
                         onClick={() => setActiveTab('students')}
-                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'students' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
-                        Estudiantes
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('assignments')}
-                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Asignaciones
+                        <HiOutlineUsers className="text-lg" /> Estudiantes
                     </button>
                     <button
                         onClick={() => setActiveTab('register attendance')}
-                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'register attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
-                        Registrar Asistencia
+                        <HiOutlineClipboardList className="text-lg" /> Tomar Asistencia
                     </button>
                     <button
                         onClick={() => setActiveTab('see attendance')}
-                        className={`pb-3 cursor-pointer font-medium text-sm transition-colors border-b-2 ${activeTab === 'see attendance' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
-                        Ver Asistencia
+                        <HiOutlineCalendar className="text-lg" /> Ver Asistencia
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('assignments')}
+                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                    >
+                        <HiOutlineDocumentText className="text-lg" /> Asignaciones
                     </button>
                 </div>
             </div>

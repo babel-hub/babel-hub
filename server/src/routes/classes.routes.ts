@@ -1,5 +1,5 @@
 import Router from "express";
-import { createClass, getClassInfo, getAllClasses, getTeacherClasses, getTeacherClassDetails, deleteClass } from "../controllers/classes.controllers.js";
+import { createClass, getClassInfo, getAllClasses, getTeacherClasses, getTeacherClassDetails, deleteClass, updateClass } from "../controllers/classes.controllers.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { strictLimiter } from "../middleware/ratelimit.middleware.js";
@@ -41,6 +41,14 @@ router.post(
     authorizedRoles(["principal", "admin"]),
     createClass
 );
+
+router.put(
+    "/:classId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["principal", "admin"]),
+    updateClass
+)
 
 router.delete(
     "/:classId",

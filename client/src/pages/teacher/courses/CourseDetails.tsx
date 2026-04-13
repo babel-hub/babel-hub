@@ -261,7 +261,7 @@ export default function TeacherCourseDetails() {
                         </select>
                     )}
                 </div>
-                <div className="flex overflow-x-auto bg-white w-full rounded-xl p-1 no-scrollbar">
+                <div className="flex overflow-x-auto bg-white w-full p-1 no-scrollbar">
                     <button
                         onClick={() => setActiveTab('students')}
                         className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}

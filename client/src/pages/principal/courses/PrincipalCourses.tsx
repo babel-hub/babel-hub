@@ -327,7 +327,7 @@ const PrincipalCourses = () => {
                     ))}
                 </div>
             </div>
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-100 flex-1 overflow-y-auto ${!activeCourseId ? 'hidden lg:flex items-center justify-center' : 'flex flex-col'}`}>
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-100 flex-1 no-scrollbar overflow-y-auto ${!activeCourseId ? 'hidden lg:flex items-center justify-center' : 'flex flex-col'}`}>
                 {activeCourseId ? (
                     <Outlet key={activeCourseId} />
                 ) : (

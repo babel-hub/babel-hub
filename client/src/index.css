@@ -11,6 +11,32 @@
     scrollbar-width: none;
 }
 
+@utility styled-scrollbar {
+    &::-webkit-scrollbar {
+        width: 30px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #ffffff; /* Color of the track */
+        border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #e0e7ff; /* Color of the scroll handle */
+        border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #a391fa; /* Color on hover */
+    }
+
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #a391fa transparent;
+}
+
+
 @theme {
     --color-page: #f9fafb;
     --color-white: #fff;
