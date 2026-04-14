@@ -2,7 +2,7 @@ import { useNavigate, useParams, Outlet } from "react-router-dom";
 import React, { useEffect, useState, useRef } from "react";
 import api from "../../../api/client.ts";
 import { PrimaryButton } from "../../../components/Buttons.tsx";
-import { FaSchool } from "react-icons/fa6";
+import { IoSchool } from "react-icons/io5";
 import { LoadingPage } from "../../../components/Loadings.tsx";
 import { HiDotsVertical } from "react-icons/hi";
 import DynamicModalForm, { type FormField } from "../../../components/ModalForm.tsx";
@@ -231,10 +231,10 @@ const PrincipalCourses = () => {
     if (loading && courses.length === 0) return <LoadingPage title="Cargando cursos..." />
 
     return (
-        <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-3rem)] ">
-            <div className={`bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/4`}>
-                <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between gap-5 items-start md:items-center rounded-t-xl bg-white z-10">
-                    <h2 className="text-xl font-bold text-custom-black">Cursos</h2>
+        <div className="flex flex-col lg:flex-row gap-5 h-[calc(100dvh-6rem)] md:h-[calc(100dvh-2.5rem)] ">
+            <div className={`bg-white rounded-xl shadow-sm border border-gray-100 h-full flex flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/4`}>
+                <div className="p-5 border-b border-gray-100 grid grid-cols-3 justify-between gap-5 items-start md:items-center rounded-t-xl bg-white z-10">
+                    <h2 className="text-xl font-bold col-span-2 text-custom-black w-full">Cursos</h2>
                     <PrimaryButton
                         full={false}
                         onClick={() => {
@@ -247,13 +247,13 @@ const PrincipalCourses = () => {
                     />
                 </div>
 
-                {error && <p className="text-red-500 m-4 text-sm">{error}</p>}
+                {error && <p className="text-red-error m-4 w-full bg-red-shadow rounded-md text-center p-3 text-sm">{error}</p>}
 
-                <div className="p-3 space-y-2 flex-1 overflow-y-auto overflow-x-hidden">
+                <div className="p-3 space-y-2 flex-1 overflow-y-auto styled-scrollbar overflow-x-hidden">
                     {courses.map((course, index) => (
                         <div
                             key={course.id}
-                            className={`w-full group p-4 relative rounded-xl transition-colors flex items-center justify-between gap-3 border ${
+                            className={`w-full group px-2 xl:px-3 py-4 2xl:p-4 relative rounded-xl transition-colors flex items-center justify-between gap-2 2xl:gap-3 border ${
                                 activeCourseId === course.id
                                     ? 'bg-primary-shadow border-primary-shadow'
                                     : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-100'
@@ -265,9 +265,9 @@ const PrincipalCourses = () => {
                                 <div className={`w-10 h-10 shrink-0 rounded-full flex uppercase items-center justify-center font-bold text-sm ${
                                     activeCourseId === course.id ? 'bg-primary text-white' : 'bg-primary-shadow text-primary'
                                 }`}>
-                                    {course.course_name ? course.course_name.replace("-", "") : "CC"}
+                                    {course.course_name ? course.course_name.replace("-", "") : "UNK"}
                                 </div>
-                                <div className="max-w-36 overflow-hidden">
+                                <div className="max-w-full lg:max-w-28 2xl:max-w-36 overflow-hidden">
                                     <h3 className={`font-bold text-base truncate ${activeCourseId === course.id ? 'text-primary-900' : 'text-custom-black'}`}>
                                         Curso <span className="uppercase">{course.course_name}</span>
                                     </h3>
@@ -281,7 +281,7 @@ const PrincipalCourses = () => {
                                     e.stopPropagation();
                                     handleShowOptions(index, e);
                                 }}
-                                className="hover:bg-gray-100 cursor-pointer p-1.5 text-custom-black text-sm opacity-0 group-hover:opacity-100 transition-opacity md:text-base rounded-full ">
+                                className="hover:bg-gray-100 cursor-pointer p-1.5 text-custom-black text-sm xl:opacity-0 xl:group-hover:opacity-100 transition-opacity md:text-base rounded-full ">
                                 <HiDotsVertical />
                             </button>
                             {indexOption === index && (
@@ -332,9 +332,9 @@ const PrincipalCourses = () => {
                     <Outlet key={activeCourseId} />
                 ) : (
                     <div className="flex items-center justify-center flex-col text-gray-400 p-10">
-                        <FaSchool className="text-4xl" />
+                        <IoSchool className="text-4xl text-primary" />
                         <h3 className="text-xl font-medium text-gray-500">Selecciona un curso</h3>
-                        <p className="text-sm mt-2">Haz clic en un curso de la lista para ver sus detalles, estudiantes y clases asignadas.</p>
+                        <p className="text-sm text-center mt-2">Haz clic en un curso de la lista para ver sus detalles, estudiantes y clases asignadas.</p>
                     </div>
                 )}
             </div>

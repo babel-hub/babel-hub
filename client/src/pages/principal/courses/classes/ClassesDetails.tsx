@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import {memo, useCallback, useEffect, useState} from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from "../../../../api/client.ts";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
@@ -39,6 +39,50 @@ interface ClassDetailsData {
     students: Student[];
     assignments: Assignment[];
 }
+
+const StudentAttendanceRow = memo(function StudentAttendanceRow({
+    student,
+    status,
+    onUpdate
+                                            }:{
+    student: Student;
+    status: string;
+    onUpdate: (id: string, status: 'present' | 'absent' | 'late') => void
+}) {
+    return (
+        <li key={student.student_id} className="p-4 flex flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs md:text-sm font-bold shrink-0">
+                    {getInitials(student.full_name)}
+                </div>
+                <span className="font-medium text-sm md:text-base text-custom-black leading-tight">
+                {reverseName(student.full_name)}
+            </span>
+            </div>
+
+            <div className="flex p-1 shrink-0">
+                <button
+                    onClick={() => onUpdate(student.student_id, 'present')}
+                    className={`px-2 py-1.5 rounded-md transition-all`}
+                >
+                    <span className={`border-2 w-4 h-4 rounded-full block ${status === 'present' ? 'bg-green-600 border-green-600' : 'bg-transparent border-gray-600'}`}></span>
+                </button>
+                <button
+                    onClick={() => onUpdate(student.student_id, 'late')}
+                    className={`px-2 py-1.5 rounded-md transition-all}`}
+                >
+                    <span className={`border-2 w-4 h-4 rounded-full block ${status === 'late' ? 'bg-yellow-400 border-yellow-400' : 'bg-transparent border-gray-600'}`}></span>
+                </button>
+                <button
+                    onClick={() => onUpdate(student.student_id, 'absent')}
+                    className={`px-2 py-1.5 rounded-md transition-all'}`}
+                >
+                    <span className={`border-2 w-4 h-4 rounded-full block ${status === 'absent' ? 'bg-red-600 border-red-600' : 'bg-transparent border-gray-600'}`}></span>
+                </button>
+            </div>
+        </li>
+    )
+});
 
 export default function ClassDetails() {
     const { id, courseId } = useParams<{ id: string, courseId: string }>();
@@ -203,9 +247,9 @@ export default function ClassDetails() {
         }
     };
 
-    const updateStudentStatus = (studentId: string, status: 'present' | 'absent' | 'late') => {
-        setAttendanceRecords(prev => ({ ...prev, [studentId]: status }));
-    };
+    const updateStudentStatus = useCallback((id: string, status: 'present' | 'absent' | 'late') => {
+        setAttendanceRecords(prev => ({...prev, [id]: status }));
+    }, []);
 
     if (loading) return <LoadingContent title="Cargando clase..."/>;
     if (!data) return <div className="p-6 text-gray-500 text-center flex-1">Clase no encontrada.</div>;
@@ -217,11 +261,11 @@ export default function ClassDetails() {
                     <div className="flex gap-4 items-center">
                         <ButtonChevronBack onClick={() => navigate(-1)} />
                         <div>
-                            <h1 className="text-xl md:text-2xl font-bold text-custom-black">
+                            <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">
                                 {data.details.subject_name}
                                 <span className="text-gray-400 font-normal ml-2">| {data.details.course_name}</span>
                             </h1>
-                            <p className="text-gray-500 mt-1 text-sm">
+                            <p className="text-gray-500 mt-1 text-xs md:text-sm">
                                 Profesor: <span className="font-medium text-gray-700">{data.details.teacher_name}</span>
                             </p>
                         </div>
@@ -254,32 +298,32 @@ export default function ClassDetails() {
                 <div className="flex overflow-x-auto bg-white w-full no-scrollbar">
                     <button
                         onClick={() => setActiveTab('students')}
-                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineUsers className="text-lg" /> Estudiantes
                     </button>
                     <button
                         onClick={() => setActiveTab('register attendance')}
-                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineClipboardList className="text-lg" /> Tomar Asistencia
                     </button>
                     <button
                         onClick={() => setActiveTab('see attendance')}
-                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineCalendar className="text-lg" /> Ver Asistencia
                     </button>
                     <button
                         onClick={() => setActiveTab('assignments')}
-                        className={`flex-1 text-xs md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineDocumentText className="text-lg" /> Asignaciones
                     </button>
                 </div>
             </div>
 
-            <div className="p-6 flex-1 overflow-y-auto">
+            <div className="p-3 lg:p-4 xl:p-5 flex-1 styled-scrollbar overflow-y-auto">
                 {activeTab === 'assignments' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {data.assignments.map((assignment) => (
@@ -309,7 +353,7 @@ export default function ClassDetails() {
                 )}
 
                 {activeTab === 'students' && (
-                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden max-w-3xl mx-auto">
+                    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                         <ul className="divide-y divide-gray-50">
                             {data.students.map((student) => (
                                 <li key={student.student_id} className="py-3 px-5 flex items-center gap-4 hover:bg-gray-50">
@@ -317,7 +361,7 @@ export default function ClassDetails() {
                                         {getInitials(student.full_name)}
                                     </div>
                                     <div>
-                                        <span className="block font-medium text-custom-black">{reverseName(student.full_name)}</span>
+                                        <span className="block text-sm md:text-base font-medium text-custom-black">{reverseName(student.full_name)}</span>
                                         <span className="block text-sm text-gray-500">{student.email}</span>
                                     </div>
                                 </li>
@@ -347,35 +391,12 @@ export default function ClassDetails() {
                                         const status = attendanceRecords[student.student_id] || 'present';
 
                                         return (
-                                            <li key={student.student_id} className="p-4 flex flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-bold shrink-0">
-                                                        {getInitials(student.full_name)}
-                                                    </div>
-                                                    <span className="font-medium text-custom-black">{reverseName(student.full_name)}</span>
-                                                </div>
-
-                                                <div className="flex p-1 shrink-0">
-                                                    <button
-                                                        onClick={() => updateStudentStatus(student.student_id, 'present')}
-                                                        className={`px-2 py-1.5 rounded-md transition-all`}
-                                                    >
-                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'present' ? 'bg-green-600 border-green-600' : 'bg-transparent border-gray-600'}`}></span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => updateStudentStatus(student.student_id, 'late')}
-                                                        className={`px-2 py-1.5 rounded-md transition-all}`}
-                                                    >
-                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'late' ? 'bg-yellow-400 border-yellow-400' : 'bg-transparent border-gray-600'}`}></span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => updateStudentStatus(student.student_id, 'absent')}
-                                                        className={`px-2 py-1.5 rounded-md transition-all'}`}
-                                                    >
-                                                        <span className={`border-2 w-4 h-4 rounded-full block ${status === 'absent' ? 'bg-red-600 border-red-600' : 'bg-transparent border-gray-600'}`}></span>
-                                                    </button>
-                                                </div>
-                                            </li>
+                                            <StudentAttendanceRow
+                                                key={student.student_id}
+                                                student={student}
+                                                status={status}
+                                                onUpdate={updateStudentStatus}
+                                            />
                                         );
                                     })}
                                 </ul>

@@ -40,7 +40,7 @@ const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate }: Tea
                     </div>
                     <button
                         onClick={() => onNavigate(`${teacher.id}`)}
-                        className="overflow-hidden text-left cursor-pointer"
+                        className="overflow-hidden text-sm xl:text-base text-left cursor-pointer"
                     >
                         <p className="font-bold capitalize text-custom-black truncate" title={teacher.full_name}>
                             {teacher.full_name}
@@ -58,11 +58,11 @@ const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate }: Tea
                 </span>
             </td>
 
-            <td className="p-4 text-gray-500 text-sm font-medium">
+            <td className="p-4 text-gray-500 text-xs xl:text-sm font-medium">
                 {formateDate(teacher.created_at)}
             </td>
 
-            <td className="md:p-4 pr-3 text-right space-x-3">
+            <td className="md:p-4 pr-3 text-right space-x-1 xl:space-x-3">
                 <EditButton onClick={() => onEdit(teacher)} />
                 <DeleteButton onClick={() => onDelete(teacher)} />
             </td>
@@ -244,7 +244,7 @@ const ListTeacher = () => {
                 <div>
                     <div className="flex gap-2 items-center">
                         <ButtonChevronBack onClick={() => navigate(-1)} />
-                        <h2 className="text-2xl font-bold text-custom-black">Profesores</h2>
+                        <h2 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">Profesores</h2>
                     </div>
                     <p className="text-gray-500 text-sm mt-1">
                         {teachers.length} profesores registrados en el sistema.

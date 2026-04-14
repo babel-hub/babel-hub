@@ -19,12 +19,12 @@
 
     &::-webkit-scrollbar-track {
         background: #ffffff; /* Color of the track */
-        border-radius: 10px;
+        border-radius: 20px;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #e0e7ff; /* Color of the scroll handle */
-        border-radius: 10px;
+        background: #e0e7ff;
+        border-radius: 20px;
     }
 
     &::-webkit-scrollbar-thumb:hover {
@@ -33,7 +33,7 @@
 
     /* Firefox */
     scrollbar-width: thin;
-    scrollbar-color: #a391fa transparent;
+    scrollbar-color: #ffffff transparent;
 }
 
 

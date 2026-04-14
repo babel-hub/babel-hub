@@ -4,6 +4,8 @@ import LogOutButton from "./LogOutButton.tsx";
 import type { UserProfile } from "../auth/useAuth.ts";
 import ErrorBoundary from "./ErrorBoundary.tsx";
 import { HiMenu, HiX } from "react-icons/hi";
+import logo from "../../src/assets/images/logo.png"
+import { IoSettingsOutline } from "react-icons/io5";
 
 interface GridItem {
     id: string | number;
@@ -41,9 +43,20 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
         <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-gray-50">
 
             <div className="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-                <h1 className="text-custom-black text-lg font-bold capitalize">
-                    {displayTitle}
-                </h1>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => navigate(`/${user?.role}/dashboard`)}
+                    >
+                        <img
+                            className="w-7 h-7 object-contain"
+                            src={logo}
+                            alt="Logo"
+                        />
+                    </button>
+                    <h1 className="text-custom-black text-lg font-bold capitalize">
+                        {displayTitle}
+                    </h1>
+                </div>
                 <button
                     onClick={() => setIsSidebarOpen(true)}
                     className="text-2xl text-custom-black hover:text-primary transition-colors focus:outline-none"
@@ -74,10 +87,23 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                 </button>
 
                 <div className="mt-6 md:mt-0">
-                    <div className="hidden md:flex items-center mb-3 justify-center">
+                    <div className="hidden md:flex items-center mb-3 justify-between">
+                        <button
+                            className="cursor-pointer"
+                            onClick={() => navigate(`/${user?.role}/dashboard`)}
+                        >
+                            <img
+                                className="w-7 h-7 object-contain"
+                                src={logo}
+                                alt="Logo"
+                            />
+                        </button>
                         <h1 className="text-custom-black text-base sm:text-lg font-bold capitalize">
                             {displayTitle}
                         </h1>
+                        <div className="text-xl text-gray-500 px-1 cursor-not-allowed">
+                            <IoSettingsOutline />
+                        </div>
                     </div>
 
                     <div className="flex flex-col items-center mb-5">

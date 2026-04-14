@@ -4,6 +4,7 @@ import api from "../../../../api/client.ts";
 import {LoadingPage} from "../../../../components/Loadings.tsx";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import StudentCalendarCard from "../../../../components/StudentCalendarCard.tsx";
+import {getInitials} from "../../../../types";
 
 interface Period {
     id: string;
@@ -115,19 +116,19 @@ export default function AttendanceCenter() {
     return (
         <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                <div className="flex gap-3 items-center">
+                <div className="flex grow gap-3 items-center">
                     <ButtonChevronBack onClick={() => navigate(-1)}/>
                     <div>
-                        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-custom-black">Asistencias</h1>
+                        <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">Asistencias</h1>
                         <p className="text-gray-400 mt-1 text-sm">Monitorea las inasistencias y llegadas tarde</p>
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                    <div className="flex flex-col">
+                <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-4">
+                    <div className="flex w-full lg:w-auto flex-col">
                         <label className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">filtrar Periodo</label>
                         <select
-                            className="bg-gray-50 text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                            className="bg-gray-50 w-full text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                             value={selectedPeriod?.id || ""}
                             onChange={(e) => {
                                 const period = periods.find(p => p.id === e.target.value);
@@ -141,7 +142,7 @@ export default function AttendanceCenter() {
                         </select>
                     </div>
 
-                    <div className="flex flex-col">
+                    <div className="flex w-full lg:w-auto flex-col">
                         <label className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Filtrar Curso</label>
                         <select
                             className="bg-gray-50 text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
@@ -169,64 +170,79 @@ export default function AttendanceCenter() {
                 {
                     filteredData.length > 0 ? (
                         displayedCourses.map((course) => (
-                            <div key={course}>
-                                <div className="flex flex-col gap-2">
-                                    <span className="font-semibold text-sm md:text-base px-2 py-1 rounded-lg bg-gray-100 self-start
-                                     text-gray-600">{course}</span>
-                                    {
-                                        filteredData.map((student, index) => {
-                                            const absences = Number(student.total_absences);
-                                            const lates = Number(student.total_lates);
+                            <div key={course} className="mb-8">
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="w-1 h-6 rounded-full bg-primary" />
+                                        <span className="font-bold text-xs uppercase tracking-wider text-gray-500">
+                                            {course}
+                                        </span>
+                                    </div>
 
-                                            return (
-                                                (student.course_name === course) && (
-                                                    <Fragment key={student.student_id}>
-                                                        <button
-                                                            onClick={() => handleToggle(student, index)}
-                                                            className="py-2 px-3 cursor-pointer w-full border border-gray-200 flex items-center justify-between bg-white rounded-xl"
-                                                        >
-                                                            <p className="text-sm md:text-base">{student.student_name}</p>
-                                                            <div className="flex items-center gap-5">
-                                                                {lates > 0 ? (
-                                                                    <span className="inline-flex text-xs md:text-sm items-center justify-center px-2 md:px-2.5 py-1 rounded-full font-bold bg-yellow-100 text-yellow-700">
-                                                                        {lates}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-gray-700 bg-gray-100 text-xs md:text-sm px-2.5 md:px-3 py-1 rounded-full font-medium">-</span>
-                                                                )}
+                                    {filteredData.map((student, index) => {
+                                        const absences = Number(student.total_absences);
+                                        const lates = Number(student.total_lates);
+                                        const isOpen = openIndex === index;
 
-                                                                {absences > 0 ? (
-                                                                    <span className={`inline-flex items-center justify-center px-2 md:px-2.5 py-1 rounded-full text-xs md:text-sm font-bold ${
-                                                                        absences >= 2
-                                                                            ? 'bg-red-300 text-red-700 animate-pulse'
-                                                                            : 'bg-red-100 text-red-700'
-                                                                    }`}>
-                                                                        {absences}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-gray-700 bg-gray-100 text-xs md:text-sm px-2.5 md:px-3 py-1 rounded-full font-medium">-</span>
-                                                                )}
+                                        return (
+                                            student.course_name === course && (
+                                                <Fragment key={student.student_id}>
+                                                    <button
+                                                        onClick={() => handleToggle(student, index)}
+                                                        className={`group py-3 px-4 cursor-pointer transition-all duration-200 w-full border flex items-center justify-between rounded-2xl
+                                                            ${isOpen
+                                                            ? 'border-primary shadow-md'
+                                                            : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors
+                                                                ${isOpen ? 'bg-primary text-white' : 'bg-primary-shadow text-primary'}`}>
+                                                                {getInitials(student.student_name)}
                                                             </div>
-                                                        </button>
-                                                        {student.student_id && openIndex === index && selectedPeriod && (
-                                                            <div className="border border-gray-200 w-full rounded-xl z-0 relative">
+                                                            <p className={`text-sm md:text-base font-semibold transition-colors ${isOpen ? 'text-gray-900' : 'text-gray-700 group-hover:text-primary'}`}>
+                                                                {student.student_name}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex flex-col items-end">
+                                                                <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${lates > 0 ? 'bg-yellow-50 text-yellow-600' : 'text-gray-300'}`}>
+                                                                    {lates}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="flex flex-col items-end border-l pl-4 border-gray-100">
+                                                                <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${
+                                                                    absences >= 2 ? 'bg-red-300 text-red-600 animate-pulse' :
+                                                                        absences > 0 ? 'bg-red-50 text-red-500' : 'text-gray-300'
+                                                                }`}>
+                                                                    {absences}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+
+                                                    {isOpen && selectedPeriod && (
+                                                        <div className="p-1 rounded-xl bg-primary-shadow/30 ring-1 ring-primary/20">
+                                                            <div className="bg-white rounded-xl shadow-inner">
                                                                 <StudentCalendarCard
                                                                     studentId={student.student_id}
                                                                     period={selectedPeriod}
                                                                 />
                                                             </div>
-                                                        )}
-                                                    </Fragment>
-                                                )
+                                                        </div>
+                                                    )}
+                                                </Fragment>
                                             )
-                                        })
-                                    }
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))
                     ) : (
-                        <div className="p-5 flex flex-col items-center justify-center">
-                            <p className="text-sm md:text-base font-semibold text-custom-black">Sin resultados</p>
+                        <div className="py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <p className="text-gray-400 font-medium">No hay resultados</p>
                         </div>
                     )
                 }

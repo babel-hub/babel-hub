@@ -321,17 +321,17 @@ export default function CourseDetails() {
         <div className="flex flex-col h-full w-full">
             <div className="sticky relative top-0 z-10 bg-white border-b border-gray-100 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-custom-black">
+                    <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">
                         Curso: {data.course.name}
                     </h1>
-                    <p className="text-gray-500 mt-1 text-sm">Año Lectivo: {data.course.year}</p>
+                    <p className="text-gray-500 mt-1 text-xs md:text-sm">Año Lectivo: {data.course.year}</p>
                 </div>
-                <div className="flex flex-col sm:flex-row w-full md:w-auto gap-5 items-center">
+                <div className="flex flex-col md:flex-row w-full md:w-auto gap-3 xl:gap-5 items-center">
                     <PrimaryButton onClick={() => setModalMode("create")} title="Asignar asignatura"/>
                     <div className="w-full md:w-auto" ref={dropdownRef}>
                         <PrimaryButton
                             onClick={() => setShowClasses(!showClasses)}
-                            title={showClasses ? "Ocultar Clases" : "Ver Clases"}
+                            title="Ver clases"
                         />
                         {showClasses && (
                             <div className="absolute right-5 top-full w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden">
@@ -364,46 +364,56 @@ export default function CourseDetails() {
             </div>
 
             <div className="p-5 overflow-y-auto styled-scrollbar">
-                <div className="flex w-full mb-2 items-end justify-between">
-                    <h2 className="text-lg font-bold text-primary">
-                        Estudiantes
-                    </h2>
-                    <h2 className="text-xs pr-4 text-primary">
-                        Asistencia
-                    </h2>
-                </div>
-                <div className="bg-white rounded-xl overflow-hidden">
-                    <div className="overflow-y-auto h-full">
-                        <ul>
+                <div className="bg-white rounded-xl overflow-hidden border border-gray-100">
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-md text-center border-collapse">
+                            <thead>
+                                <tr className="bg-primary-shadow text-primary border-b border-primary-shadow">
+                                    <th className="py-3 md:py-4 px-4 md:text-base md:px-5 lg:px-6 text-sm text-left font-semibold ">Estudiante</th>
+                                    <th className="py-3 md:py-4 px-4 md:text-base md:px-5 lg:px-6 text-sm font-semibold ">Promedio</th>
+                                    <th className="py-3 md:py-4 px-4 md:text-base md:px-5 lg:px-6 text-sm font-semibold ">Asistencia</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
                             {data.students.map((student) => {
                                 const status = attendanceRecords[student.student_id] || 'present';
 
                                 return (
-                                    <li className="mb-3" key={student.student_id}>
-                                        <div className="p-2 shadow-sm rounded-xl border border-gray-100 flex w-full justify-between items-center hover:bg-gray-50 transition-colors">
-                                            <button
-                                                onClick={() => navigate(`/principal/comunidad/estudiantes/${student.student_id}`)}
-                                                className="flex items-center cursor-pointer justify-start gap-3"
-                                            >
-                                                <div className="w-10 h-10 shrink-0 rounded-full bg-primary-shadow flex items-center justify-center text-primary-darker font-bold text-sm">
+                                    <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="py-3 px-6">
+                                            <div className="flex items-center text-left gap-3">
+                                                <div className="w-9 h-9 rounded-full bg-primary-shadow text-primary-darker flex items-center justify-center text-xs md:text-sm font-bold shrink-0">
                                                     {getInitials(student.full_name)}
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium text-custom-black">{reverseName(student.full_name)}</p>
+                                                <div className="max-w-48 py-0.5">
+                                                    <span className="block font-medium truncate text-custom-black text-sm md:text-base leading-normal">
+                                                        {reverseName(student.full_name)}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400 block truncate">{student.email}</span>
                                                 </div>
-                                            </button>
-                                            <span
-                                                className={`w-4 h-4 mr-5 rounded-full ${getStatusDotColor(status)}`}
-                                                title={`Estado: ${status}`}
-                                            ></span>
-                                        </div>
-                                    </li>
+                                            </div>
+                                        </td>
+
+                                        <td className="py-3 text-center px-6">
+                                            <span className="text-xs md:text-sm font-medium text-gray-700">—</span>
+                                        </td>
+
+                                        <td className="py-3 px-6">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <span className={`md:w-4 w-3 h-3 md:h-4 rounded-full ${getStatusDotColor(status)}`}></span>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 );
                             })}
-                            {data.students.length === 0 && (
-                                <p className="text-gray-500 text-center py-6 text-sm">No hay estudiantes en este curso.</p>
-                            )}
-                        </ul>
+                            </tbody>
+                        </table>
+
+                        {data.students.length === 0 && (
+                            <div className="text-gray-500 text-center py-10 text-sm">
+                                No hay estudiantes en este curso.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

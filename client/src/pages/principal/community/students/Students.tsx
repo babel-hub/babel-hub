@@ -42,7 +42,7 @@ const StudentsRows = memo(function ({ student, onEdit, onDelete, onNavigate }: S
                     </div>
                     <button
                         onClick={() => onNavigate(`${student.student_id}`)}
-                        className="overflow-hidden text-left cursor-pointer"
+                        className="overflow-hidden text-sm xl:text-base text-left cursor-pointer"
                     >
                         <p className="font-bold capitalize text-custom-black truncate" title={student.full_name}>
                             {reverseName(student.full_name)}
@@ -66,15 +66,15 @@ const StudentsRows = memo(function ({ student, onEdit, onDelete, onNavigate }: S
                 )}
             </td>
 
-            <td className="p-4 font-medium text-gray-700">
+            <td className="p-4 font-medium text-sm xl:text-base text-gray-700">
                 {student.course_name}
             </td>
 
-            <td className="p-4 text-gray-500 text-sm">
+            <td className="p-4 text-gray-500 text-xs xl:text-sm">
                 {formateDate(student.created_at)}
             </td>
 
-            <td className="md:p-4 pr-3 text-right space-x-3">
+            <td className="md:p-4 pr-3 text-right space-x-1 xl:space-x-3">
                 <EditButton onClick={() => onEdit(student)} />
                 <DeleteButton onClick={() => onDelete(student.student_id)} />
             </td>
@@ -299,7 +299,7 @@ const ListStudents = () => {
                 <div>
                     <div className="flex gap-2">
                         <ButtonChevronBack onClick={() => navigate(-1)}/>
-                        <h2 className="text-2xl font-bold text-custom-black">Estudiantes</h2>
+                        <h2 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">Estudiantes</h2>
                     </div>
                     <p className="text-gray-500 text-sm mt-1">
                         {students.length} estudiantes registrados en el sistema.
