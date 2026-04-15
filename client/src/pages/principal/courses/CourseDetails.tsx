@@ -73,7 +73,7 @@ const ClassRowItem = memo(function ClassRowItem({
                     e.stopPropagation();
                     onToggleMenu(cls.class_id);
                 }}
-                className="hover:text-gray-500 cursor-pointer p-1.5 text-gray-300 text-base opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity md:text-lg rounded-full"
+                className="cursor-pointer p-1.5 text-gray-500 text-base opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity md:text-lg rounded-full"
             >
                 <HiDotsVertical/>
             </button>
