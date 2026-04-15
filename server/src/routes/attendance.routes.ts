@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { authorizedRoles } from "../middleware/role.middleware.js";
 import { strictLimiter } from "../middleware/ratelimit.middleware.js";
-import { getClassAttendance, bulkUpsertClassAttendance, getAttendanceStatusByCalendar, getCourseDailySummary, getAttendanceCenterSummary, getAttendanceCourseByClass } from "../controllers/attendance.controller.js";
+import { getClassAttendance, bulkUpsertClassAttendance, getAttendanceStatusByCalendar, getCourseDailySummary, getAttendanceCenterSummary, getAttendanceCourseByClass, getDailyAttendanceAlerts } from "../controllers/attendance.controller.js";
 
 const router = Router();
 
@@ -39,6 +39,13 @@ router.get(
     authMiddleware,
     authorizedRoles(["principal", "admin", "teacher"]),
     getAttendanceCourseByClass
+);
+
+router.get(
+    "/summary/daily",
+    authMiddleware,
+    authorizedRoles(["principal", "admin"]),
+    getDailyAttendanceAlerts
 );
 
 router.post(

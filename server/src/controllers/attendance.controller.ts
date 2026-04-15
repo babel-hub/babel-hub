@@ -289,3 +289,43 @@ export async function getAttendanceCourseByClass(
         client.release();
     }
 }
+
+export async function getDailyAttendanceAlerts(
+    request: AuthenticatedRequest,
+    response: Response
+) {
+    const user = request.user!;
+
+    const client = await pool.connect();
+
+    try {
+        const digestQuery = `
+            SELECT
+                c.id as course_id,
+                c.name as course_name,
+                s.id as student_id,
+                u.full_name as student_name,
+                COUNT(a.id) FILTER (WHERE a.status = 'absent') as total_absences,
+                COUNT(a.id) FILTER (WHERE a.status = 'late') as total_lates
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            JOIN courses c ON s.course_id = c.id
+            INNER JOIN attendance a ON a.student_id = s.id AND a.date = CURRENT_DATE
+            WHERE u.school_id = $1
+            GROUP BY c.id, c.name, s.id, u.full_name
+            HAVING COUNT(a.id) FILTER (WHERE a.status = 'absent') > 0 
+                OR COUNT(a.id) FILTER (WHERE a.status = 'late') > 0
+            ORDER BY c.name ASC, total_absences DESC, u.full_name ASC;
+        `;
+
+        const result = await client.query(digestQuery, [user.schoolId]);
+
+        response.status(200).json({ attendanceSummary: result.rows });
+
+    } catch (error) {
+        console.error("Error fetching daily alerts:", error);
+        response.status(500).json({ message: "Error al cargar alertas diarias" });
+    } finally {
+        client.release();
+    }
+}

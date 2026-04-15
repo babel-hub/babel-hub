@@ -80,7 +80,11 @@ export default function AttendanceCenter() {
 
             try {
                 setFetchingData(true);
-                const response = await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`);
+                const [response] = await Promise.all([
+                    //await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`),
+                    await api.get(`/attendance/summary/daily?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`)
+                ]);
+
                 setSummaryData(response.data.attendanceSummary || response.data);
             } catch (err: any) {
                 console.error(err);
@@ -130,6 +134,7 @@ export default function AttendanceCenter() {
                         <select
                             className="bg-gray-50 w-full text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                             value={selectedPeriod?.id || ""}
+                            disabled={true}
                             onChange={(e) => {
                                 const period = periods.find(p => p.id === e.target.value);
                                 setSelectedPeriod(period || null);
@@ -189,6 +194,7 @@ export default function AttendanceCenter() {
                                                 <Fragment key={student.student_id}>
                                                     <button
                                                         onClick={() => handleToggle(student, index)}
+                                                        disabled={true}
                                                         className={`group py-3 px-4 cursor-pointer transition-all duration-200 w-full border flex items-center justify-between rounded-2xl
                                                             ${isOpen
                                                             ? 'border-primary shadow-md'
