@@ -143,7 +143,7 @@ export default function TeacherCourseDetails() {
 
     useEffect(() => {
         const fetchAttendance = async () => {
-            if (!classDetails?.students || activeTab !== "register attendance") return;
+            if (!classDetails?.students || classDetails?.students.length === 0 || activeTab !== "register attendance") return;
 
             setLoadingAttendance(true);
 
@@ -173,7 +173,7 @@ export default function TeacherCourseDetails() {
 
     useEffect(() => {
         const fetchPeriodAttendance = async () =>  {
-            if (!selectedPeriod || activeTab !== 'see attendance') return;
+            if (!selectedPeriod || classDetails?.students.length === 0 || activeTab !== 'see attendance') return;
 
             const today = new Date();
             const courseId = classDetails?.course_id;
@@ -373,7 +373,7 @@ export default function TeacherCourseDetails() {
                             </table>
 
                             {classDetails.students.length === 0 && (
-                                <div className="text-gray-500 text-center py-10 text-sm">
+                                <div className="text-gray-500 text-center py-10 text-sm md:text-base">
                                     No hay estudiantes en este curso.
                                 </div>
                             )}
@@ -397,6 +397,12 @@ export default function TeacherCourseDetails() {
                             <LoadingContent title="Cargando..." />
                         ) : (
                             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                                {classDetails?.students.length === 0 && (
+                                    <div className="p-10">
+                                        <p className="text-center text-sm md:text-base text-gray-500">Esta clase no cuenta con estudiantes</p>
+                                    </div>
+                                )}
+
                                 <ul className="divide-y divide-gray-50">
                                     {classDetails?.students.map((student) => {
                                         const status = classAttendance[student.student_id] || 'present';
@@ -471,7 +477,7 @@ export default function TeacherCourseDetails() {
                                     ))}
                                     {attendanceGrid.length === 0 && (
                                         <tr>
-                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-10 text-center text-gray-500">
+                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-5 md:p-10 text-center text-sm md:text-base text-gray-500">
                                                 {   //@ts-ignore
                                                     new Date() < new Date(selectedPeriod?.start_date || "")
                                                         ? "Este periodo aún no ha comenzado."
@@ -487,8 +493,8 @@ export default function TeacherCourseDetails() {
                 )}
 
                 {activeTab === 'assignments' && (
-                    <div className="text-center py-10 bg-white rounded-xl border border-gray-100 animate-fade-in">
-                        <p className="text-gray-500 font-medium">Módulo de calificaciones</p>
+                    <div className="text-center p-5 md:py-10 bg-white rounded-xl border border-gray-100 animate-fade-in">
+                        <p className="text-gray-500 text-sm md:text-base">Módulo de calificaciones</p>
                     </div>
                 )}
             </div>

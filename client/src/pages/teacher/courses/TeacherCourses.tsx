@@ -29,13 +29,11 @@ function TeacherCourses() {
     const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
     const [classData, setClassData] = useState<TeacherClass[]>([]);
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(true); // Default to true
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchCoursesAndClasses = async () => {
             try {
-                setLoading(true);
-
                 const [courseRes, classesRes] = await Promise.all([
                     api.get("/courses/teacher/course"),
                     api.get("/classes/teacher/classes")
@@ -131,7 +129,7 @@ function TeacherCourses() {
 
                     <div className="space-y-2 flex-1 overflow-y-auto styled-scrollbar overflow-x-hidden">
                         {classData.length === 0 ? (
-                            <div className="bg-white p-10 rounded-2xl border border-gray-100 text-center shadow-sm">
+                            <div className="p-5 lg:p-10 text-center">
                                 <p className="text-gray-500">No tienes clases asignadas en este momento.</p>
                             </div>
                         ) : (
@@ -205,7 +203,7 @@ function TeacherCourses() {
                     <div className="flex items-center justify-center flex-col text-gray-400 p-10">
                         <IoSchool className="text-4xl text-primary" />
                         <h3 className="text-xl font-medium text-custom-black">Selecciona una clase</h3>
-                        <p className="text-sm mt-2">Haz clic en una clase de la lista para ver sus detalles y estudiante.</p>
+                        <p className="text-sm mt-2 text-center">Haz clic en una clase de la lista para ver sus detalles y estudiante.</p>
                     </div>
                 )}
             </div>

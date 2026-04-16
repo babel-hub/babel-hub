@@ -199,7 +199,7 @@ export async function getTeacherClasses(
                 s.name as subject_name,
                 co.name as course_name,
                 co.id as course_id,
-                COUNT(s.id) as total_students
+                COUNT(st.id) as total_students
             FROM classes cl
             JOIN subjects s ON cl.subject_id = s.id
             JOIN courses co ON cl.course_id = co.id
@@ -210,7 +210,7 @@ export async function getTeacherClasses(
                      s.name,
                      co.name,
                      co.id
-            ORDER BY co.name, s.name;
+            ORDER BY co.name::integer, s.name;
         `, [user.userId, user.schoolId]);
 
         response.status(200).json({

@@ -55,9 +55,9 @@ const StudentAttendanceRow = memo(function StudentAttendanceRow({
                 <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs md:text-sm font-bold shrink-0">
                     {getInitials(student.full_name)}
                 </div>
-                <span className="font-medium text-sm md:text-base text-custom-black leading-tight">
-                {reverseName(student.full_name)}
-            </span>
+                <span className="font-medium capitalize text-sm md:text-base text-custom-black leading-tight">
+                    {reverseName(student.full_name)}
+                </span>
             </div>
 
             <div className="flex p-1 shrink-0">
@@ -361,7 +361,7 @@ export default function ClassDetails() {
                                         {getInitials(student.full_name)}
                                     </div>
                                     <div>
-                                        <span className="block text-sm md:text-base font-medium text-custom-black">{reverseName(student.full_name)}</span>
+                                        <span className="block text-sm md:text-base capitalize font-medium text-custom-black">{reverseName(student.full_name)}</span>
                                         <span className="block text-sm text-gray-500">{student.email}</span>
                                     </div>
                                 </li>
@@ -415,34 +415,34 @@ export default function ClassDetails() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse min-w-max">
                                     <thead>
-                                    <tr className="bg-gray-50 text-gray-600 text-[10px] uppercase tracking-wider">
-                                        <th className="sticky left-0 bg-gray-50 p-4 border-b border-r border-gray-100 z-10 font-bold min-w-[200px]">
-                                            Estudiante
-                                        </th>
-                                        {calendarDates.map(date => {
-                                            const { dayNum, month, weekday } = formatDate(date);
+                                        <tr className="bg-gray-50 text-gray-600 text-[10px] uppercase tracking-wider">
+                                            <th className="bg-gray-50 sticky left-0  p-4 border-b border-r border-gray-100 z-10 font-bold min-w-[200px]">
+                                                Estudiantes
+                                            </th>
+                                            {calendarDates.map(date => {
+                                                const { dayNum, month, weekday } = formatDate(date);
 
-                                            return (
-                                                <th key={date} className="p-1 border-b border-gray-100 text-center font-semibold w-8">
-                                                    <div className="text-[10px] flex flex-col items-center font-medium text-gray-400">
-                                                        <span>{dayNum}</span>
-                                                        <span className="text-custom-black -my-1">{month}</span>
-                                                        <span>{weekday}</span>
-                                                    </div>
-                                                </th>
-                                            );
-                                        })}
-                                    </tr>
+                                                return (
+                                                    <th key={date} className="p-1 border-b border-gray-100 text-center font-semibold w-8">
+                                                        <div className="text-[10px] flex flex-col items-center font-medium text-gray-400">
+                                                            <span>{dayNum}</span>
+                                                            <span className="text-custom-black -my-1">{month}</span>
+                                                            <span>{weekday}</span>
+                                                        </div>
+                                                    </th>
+                                                );
+                                            })}
+                                        </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                     {attendanceGrid.map((student) => (
                                         <tr key={student.student_id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="sticky left-0 bg-white p-4 border-r border-gray-100 z-10">
-                                                <div className="truncate max-w-[200px] font-medium text-custom-black text-sm"
-                                                     title={reverseName(student.name)}>
+                                                <div className="truncate max-w-[200px] capitalize font-medium text-custom-black text-sm" title={reverseName(student.name)}>
                                                     {reverseName(student.name)}
                                                 </div>
                                             </td>
+
                                             {student.records.map((record: any, idx: number) => {
 
                                                 let bg = "bg-gray-100";

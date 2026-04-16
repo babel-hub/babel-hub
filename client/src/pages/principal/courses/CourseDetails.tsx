@@ -386,7 +386,7 @@ export default function CourseDetails() {
                                                     {getInitials(student.full_name)}
                                                 </div>
                                                 <div className="max-w-48 py-0.5">
-                                                    <span className="block font-medium truncate text-custom-black text-sm md:text-base leading-normal">
+                                                    <span className="block font-medium capitalize truncate text-custom-black text-sm md:text-base leading-normal">
                                                         {reverseName(student.full_name)}
                                                     </span>
                                                     <span className="text-xs text-gray-400 block truncate">{student.email}</span>

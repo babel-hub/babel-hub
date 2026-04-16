@@ -40,7 +40,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-gray-50">
+        <div className="flex flex-col md:flex-row h-dvh overflow-hidden bg-gray-50">
 
             <div className="md:hidden bg-white border-b border-gray-200 p-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
             )}
 
             <div className={`
-                fixed inset-y-0 left-0 z-50 w-64 xl:w-72 bg-white border-r border-gray-200 p-4 flex flex-col justify-between h-screen 
+                fixed inset-y-0 left-0 z-50 w-64 xl:w-72 bg-white border-r border-gray-200 p-4 flex flex-col justify-between h-dvh 
                 transform transition-transform duration-300 ease-in-out
                 md:relative md:translate-x-0 
                 ${isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}
@@ -152,7 +152,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                 </div>
             </div>
 
-            <div className="flex-1 p-4 md:p-5 bg-gray-50 h-[calc(100dvh-64px)] md:h-[100dvh] overflow-y-auto">
+            <div className="flex-1 p-4 md:p-5 bg-gray-50 h-[calc(100dvh-64px)] md:h-dvh overflow-y-auto">
                 <ErrorBoundary>
                     <Outlet />
                 </ErrorBoundary>

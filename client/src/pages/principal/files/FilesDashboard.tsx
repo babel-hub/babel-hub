@@ -283,6 +283,16 @@ export default function FilesDashboard() {
             )
         },
         {
+            label: "Porcentajes Evaluativos",
+            content: (
+                <div className="w-full flex justify-center items-center px-2 py-5 md:p-5">
+                    <div className="text-center">
+                        <p className="text-gray-400">Lo sentimos, actualmente estamos trabajando esta sección.</p>
+                    </div>
+                </div>
+            )
+        },
+        {
             label: "Centro de Asistencia"
         },
     ];

@@ -1,5 +1,6 @@
 import { HiOutlineTrash } from "react-icons/hi";
 import { FiEdit2 } from "react-icons/fi";
+import { type JSX } from "react";
 
 interface CancelButtonProps {
     title: string;
@@ -21,7 +22,7 @@ export const CancelButton = ({ title, onClick, full }: CancelButtonProps) => {
 }
 
 interface PrimaryButtonProps {
-    title: string;
+    title: string | JSX.Element;
     full?: boolean;
     onClick?: () => void;
     disabled?: boolean;

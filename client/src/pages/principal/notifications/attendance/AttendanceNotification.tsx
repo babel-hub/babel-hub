@@ -4,7 +4,7 @@ import api from "../../../../api/client.ts";
 import {LoadingPage} from "../../../../components/Loadings.tsx";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
 import StudentCalendarCard from "../../../../components/StudentCalendarCard.tsx";
-import {getInitials} from "../../../../types";
+import {getInitials, reverseName} from "../../../../types";
 
 interface Period {
     id: string;
@@ -206,8 +206,8 @@ export default function AttendanceCenter() {
                                                                 ${isOpen ? 'bg-primary text-white' : 'bg-primary-shadow text-primary'}`}>
                                                                 {getInitials(student.student_name)}
                                                             </div>
-                                                            <p className={`text-sm md:text-base font-semibold transition-colors ${isOpen ? 'text-gray-900' : 'text-gray-700 group-hover:text-primary'}`}>
-                                                                {student.student_name}
+                                                            <p className={`text-sm md:text-base capitalize font-semibold transition-colors ${isOpen ? 'text-gray-900' : 'text-gray-700 group-hover:text-primary'}`}>
+                                                                {reverseName(student.student_name)}
                                                             </p>
                                                         </div>
 

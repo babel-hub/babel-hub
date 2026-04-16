@@ -1,7 +1,7 @@
 import api from "../../../../api/client.ts";
 import toast from 'react-hot-toast';
 import {memo, useCallback, useEffect, useState} from "react";
-import {formateDate, getInitials} from "../../../../types";
+import {formateDate, getInitials, reverseName} from "../../../../types";
 import {DeleteButton, EditButton, PrimaryButton} from "../../../../components/Buttons.tsx";
 import { useNavigate } from "react-router-dom";
 import ButtonChevronBack from "../../../../components/ButtonChevrowBack.tsx";
@@ -43,7 +43,7 @@ const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate }: Tea
                         className="overflow-hidden text-sm xl:text-base text-left cursor-pointer"
                     >
                         <p className="font-bold capitalize text-custom-black truncate" title={teacher.full_name}>
-                            {teacher.full_name}
+                            {reverseName(teacher.full_name)}
                         </p>
                         <p className="text-gray-500 text-xs truncate" title={teacher.email}>
                             {teacher.email}

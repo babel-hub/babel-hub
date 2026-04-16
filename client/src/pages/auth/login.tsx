@@ -3,10 +3,10 @@ import { supabase } from "../../auth/supabase.ts";
 import api from "../../api/client.ts";
 import { useAuth } from "../../auth/useAuth.ts";
 import { useNavigate } from "react-router-dom";
-import { LoadingPage } from "../../components/Loadings.tsx";
 import logo from "../../assets/images/logo.png";
-import backImg from "../../assets/images/login-back-img.png";
+import backImg from "../../assets/images/login-img.webp";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
+import AuthButton from "../../components/AuthButtons.tsx";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -68,8 +68,6 @@ export default function Login() {
 
     return (
         <>
-            {loading && ( <LoadingPage title="Iniciando sesión..." /> )}
-
             <div className="bg-gradient-to-b from-[#f7f7fb] to-[#f9f9fb] p-5 xl:p-10">
                 <div
                     className={`w-full h-[calc(100dvh-2.5rem)] xl:h-[calc(100dvh-5rem)] flex items-center justify-center mx-auto max-w-7xl bg-cover lg:bg-contain xl:bg-cover bg-no-repeat bg-center`}
@@ -101,7 +99,7 @@ export default function Login() {
                                 )}
 
                                 <input
-                                    className="text-custom-black my-3 text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                    className="text-custom-black my-3 text-sm md:text-base w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                                     placeholder="email@ejemplo.com"
                                     type="email"
                                     required
@@ -112,14 +110,14 @@ export default function Login() {
                                 <div>
                                     <div className="w-full mb-2 relative">
                                         <input
-                                            className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                            className="text-custom-black text-sm md:text-base w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
                                             placeholder="Contraseña"
                                             required
                                             type={passwordEye ? "text" : "password"}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                         />
-                                        <div className="absolute right-4 top-4">
+                                        <div className="absolute right-4 top-3.5">
                                             <button
                                                 type="button"
                                                 className="text-xl text-gray-500 hover:text-gray-700 transition-colors"
@@ -137,13 +135,11 @@ export default function Login() {
                                 </div>
                             </div>
 
-                            <button
+                            <AuthButton
                                 type="submit"
-                                disabled={loading}
-                                className="bg-primary text-sm md:text-base hover:bg-primary-darker cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed rounded-xl focus:outline-none font-semibold text-white w-full py-3 transition-colors shadow-md"
-                            >
-                                Acceder
-                            </button>
+                                disable={loading}
+                                title="Acceder"
+                            />
                         </form>
                     </div>
                 </div>
