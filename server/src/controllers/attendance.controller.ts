@@ -310,7 +310,7 @@ export async function getDailyAttendanceAlerts(
             FROM students s
             JOIN users u ON s.user_id = u.id
             JOIN courses c ON s.course_id = c.id
-            INNER JOIN attendance a ON a.student_id = s.id AND a.date = CURRENT_DATE
+            INNER JOIN attendance a ON a.student_id = s.id AND a.date = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Bogota')::date
             WHERE u.school_id = $1
             GROUP BY c.id, c.name, s.id, u.full_name
             HAVING COUNT(a.id) FILTER (WHERE a.status = 'absent') > 0 

@@ -76,13 +76,14 @@ export default function AttendanceCenter() {
 
             const todayStr = today.toISOString().split('T')[0];
             const periodEndStr = selectedPeriod.end_date.split('T')[0];
+            // @ts-ignore
             const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
 
             try {
                 setFetchingData(true);
                 const [response] = await Promise.all([
                     //await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`),
-                    await api.get(`/attendance/summary/daily?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`)
+                    await api.get(`/attendance/summary/daily`)
                 ]);
 
                 setSummaryData(response.data.attendanceSummary || response.data);
