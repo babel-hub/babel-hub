@@ -159,23 +159,43 @@ export async function getAttendanceCenterSummary(
 
     try {
         const result = await client.query(`
+            WITH LastRecord AS (
+                SELECT
+                    student_id,
+                    MAX(date) as last_record
+                FROM attendance
+                WHERE date >= $1 AND date <= $2
+                GROUP BY student_id
+            ), CheckLastStatus AS (
+                    SELECT a.student_id
+                    FROM attendance a
+                    JOIN LastRecord lr ON a.student_id = lr.student_id AND a.date = lr.last_record
+                    GROUP BY a.student_id
+                    HAVING BOOL_OR(a.status IN ('absent', 'late'))
+                        AND NOT BOOL_OR(a.status = 'present')
+            )
             SELECT
                 c.id as course_id,
                 c.name as course_name,
                 s.id as student_id,
                 u.full_name as student_name,
-                COUNT(a.id) FILTER (WHERE a.status = 'absent') as total_absences,
-                COUNT(a.id) FILTER (WHERE a.status = 'late') as total_lates
-            FROM students s
+                COUNT(DISTINCT a.date) FILTER (WHERE a.status = 'absent') AS total_absences,
+                COUNT(s.id) FILTER (WHERE a.status = 'late') AS total_lates
+            FROM CheckLastStatus cls
+            JOIN students s ON cls.student_id = s.id
             JOIN users u ON s.user_id = u.id
             JOIN courses c ON s.course_id = c.id
-            LEFT JOIN attendance a ON a.student_id = s.id
-            AND a.date >= $1 AND a.date <= $2
+            JOIN attendance a ON s.id = a.student_id 
             WHERE u.school_id = $3
-            GROUP BY c.id, c.name, s.id, u.full_name
-            HAVING COUNT(a.id) FILTER (WHERE a.status = 'absent') > 0 
-                OR COUNT(a.id) FILTER (WHERE a.status = 'late') > 0
-            ORDER BY c.name ASC, total_absences DESC, u.full_name ASC;
+            AND a.date >= $1 AND a.date <= $2
+            GROUP BY
+                c.id,
+                c.name,
+                s.id,
+                u.full_name
+            HAVING COUNT(DISTINCT a.date) FILTER (WHERE a.status = 'absent') > 0
+                OR COUNT(s.id) FILTER (WHERE a.status = 'late') > 0
+            ORDER BY c.name::integer DESC, total_absences DESC, u.full_name ASC;
         `, [startDate, endDate, schoolId]);
 
         response.status(200).json({
@@ -208,12 +228,12 @@ export async function getAttendanceStatusByCalendar(
         const result = await client.query(`
             SELECT 
                 d.calendar_date::date as date,
-            CASE 
-                WHEN count(a.id) = 0 THEN 'no_data'
-                WHEN bool_or(a.status = 'absent') THEN 'absent'
-                WHEN bool_or(a.status = 'late') THEN 'late'
-                ELSE 'present'
-            END as daily_status
+                CASE 
+                    WHEN count(a.id) = 0 THEN 'no_data'
+                    WHEN bool_or(a.status = 'absent') THEN 'absent'
+                    WHEN bool_or(a.status = 'late') THEN 'late'
+                    ELSE 'present'
+                END as daily_status
             FROM generate_series(
                 $1::date,
                 LEAST($3::date, CURRENT_DATE),

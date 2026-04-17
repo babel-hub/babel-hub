@@ -76,16 +76,13 @@ export default function AttendanceCenter() {
 
             const todayStr = today.toISOString().split('T')[0];
             const periodEndStr = selectedPeriod.end_date.split('T')[0];
-            // @ts-ignore
             const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
 
             try {
                 setFetchingData(true);
-                const [response] = await Promise.all([
-                    //await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`),
-                    await api.get(`/attendance/summary/daily`)
-                ]);
+                const response = await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`);
 
+                console.log(response.data)
                 setSummaryData(response.data.attendanceSummary || response.data);
             } catch (err: any) {
                 console.error(err);
@@ -135,7 +132,6 @@ export default function AttendanceCenter() {
                         <select
                             className="bg-gray-50 w-full text-sm md:text-base appearance-none border border-gray-200 text-custom-black rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                             value={selectedPeriod?.id || ""}
-                            disabled={true}
                             onChange={(e) => {
                                 const period = periods.find(p => p.id === e.target.value);
                                 setSelectedPeriod(period || null);
@@ -195,19 +191,25 @@ export default function AttendanceCenter() {
                                                 <Fragment key={student.student_id}>
                                                     <button
                                                         onClick={() => handleToggle(student, index)}
-                                                        disabled={true}
                                                         className={`group py-3 px-4 cursor-pointer transition-all duration-200 w-full border flex items-center justify-between rounded-2xl
-                                                            ${isOpen
-                                                            ? 'border-primary shadow-md'
-                                                            : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
+                                                            ${isOpen ? 
+                                                                absences >= 2 ? 'border-red-error shadow-md' : 'border-primary shadow-md' :
+                                                                absences >= 2 ? 'border-red-error hover:shadow-sm' : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
                                                         }`}
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors
-                                                                ${isOpen ? 'bg-primary text-white' : 'bg-primary-shadow text-primary'}`}>
+                                                                ${isOpen ?
+                                                                    (absences >= 2) ? 'bg-red-error text-white' : 'bg-primary text-white' :
+                                                                    (absences >= 2) ? 'bg-red-shadow text-red-error' : 'bg-primary-shadow text-primary'
+                                                            }`}>
                                                                 {getInitials(student.student_name)}
                                                             </div>
-                                                            <p className={`text-sm md:text-base capitalize font-semibold transition-colors ${isOpen ? 'text-gray-900' : 'text-gray-700 group-hover:text-primary'}`}>
+                                                            <p className={`text-sm md:text-base capitalize font-semibold transition-colors 
+                                                                ${isOpen ? 
+                                                                    absences >= 2 ? 'text-gray-900' : 'text-gray-900' :
+                                                                    absences >= 2 ?  'text-gray-700 group-hover:text-red-error' :  'text-gray-700 group-hover:text-primary'
+                                                            }`}>
                                                                 {reverseName(student.student_name)}
                                                             </p>
                                                         </div>
@@ -221,8 +223,7 @@ export default function AttendanceCenter() {
 
                                                             <div className="flex flex-col items-end border-l pl-4 border-gray-100">
                                                                 <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${
-                                                                    absences >= 2 ? 'bg-red-300 text-red-600 animate-pulse' :
-                                                                        absences > 0 ? 'bg-red-50 text-red-500' : 'text-gray-300'
+                                                                    absences > 0 ? 'bg-red-50 text-red-500' : 'text-gray-300'
                                                                 }`}>
                                                                     {absences}
                                                                 </span>
