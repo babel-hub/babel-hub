@@ -81,8 +81,6 @@ export default function AttendanceCenter() {
             try {
                 setFetchingData(true);
                 const response = await api.get(`/attendance/summary?startDate=${selectedPeriod.start_date}&endDate=${effectiveEndDate}`);
-
-                console.log(response.data)
                 setSummaryData(response.data.attendanceSummary || response.data);
             } catch (err: any) {
                 console.error(err);
@@ -162,7 +160,7 @@ export default function AttendanceCenter() {
 
             {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg font-medium">{error}</div>}
 
-            <div className="bg-white flex flex-col gap-5 rounded-xl p-5 shadow-sm border border-gray-100 overflow-hidden relative">
+            <div className="bg-white flex flex-col gap-5 rounded-xl p-3 md:p-5 shadow-sm border border-gray-100 overflow-hidden relative">
                 {fetchingData && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -197,7 +195,7 @@ export default function AttendanceCenter() {
                                                                 absences >= 2 ? 'border-red-error hover:shadow-sm' : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
                                                         }`}
                                                     >
-                                                        <div className="flex items-center gap-3">
+                                                        <div className="flex items-center min-w-0 gap-3">
                                                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors
                                                                 ${isOpen ?
                                                                     (absences >= 2) ? 'bg-red-error text-white' : 'bg-primary text-white' :
@@ -205,7 +203,7 @@ export default function AttendanceCenter() {
                                                             }`}>
                                                                 {getInitials(student.student_name)}
                                                             </div>
-                                                            <p className={`text-sm md:text-base capitalize font-semibold transition-colors 
+                                                            <p className={`text-sm md:text-base leading-tight max-w-40 sm:max-w-full text-left capitalize font-semibold transition-colors 
                                                                 ${isOpen ? 
                                                                     absences >= 2 ? 'text-gray-900' : 'text-gray-900' :
                                                                     absences >= 2 ?  'text-gray-700 group-hover:text-red-error' :  'text-gray-700 group-hover:text-primary'
@@ -249,8 +247,8 @@ export default function AttendanceCenter() {
                             </div>
                         ))
                     ) : (
-                        <div className="py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                            <p className="text-gray-400 font-medium">No hay resultados</p>
+                        <div className="py-10 sm:py-14 lg:py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                            <p className="text-gray-400 text-sm font-medium">No hay resultados</p>
                         </div>
                     )
                 }

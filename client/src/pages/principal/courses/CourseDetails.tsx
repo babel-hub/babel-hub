@@ -410,8 +410,10 @@ export default function CourseDetails() {
                         </table>
 
                         {data.students.length === 0 && (
-                            <div className="text-gray-500 text-center py-10 text-sm">
-                                No hay estudiantes en este curso.
+                            <div className="p-3">
+                                <div className="py-10 sm:py-14 lg:py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                                    <p className="text-gray-400 text-sm font-medium">No hay estudiantes en este curso</p>
+                                </div>
                             </div>
                         )}
                     </div>

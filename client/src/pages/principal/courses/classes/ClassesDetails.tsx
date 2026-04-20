@@ -40,6 +40,16 @@ interface ClassDetailsData {
     assignments: Assignment[];
 }
 
+const NoStudents = ({ title }: { title: string }) => {
+    return (
+        <div className="p-3">
+            <div className="py-10 sm:py-14 lg:py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                <p className="text-gray-400 text-sm font-medium">{title}</p>
+            </div>
+        </div>
+    )
+}
+
 const StudentAttendanceRow = memo(function StudentAttendanceRow({
     student,
     status,
@@ -110,8 +120,21 @@ export default function ClassDetails() {
             setLoading(true);
 
             try {
-                const response = await api.get(`/classes/${id}`);
-                setData(response.data);
+                const [classData, periods] = await Promise.all([
+                    await api.get(`/classes/${id}`),
+                    await api.get('/periods')
+                ]);
+
+                const fetchedPeriods = periods.data.periods || periods.data;
+                const classDetails = classData.data
+
+                setData(classDetails);
+                setPeriods(fetchedPeriods);
+
+                if (Array.isArray(fetchedPeriods) && fetchedPeriods.length > 0) {
+                    setSelectedPeriod(fetchedPeriods[0]);
+                }
+
             } catch (error) {
                 console.error("Error fetching class:", error);
             } finally {
@@ -124,7 +147,7 @@ export default function ClassDetails() {
 
     useEffect(() => {
         const fetchAttendance = async () => {
-            if (!data || activeTab !== 'register attendance') return;
+            if (!data || data.students.length === 0 || activeTab !== 'register attendance') return;
 
             try {
                 setLoadingAttendance(true);
@@ -150,28 +173,8 @@ export default function ClassDetails() {
     }, [activeTab, attendanceDate, id, data]);
 
     useEffect(() => {
-        const fetchPeriods = async () => {
-            try {
-                const response = await api.get('/periods');
-                const fetchedPeriods = response.data.periods || response.data;
-                setPeriods(fetchedPeriods);
-
-                if (fetchedPeriods.length > 0) {
-                    setSelectedPeriod(fetchedPeriods[0]);
-                }
-            } catch (err: any) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPeriods();
-    }, []);
-
-    useEffect(() => {
         const fetchCourseAttendanceByClass = async () => {
-            if (!selectedPeriod || activeTab !== 'see attendance') return;
+            if (!selectedPeriod || data?.students.length === 0 || activeTab !== 'see attendance') return;
 
             const today = new Date();
             const periodStart = new Date(selectedPeriod.start_date);
@@ -325,7 +328,7 @@ export default function ClassDetails() {
 
             <div className="p-3 lg:p-4 xl:p-5 flex-1 styled-scrollbar overflow-y-auto">
                 {activeTab === 'assignments' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid bg-white grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {data.assignments.map((assignment) => (
                             <div key={assignment.id} className="border border-gray-100 rounded-xl p-5 hover:shadow-md transition-all bg-white flex flex-col h-full">
                                 <div className="flex justify-between items-start mb-3 gap-2">
@@ -345,8 +348,8 @@ export default function ClassDetails() {
                             </div>
                         ))}
                         {data.assignments.length === 0 && (
-                            <div className="col-span-full text-center py-10 bg-white rounded-xl border border-gray-100">
-                                <p className="text-gray-500 font-medium">No hay asignaciones creadas todavía.</p>
+                            <div className="md:col-span-2 lg:col-span-3">
+                                <NoStudents title="No hay asignaciones creadas todavía" />
                             </div>
                         )}
                     </div>
@@ -354,19 +357,30 @@ export default function ClassDetails() {
 
                 {activeTab === 'students' && (
                     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        <ul className="divide-y divide-gray-50">
-                            {data.students.map((student) => (
-                                <li key={student.student_id} className="py-3 px-5 flex items-center gap-4 hover:bg-gray-50">
-                                    <div className="w-10 h-10 rounded-full bg-primary-shadow text-primary-darker flex items-center justify-center text-sm font-bold shrink-0">
-                                        {getInitials(student.full_name)}
+                        {
+                            data.students.length > 0 ? (
+                                <ul className="divide-y divide-gray-50">
+                                    {
+                                        data.students.map((student) => (
+                                            <li key={student.student_id} className="py-3 px-5 flex items-center gap-4 hover:bg-gray-50">
+                                                <div className="w-10 h-10 rounded-full bg-primary-shadow text-primary-darker flex items-center justify-center text-sm font-bold shrink-0">
+                                                    {getInitials(student.full_name)}
+                                                </div>
+                                                <div>
+                                                    <span className="block text-sm md:text-base capitalize font-medium text-custom-black">{reverseName(student.full_name)}</span>
+                                                    <span className="block text-sm text-gray-500">{student.email}</span>
+                                                </div>
+                                            </li>
+                                        ))}
+                                </ul>
+                            ) : (
+                                <div className="p-3">
+                                    <div className="py-10 sm:py-14 lg:py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                                        <p className="text-gray-400 text-sm font-medium">No hay estudiantes en este curso</p>
                                     </div>
-                                    <div>
-                                        <span className="block text-sm md:text-base capitalize font-medium text-custom-black">{reverseName(student.full_name)}</span>
-                                        <span className="block text-sm text-gray-500">{student.email}</span>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                                </div>
+                            )
+                        }
                     </div>
                 )}
 
@@ -386,20 +400,30 @@ export default function ClassDetails() {
                             <LoadingContent title="Cargando..." />
                         ) : (
                             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                                <ul className="divide-y divide-gray-50">
-                                    {data.students.map((student) => {
-                                        const status = attendanceRecords[student.student_id] || 'present';
+                                {
+                                    data.students.length > 0 ? (
+                                        <ul className="divide-y divide-gray-50">
+                                            {data.students.map((student) => {
+                                                const status = attendanceRecords[student.student_id] || 'present';
 
-                                        return (
-                                            <StudentAttendanceRow
-                                                key={student.student_id}
-                                                student={student}
-                                                status={status}
-                                                onUpdate={updateStudentStatus}
-                                            />
-                                        );
-                                    })}
-                                </ul>
+                                                return (
+                                                    <StudentAttendanceRow
+                                                        key={student.student_id}
+                                                        student={student}
+                                                        status={status}
+                                                        onUpdate={updateStudentStatus}
+                                                    />
+                                                );
+                                            })}
+                                        </ul>
+                                    ) : (
+                                        <div className="p-3">
+                                            <div className="py-10 sm:py-14 lg:py-20 flex flex-col items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                                                <p className="text-gray-400 text-sm font-medium">No hay estudiantes en este curso</p>
+                                            </div>
+                                        </div>
+                                    )
+                                }
                             </div>
                         )}
                     </div>
@@ -460,11 +484,11 @@ export default function ClassDetails() {
                                     ))}
                                     {attendanceGrid.length === 0 && (
                                         <tr>
-                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="p-10 text-center text-gray-500">
+                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2}>
                                                 {   //@ts-ignore
                                                     new Date() < new Date(selectedPeriod.start_date)
-                                                    ? "Este periodo aún no ha comenzado."
-                                                    : "No hay datos de asistencia para este periodo."}
+                                                    ? (<NoStudents title="Este periodo aún no ha comenzado" />) : (<NoStudents title="No hay datos de asistencia para este periodo" />)
+                                                }
                                             </td>
                                         </tr>
                                     )}
