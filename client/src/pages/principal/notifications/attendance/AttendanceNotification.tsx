@@ -191,8 +191,8 @@ export default function AttendanceCenter() {
                                                         onClick={() => handleToggle(student, index)}
                                                         className={`group py-3 px-4 cursor-pointer transition-all duration-200 w-full border flex items-center justify-between rounded-2xl
                                                             ${isOpen ? 
-                                                                absences >= 2 ? 'border-red-error shadow-md' : 'border-primary shadow-md' :
-                                                                absences >= 2 ? 'border-red-error hover:shadow-sm' : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
+                                                                absences % 2 == 0 ? 'border-red-error shadow-md' : 'border-primary shadow-md' :
+                                                                absences % 2 == 0 ? 'border-red-error hover:shadow-sm' : 'border-gray-100 bg-white hover:border-primary hover:shadow-sm'
                                                         }`}
                                                     >
                                                         <div className="flex items-center min-w-0 gap-3">
