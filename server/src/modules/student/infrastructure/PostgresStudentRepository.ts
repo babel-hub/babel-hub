@@ -5,6 +5,7 @@ import { supabase } from "../../../services/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { AuthUser, StudentCreateCredentials, StudentUpdateCredentials } from "../../shared/domain/Shared.types.js";
+import { nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class PostgresStudentRepository implements IStudentRepository {
     async getStudents(userSchoolId: string, isActive: boolean): Promise<Students[]> {
@@ -148,13 +149,13 @@ export class PostgresStudentRepository implements IStudentRepository {
             `, [
                 authUserId,
                 studentCredentials.firstName,
-                studentCredentials.middleName ?? null,
+                nullifyEmpty(studentCredentials.middleName),
                 studentCredentials.firstLastName,
-                studentCredentials.secondLastName ?? null,
+                nullifyEmpty(studentCredentials.secondLastName),
                 studentCredentials.email,
                 authUser.userSchoolId,
-                studentCredentials.userName ?? null,
-                studentCredentials.phone ?? null,
+                nullifyEmpty(studentCredentials.userName),
+                nullifyEmpty(studentCredentials.phone),
             ]);
 
             const profileId = profile.rows[0].id;
@@ -225,11 +226,11 @@ export class PostgresStudentRepository implements IStudentRepository {
                 WHERE id = $7
             `, [
                 studentCredentials.firstName,
-                studentCredentials.middleName ?? null,
+                nullifyEmpty(studentCredentials.middleName),
                 studentCredentials.firstLastName,
-                studentCredentials.secondLastName ?? null,
-                studentCredentials.userName ?? null,
-                studentCredentials.phone ?? null,
+                nullifyEmpty(studentCredentials.secondLastName),
+                nullifyEmpty(studentCredentials.userName),
+                nullifyEmpty(studentCredentials.phone),
                 studentProfileId
             ]);
 

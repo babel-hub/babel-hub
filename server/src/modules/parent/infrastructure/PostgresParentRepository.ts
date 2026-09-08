@@ -5,6 +5,7 @@ import { supabase } from "../../../services/index.js";
 import { ConflictError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
 import { createAuditLog} from "../../../services/audit.service.js";
 import type {Parent, ParentStudent, RelationTypes} from "../domain/Parent.types.js";
+import { nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class PostgresParentRepository implements IParentRepository {
     async getParents(userSchoolId: string): Promise<Parent[]> {
@@ -130,13 +131,13 @@ export class PostgresParentRepository implements IParentRepository {
             `, [
                 authUserId,
                 parentCredentials.firstName,
-                parentCredentials.middleName ?? null,
+                nullifyEmpty(parentCredentials.middleName),
                 parentCredentials.firstLastName,
-                parentCredentials.secondLastName ?? null,
+                nullifyEmpty(parentCredentials.secondLastName),
                 parentCredentials.email,
                 authUser.userSchoolId,
-                parentCredentials.userName ?? null,
-                parentCredentials.phone ?? null
+                nullifyEmpty(parentCredentials.userName),
+                nullifyEmpty(parentCredentials.phone)
             ]);
 
             const profileId = profile.rows[0].id;
