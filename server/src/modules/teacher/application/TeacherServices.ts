@@ -2,6 +2,7 @@ import type { ITeacherRepository } from "../domain/ITeacherRepository.js";
 import type { CreateTeacher, TeacherDetails, Teachers } from "../domain/Teacher.types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } from "../../shared/domain/Shared.types.js";
+import {normalizeOptionalText, normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
 
 export class TeacherServices {
     constructor( private readonly teacherRepository : ITeacherRepository ) {}
@@ -23,20 +24,42 @@ export class TeacherServices {
     async createTeacher(teacherCredentials: TeacherCreateCredentials, authUser: AuthUser): Promise<CreateTeacher> {
         if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
 
-        if (!teacherCredentials.firstName ||
-            !teacherCredentials.firstLastName ||
-            !teacherCredentials.password ||
-            !teacherCredentials.email) throw new ValidationError("Faltan campos obligatorios del formulario");
+        const normalized = {
+            ...teacherCredentials,
+            firstName: normalizeText(teacherCredentials.firstName),
+            middleName: normalizeOptionalText(teacherCredentials.middleName),
+            firstLastName: normalizeText(teacherCredentials.firstLastName),
+            secondLastName: normalizeOptionalText(teacherCredentials.secondLastName),
+            userName: normalizeOptionalText(teacherCredentials.userName),
+            phone: nullifyEmpty(teacherCredentials.phone),
+            email: normalizeText(teacherCredentials.email),
+        }
 
-        return await this.teacherRepository.createTeacher(teacherCredentials, authUser);
+        if (!normalized.firstName ||
+            !normalized.firstLastName ||
+            !normalized.password ||
+            !normalized.email) throw new ValidationError("Faltan campos obligatorios del formulario");
+
+        return await this.teacherRepository.createTeacher(normalized, authUser);
     }
 
     async updateTeacher(teacherCredentials: TeacherUpdateCredentials, authUser: AuthUser): Promise<void> {
         if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!teacherCredentials.firstName || !teacherCredentials.firstLastName) throw new ValidationError("Faltan campos obligatorios");
-        if (!teacherCredentials.teacherId) throw new ValidationError("El ID del maestro es obligatorio");
 
-        return await this.teacherRepository.updateTeacher(teacherCredentials, authUser);
+        const normalized = {
+            ...teacherCredentials,
+            firstName: normalizeText(teacherCredentials.firstName),
+            middleName: normalizeOptionalText(teacherCredentials.middleName),
+            firstLastName: normalizeText(teacherCredentials.firstLastName),
+            secondLastName: normalizeOptionalText(teacherCredentials.secondLastName),
+            userName: normalizeOptionalText(teacherCredentials.userName),
+            phone: nullifyEmpty(teacherCredentials.phone),
+        }
+
+        if (!normalized.firstName || !normalized.firstLastName) throw new ValidationError("Faltan campos obligatorios");
+        if (!normalized.teacherId) throw new ValidationError("El ID del maestro es obligatorio");
+
+        return await this.teacherRepository.updateTeacher(normalized, authUser);
     }
 
     async deleteTeacher(teacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {

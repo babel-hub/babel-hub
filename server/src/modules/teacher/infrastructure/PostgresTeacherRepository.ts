@@ -4,8 +4,7 @@ import { pool } from "../../../db/index.js";
 import { supabase } from "../../../services/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type {AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials} from "../../shared/domain/Shared.types.js";
-import { nullifyEmpty } from "../../shared/domain/normalize.js";
+import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } from "../../shared/domain/Shared.types.js";
 
 export class PostgresTeacherRepository implements ITeacherRepository {
     async getTeachers(userSchoolId: string, available: string | undefined, includeTeacherId: string | undefined, isActive: boolean): Promise<Teachers[]> {
@@ -134,11 +133,11 @@ export class PostgresTeacherRepository implements ITeacherRepository {
             `, [
                 authUserId,
                 teacherCredentials.firstName,
-                nullifyEmpty(teacherCredentials.middleName),
+                teacherCredentials.middleName,
                 teacherCredentials.firstLastName,
-                nullifyEmpty(teacherCredentials.secondLastName),
-                nullifyEmpty(teacherCredentials.userName),
-                nullifyEmpty(teacherCredentials.phone),
+                teacherCredentials.secondLastName,
+                teacherCredentials.userName,
+                teacherCredentials.phone,
                 teacherCredentials.email,
                 authUser.userSchoolId
             ]);
@@ -219,11 +218,11 @@ export class PostgresTeacherRepository implements ITeacherRepository {
                 WHERE id = $7
             `, [
                 teacherCredentials.firstName,
-                nullifyEmpty(teacherCredentials.middleName),
+                teacherCredentials.middleName,
                 teacherCredentials.firstLastName,
-                nullifyEmpty(teacherCredentials.secondLastName),
-                nullifyEmpty(teacherCredentials.userName),
-                nullifyEmpty(teacherCredentials.phone),
+                teacherCredentials.secondLastName,
+                teacherCredentials.userName,
+                teacherCredentials.phone,
                 teacherUserId
             ]);
 

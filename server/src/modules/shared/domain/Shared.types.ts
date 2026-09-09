@@ -9,8 +9,8 @@ export interface BaseUserProfile {
     middleName: string | null | undefined;
     firstLastName: string;
     secondLastName: string | null | undefined;
-    userName: string;
-    phone: string;
+    userName: string | null | undefined;
+    phone: string | null | undefined;
 }
 
 export interface UserCredentialsForm extends BaseUserProfile {

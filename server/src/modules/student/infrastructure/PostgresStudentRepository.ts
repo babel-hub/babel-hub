@@ -5,7 +5,6 @@ import { supabase } from "../../../services/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { AuthUser, StudentCreateCredentials, StudentUpdateCredentials } from "../../shared/domain/Shared.types.js";
-import { nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class PostgresStudentRepository implements IStudentRepository {
     async getStudents(userSchoolId: string, isActive: boolean): Promise<Students[]> {
@@ -149,13 +148,13 @@ export class PostgresStudentRepository implements IStudentRepository {
             `, [
                 authUserId,
                 studentCredentials.firstName,
-                nullifyEmpty(studentCredentials.middleName),
+                studentCredentials.middleName,
                 studentCredentials.firstLastName,
-                nullifyEmpty(studentCredentials.secondLastName),
+                studentCredentials.secondLastName,
                 studentCredentials.email,
                 authUser.userSchoolId,
-                nullifyEmpty(studentCredentials.userName),
-                nullifyEmpty(studentCredentials.phone),
+                studentCredentials.userName,
+                studentCredentials.phone,
             ]);
 
             const profileId = profile.rows[0].id;
@@ -226,11 +225,11 @@ export class PostgresStudentRepository implements IStudentRepository {
                 WHERE id = $7
             `, [
                 studentCredentials.firstName,
-                nullifyEmpty(studentCredentials.middleName),
+                studentCredentials.middleName,
                 studentCredentials.firstLastName,
-                nullifyEmpty(studentCredentials.secondLastName),
-                nullifyEmpty(studentCredentials.userName),
-                nullifyEmpty(studentCredentials.phone),
+                studentCredentials.secondLastName,
+                studentCredentials.userName,
+                studentCredentials.phone,
                 studentProfileId
             ]);
 

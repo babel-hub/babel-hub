@@ -87,17 +87,15 @@ export function ParentFormModal({ mode, initialData, onClose, onSuccess }: Paren
         }
 
         const payload = {
-            firstName: formData.firstName.trim().toLowerCase(),
-            middleName: formData.middleName.trim().toLowerCase(),
-            firstLastName: formData.firstLastName.trim().toLowerCase(),
-            secondLastName: formData.secondLastName.trim().toLowerCase(),
-            userName: formData.userName.trim()
-                ? `@${formData.userName.trim().toLowerCase().replace(/^@/, '')}`
-                : "",
-            phone: formData.phone.trim(),
+            firstName: formData.firstName,
+            middleName: formData.middleName,
+            firstLastName: formData.firstLastName,
+            secondLastName: formData.secondLastName,
+            userName: formData.userName,
+            phone: formData.phone,
             ...(isCreateMode && {
                 password: formData.password,
-                email: formData.email.trim().toLowerCase(),
+                email: formData.email,
             })
         };
 

@@ -6,6 +6,7 @@ import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
 import type { StudentGrade } from "../../grade/domain/Grade.types.js";
 import type { DailyAttendance } from "../../attendance/domain/Attendance.types.js";
+import {normalizeOptionalText, normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
 
 export class ParentService {
     constructor(
@@ -53,13 +54,26 @@ export class ParentService {
 
     async createParent(parentCredentials: ParentCredentials, authUser: AuthUser): Promise<void> {
         if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (
-            !parentCredentials.email ||
-            !parentCredentials.firstName ||
-            !parentCredentials.firstLastName ||
-            !parentCredentials.password) throw new ValidationError("Faltan campos obligatorios del formulario");
 
-        return await this.parentRepository.createParent(parentCredentials, authUser);
+        const normalized = {
+            ...parentCredentials,
+            firstName: normalizeText(parentCredentials.firstName),
+            middleName: normalizeOptionalText(parentCredentials.middleName),
+            firstLastName: normalizeText(parentCredentials.firstLastName),
+            secondLastName: normalizeOptionalText(parentCredentials.secondLastName),
+            email: normalizeText(parentCredentials.email),
+            userName: normalizeOptionalText(parentCredentials.userName),
+            phone: nullifyEmpty(parentCredentials.phone),
+        }
+
+        if (
+            !normalized.email ||
+            !normalized.firstName ||
+            !normalized.firstLastName ||
+            !normalized.password
+        ) throw new ValidationError("Faltan campos obligatorios del formulario");
+
+        return await this.parentRepository.createParent(normalized, authUser);
     }
 
     async linkedParentToStudent(parentId: string, studentId: string, type: RelationTypes, authUser: AuthUser): Promise<void> {

@@ -15,10 +15,6 @@ interface ParentsTableProps {
 export function ParentsTable({ parents, onEdit, onDelete, onAddStudent }: ParentsTableProps) {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-    const toggleMenu = (id: string) => {
-        setActiveMenuId((prev) => (prev === id ? null : id));
-    };
-
     const closeMenu = () => setActiveMenuId(null);
 
     return (
@@ -33,13 +29,11 @@ export function ParentsTable({ parents, onEdit, onDelete, onAddStudent }: Parent
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                {parents.map((parent, index, array) => (
+                {parents.map((parent) => (
                     <ParentsRow
                         key={parent.parent_id}
-                        position={{ index, array: array.length - 1 }}
                         onAddStudent={onAddStudent}
                         isOpen={activeMenuId === parent.parent_id}
-                        toggleMenu={() => toggleMenu(parent.parent_id)}
                         closeMenu={closeMenu}
                         parent={parent}
                         onDelete={onDelete}
@@ -55,11 +49,9 @@ export function ParentsTable({ parents, onEdit, onDelete, onAddStudent }: Parent
 interface ParentsRowProps {
     parent: Parent;
     isOpen: boolean;
-    position: { index: number, array: number }
     onEdit: (parent: Parent) => void;
     onAddStudent: (parent: Parent) => void;
     onDelete: (parent: Parent) => void;
-    toggleMenu: () => void;
     closeMenu: () => void;
 }
 

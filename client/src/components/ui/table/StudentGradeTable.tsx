@@ -13,6 +13,7 @@ import { AssignmentMenu } from "./ui/AssignmentMenu.tsx";
 import { HiPlus } from "react-icons/hi";
 import { GradeCell } from "./ui/GradeCell.tsx";
 import { LuSave } from "react-icons/lu";
+import toast from "react-hot-toast";
 
 interface DirtyCell {
     value: number;
@@ -114,6 +115,31 @@ export function StudentGradeTable({
     const handleSaveAll = async () => {
         for (const assignmentId of dirtyAssignmentIds) {
             await handleSave(assignmentId);
+        }
+    };
+
+    const handlePasteColumn = (assignmentId: string, startIndex: number, values: (number | null | 'invalid')[]) => {
+        let applied = 0;
+        let invalid = 0;
+
+        values.forEach((val, offset) => {
+            const student = students[startIndex + offset];
+            if (!student) return;
+
+            if (val === 'invalid') {
+                invalid++;
+                return;
+            }
+
+            handleCellCommit(assignmentId, student.student_id, val);
+            applied++;
+        });
+
+        const remaining = students.length - startIndex;
+        if (values.length > remaining) {
+            toast.error(`Pegaste ${values.length} valores pero solo quedaban ${remaining} estudiantes. Se aplicaron ${applied}.`);
+        } else if (invalid > 0) {
+            toast.error(`${invalid} valor(es) no eran válidos y no se aplicaron.`);
         }
     };
 
@@ -254,6 +280,7 @@ export function StudentGradeTable({
                                                     maxValue={scale.max}
                                                     onCommentCommit={(newComment) => handleCommentCommit(asg.id, student.student_id, newComment, dbGrade?.value ?? null)}
                                                     onCommit={(value) => handleCellCommit(asg.id, student.student_id, value)}
+                                                    onPasteColumn={(values) => handlePasteColumn(asg.id, index, values)}
                                                 />
                                             )
                                         })

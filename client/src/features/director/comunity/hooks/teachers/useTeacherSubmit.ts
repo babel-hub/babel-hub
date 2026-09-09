@@ -8,7 +8,7 @@ export const useTeacherSubmit = (onSuccess: () => void) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const teacherSubmit = async (mode: modeTypes, teacherId: string, payload: CreateTeacher) => {
+    const teacherSubmit = async (mode: modeTypes, teacherId: string | null, payload: CreateTeacher) => {
         setLoading(true);
         try {
             if (mode === "edit" && teacherId) {

@@ -52,7 +52,7 @@ export function AssessmentFormModal({ mode, assessmentInfo, assessment, onClose,
         }
 
         const payload = {
-            name: formModal.name.trim().toLowerCase(),
+            name: formModal.name,
             weight: weightValue,
             gradingTemplateId: formModal.gradingTemplateId
         }
