@@ -1,30 +1,19 @@
 import ButtonChevronBack from "../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { reverseName } from "../../../../../types";
-import { HiOutlineCalendar, HiOutlineClipboardList } from "react-icons/hi";
-import React from "react";
-import { useNavigate } from "react-router-dom";
 import { LuClipboardPenLine } from "react-icons/lu";
+import { HiOutlineCalendar, HiOutlineClipboardList } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
+import React from "react";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
 
-interface CumulativeGPALayoutProps {
+interface AcademicTrackingLayoutProps {
     children: React.ReactNode;
     student: ParentStudent[];
     activeTab: CumulativeGPATypes;
     onButtonChange: (tab: CumulativeGPATypes) => void;
-    periods: any[];
-    selectedPeriodId: string;
-    onPeriodChange: (id: string) => void;
 }
 
-export function CumulativeGPALayout({
-                                        children,
-                                        student,
-                                        activeTab,
-                                        onButtonChange,
-                                        periods,
-                                        selectedPeriodId,
-                                        onPeriodChange
-                                    }: CumulativeGPALayoutProps) {
+export function AcademicTrackingLayout({ children, student, activeTab, onButtonChange } : AcademicTrackingLayoutProps) {
     const navigate = useNavigate();
 
     return (
@@ -36,7 +25,7 @@ export function CumulativeGPALayout({
                             <ButtonChevronBack onClick={() => navigate(-1)} />
                             <div>
                                 <h1 className="text-xl md:text-1xl xl:text-2xl capitalize font-bold text-custom-black">
-                                    Acumulado
+                                    Seguimiento Academico
                                 </h1>
                                 <p className="text-gray-500 mt-1 text-xs md:text-sm">
                                     Estudiante: <span className="font-medium capitalize text-gray-700">
@@ -51,19 +40,6 @@ export function CumulativeGPALayout({
                             </span>
                                 </p>
                             </div>
-                        </div>
-
-                        <div className={`self-end sm:self-auto ${activeTab === 'attendance' ? 'hidden' : ''}`}>
-                            <select
-                                className="bg-white text-sm capitalize appearance-none text-custom-black border border-gray-200 rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                                value={selectedPeriodId}
-                                disabled={activeTab === 'attendance'}
-                                onChange={(e) => onPeriodChange(e.target.value)}
-                            >
-                                {periods?.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                            </select>
                         </div>
                     </div>
                 </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import type {ParentStudent} from "../types/types.ts";
-import {getParentStudents} from "../api";
+import type { ParentStudent } from "../types/types.ts";
+import { getParentStudents } from "../api";
 
-export const useParentData = () => {
+export const useStudentData = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [students, setStudents] = useState<ParentStudent[]>([]);
 

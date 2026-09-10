@@ -1,11 +1,9 @@
 import api from "../../../../api/client.ts";
-import type { ClassFinalGrade, DailyAttendance, ParentStudent } from "../types/types.ts";
+import type {
+    ClassFinalGrade,
+    DailyAttendance
+} from "../types/types.ts";
 import type { Period } from "../../../../shared/types/types.ts";
-
-export const getParentStudents = async (): Promise<ParentStudent[]> => {
-    const response = await api.get('parents/students');
-    return response.data.students
-}
 
 export const getStudentGrades = async (studentId: string, periodId: string): Promise<ClassFinalGrade[]> => {
     const response = await api.get(`parents/student/${studentId}/period/${periodId}/grades`);

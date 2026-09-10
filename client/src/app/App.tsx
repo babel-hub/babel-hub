@@ -31,6 +31,7 @@ import ParentLayout from "../pages/parent/ParentLayout.tsx";
 import ParentDashboard from "../pages/parent/dashboard/ParentDashboard.tsx";
 import Parents from "../pages/principal/community/parents/parents.tsx";
 import CumulativeGPA from "../pages/parent/cumulativeGPA/CumulativeGPA.tsx";
+import AcademicTracking from "../pages/parent/academic-tracking/AcademicTracking.tsx";
 
 const queryClient = new QueryClient();
 
@@ -135,6 +136,7 @@ function App() {
                         <Route path="dashboard" index element={<ParentDashboard />} />
 
                         <Route path="acumulado" element={<CumulativeGPA />} />
+                        <Route path="seguimiento-academico" element={<AcademicTracking />} />
                     </Route>
 
 

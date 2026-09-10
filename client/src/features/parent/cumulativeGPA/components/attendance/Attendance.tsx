@@ -1,9 +1,9 @@
-import type { ParentStudent } from "../../types/types.ts";
 import { useAttendance } from "../../hooks/attendance/useAttendance.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { BsCalendar4Week } from "react-icons/bs";
 import { GoClock, GoCheckCircle, GoXCircle, GoDash } from "react-icons/go";
 import {useState} from "react";
+import type { ParentStudent } from "../../../shared/types/types.ts";
 
 interface AttendanceProps {
     students: ParentStudent[];

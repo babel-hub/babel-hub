@@ -1,20 +1,18 @@
-import { CumulativeGPALayout } from "../../../features/parent/cumulativeGPA/components";
 import { useState, useEffect } from "react";
-import type { CumulativeGPATypes } from "../../../features/parent/cumulativeGPA/types/types.ts";
-import { useParentData } from "../../../features/parent/cumulativeGPA/hooks/useParentData.ts";
+
+import { CumulativeGPALayout, Grades, Attendance, Observations } from "../../../features/parent/cumulativeGPA/components";
 import { LoadingContent } from "../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../components/ui/blocks/NoResults.tsx";
 import { usePeriods } from "../../../shared/hooks/usePeriods.ts";
 
-import { Grades } from "../../../features/parent/cumulativeGPA/components/grades/Grades.tsx";
-import { Attendance } from "../../../features/parent/cumulativeGPA/components/attendance/Attendance.tsx";
-import { Observations } from "../../../features/parent/cumulativeGPA/components/observations/Observations.tsx";
 import { formatterDate } from "../../../types";
+import { useStudentData } from "../../../features/parent/shared/hooks/useStudentData.ts";
+import type { CumulativeGPATypes } from "../../../features/parent/shared/types/types.ts";
 
 export default function CumulativeGPA() {
     const [tab, setTab] = useState<CumulativeGPATypes>('attendance');
     const { periods } = usePeriods();
-    const { loading, students } = useParentData();
+    const { loading, students } = useStudentData();
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const initialDate = formatterDate.format(new Date());
 

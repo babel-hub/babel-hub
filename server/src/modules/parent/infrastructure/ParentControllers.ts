@@ -22,8 +22,8 @@ export class ParentControllers {
             const userSchoolId = request.user!.schoolId as string;
             const userRole = request.user!.role as string;
 
-            const students = await this.parentService.getParentStudents({ userId, userRole, userSchoolId });
-            response.status(200).json({ students });
+            const student = await this.parentService.getParentStudents({ userId, userRole, userSchoolId });
+            response.status(200).json({ student });
         } catch (error : any) {
             next(error);
         }

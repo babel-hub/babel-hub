@@ -1,8 +1,8 @@
 import { useGrades } from "../../hooks/grades/useGrades.ts";
-import type { ParentStudent } from "../../types/types.ts";
 import { toneBg } from "../../../../../types";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import {LuGraduationCap} from "react-icons/lu";
+import type { ParentStudent } from "../../../shared/types/types.ts";
 
 interface GradesProps {
     students: ParentStudent[];
