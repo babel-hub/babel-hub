@@ -26,3 +26,14 @@ export interface StudentGrade {
     scale_min: number;
     passing_value: number;
 }
+
+export interface StudentDailyGrade {
+    class_id: string;
+    subject_name: string;
+    assignment_id: string;
+    assignment_name: string;
+    criteria_name: string;
+    grade: number;
+    comment: string | null;
+    graded_at: string;
+}

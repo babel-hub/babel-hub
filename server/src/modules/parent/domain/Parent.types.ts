@@ -33,9 +33,3 @@ export interface ParentStudent {
     course_id: string;
     course_name: string;
 }
-
-export interface Date {
-    start: string;
-    end: string;
-    date: string;
-}

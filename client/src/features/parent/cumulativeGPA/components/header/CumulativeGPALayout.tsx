@@ -40,15 +40,15 @@ export function CumulativeGPALayout({
                                 </h1>
                                 <p className="text-gray-500 mt-1 text-xs md:text-sm">
                                     Estudiante: <span className="font-medium capitalize text-gray-700">
-                                {
-                                    reverseName({
-                                        middleName: student[0].student_middle_name,
-                                        secondLastName: student[0].student_second_last_name,
-                                        firstName: student[0].student_first_name,
-                                        firstLastName: student[0].student_first_last_name
-                                    })
-                                }
-                            </span>
+                                        {
+                                            reverseName({
+                                                middleName: student[0].student_middle_name,
+                                                secondLastName: student[0].student_second_last_name,
+                                                firstName: student[0].student_first_name,
+                                                firstLastName: student[0].student_first_last_name
+                                            })
+                                        } - {student[0].course_name}
+                                    </span>
                                 </p>
                             </div>
                         </div>

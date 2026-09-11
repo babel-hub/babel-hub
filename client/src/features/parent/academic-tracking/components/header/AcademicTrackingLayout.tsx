@@ -1,8 +1,6 @@
-import ButtonChevronBack from "../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { reverseName } from "../../../../../types";
 import { LuClipboardPenLine } from "react-icons/lu";
 import { HiOutlineCalendar, HiOutlineClipboardList } from "react-icons/hi";
-import { useNavigate } from "react-router-dom";
 import React from "react";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
 
@@ -14,31 +12,31 @@ interface AcademicTrackingLayoutProps {
 }
 
 export function AcademicTrackingLayout({ children, student, activeTab, onButtonChange } : AcademicTrackingLayoutProps) {
-    const navigate = useNavigate();
-
     return (
-        <div className="flex flex-col shadow-xs md:rounded-xl h-[calc(100dvh-5rem)] md:h-[calc(100dvh-1.8rem)] w-full bg-gray-50">
-            <div className="sticky top-0 z-10 p-3 bg-white md:rounded-t-xl flex flex-col gap-4">
+        <div className="flex flex-col md:rounded-xl h-[calc(100dvh-5rem)] md:h-[calc(100dvh-1.8rem)] w-full bg-gray-50">
+            <div className="sticky top-0 z-10 p-3 bg-white md:rounded-xl border border-gray-100  flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center w-full justify-between">
                         <div className="flex gap-4 items-center">
-                            <ButtonChevronBack onClick={() => navigate(-1)} />
                             <div>
-                                <h1 className="text-xl md:text-1xl xl:text-2xl capitalize font-bold text-custom-black">
+                                <h1 className="text-[10px] md:text-xs uppercase font-bold text-primary-darker">
                                     Seguimiento Academico
                                 </h1>
-                                <p className="text-gray-500 mt-1 text-xs md:text-sm">
-                                    Estudiante: <span className="font-medium capitalize text-gray-700">
-                                {
-                                    reverseName({
-                                        middleName: student[0].student_middle_name,
-                                        secondLastName: student[0].student_second_last_name,
-                                        firstName: student[0].student_first_name,
-                                        firstLastName: student[0].student_first_last_name
-                                    })
-                                }
-                            </span>
-                                </p>
+                                <div className="w-full">
+                                    <p className="text-custom-black font-bold capitalize text-lg md:text-xl xl:text-2xl">
+                                        {
+                                            reverseName({
+                                                middleName: student[0].student_middle_name,
+                                                secondLastName: student[0].student_second_last_name,
+                                                firstName: student[0].student_first_name,
+                                                firstLastName: student[0].student_first_last_name
+                                            })
+                                        }
+                                    </p>
+                                    <div className="flex items-center w-full gap-2">
+                                        <p className="text-custom-black text-xs md:text-sm ">Estudiante - {student[0].course_name}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -80,11 +78,10 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                         <HiOutlineCalendar className="size-4" />
                         Observaciones
                     </button>
-
                 </div>
-
             </div>
-            <div className="overflow-auto no-scrollbar">
+
+            <div className="overflow-auto mt-3 md:rounded-xl no-scrollbar">
                 {children}
             </div>
         </div>

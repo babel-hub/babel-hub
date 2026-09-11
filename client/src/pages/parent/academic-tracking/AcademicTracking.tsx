@@ -12,8 +12,6 @@ export default function AcademicTracking () {
     const { loading, students } = useStudentData();
     const initialDate = formatterDate.format(new Date());
 
-    console.log(students);
-
     if (loading) return <LoadingContent title="" />;
     if (students.length === 0) return <NoResults title='Estudiantes no asignados a este acudiante' />;
 
@@ -23,7 +21,7 @@ export default function AcademicTracking () {
             activeTab={tab}
             onButtonChange={setTab}
         >
-            {tab === 'grades' && (<Grades students={students} />)}
+            {tab === 'grades' && (<Grades students={students} date={initialDate} />)}
             {tab === 'attendance' && (<Attendance date={initialDate} students={students} />)}
             {tab === 'observations' && (<Observations />)}
         </AcademicTrackingLayout>

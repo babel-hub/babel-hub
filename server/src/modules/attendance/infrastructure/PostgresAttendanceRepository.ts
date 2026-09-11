@@ -11,6 +11,7 @@ import type { IAttendanceRepository } from "../domain/IAttendanceRepository.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { NotFoundError } from "../../errors/domain/CustomErrors.js";
+import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class PostgresAttendanceRepository implements IAttendanceRepository {
     async getDailyClassAttendance(classId: string, schoolId: string, date: string, isActive: boolean): Promise<ClassAttendance[]> {
@@ -173,9 +174,19 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async getStudentAttendance(studentId: string, startDate: string, endDate: string, date: string): Promise<DailyAttendance[]> {
+    async getStudentDailyAttendance(studentId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]> {
         const client = await pool.connect();
         try {
+            const check = await client.query(`
+                SELECT 1
+                FROM parent_student ps
+                JOIN parent p ON ps.parent_id = p.id
+                WHERE p.profile_id = $1 AND ps.student_id = $2
+                LIMIT 1;
+            `, [authUser.userId, studentId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+
             const query = `
                 SELECT
                     c.id AS class_id,
@@ -185,7 +196,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                 FROM student s
                 JOIN class c ON s.course_id = c.course_id
                 JOIN subject sub ON c.subject_id = sub.id
-                LEFT JOIN attendance a  ON a.class_id = c.id
+                JOIN attendance a ON a.class_id = c.id
                 AND a.student_id = s.id
                 AND a.date = $1
                 WHERE s.id = $2

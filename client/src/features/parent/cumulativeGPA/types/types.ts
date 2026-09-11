@@ -6,10 +6,3 @@ export interface ClassFinalGrade {
     scale_min: number;
     passing_value: number;
 }
-
-export interface DailyAttendance {
-    class_id: string;
-    class_name: string;
-    status: 'no_data' | 'absent' | 'late' | 'excused' | 'present';
-    recorded_at: string;
-}

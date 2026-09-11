@@ -5,7 +5,6 @@ import { LoadingContent } from "../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../components/ui/blocks/NoResults.tsx";
 import { usePeriods } from "../../../shared/hooks/usePeriods.ts";
 
-import { formatterDate } from "../../../types";
 import { useStudentData } from "../../../features/parent/shared/hooks/useStudentData.ts";
 import type { CumulativeGPATypes } from "../../../features/parent/shared/types/types.ts";
 
@@ -14,7 +13,6 @@ export default function CumulativeGPA() {
     const { periods } = usePeriods();
     const { loading, students } = useStudentData();
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
-    const initialDate = formatterDate.format(new Date());
 
     useEffect(() => {
         if (periods && periods.length > 0 && !selectedPeriodId) {
@@ -41,7 +39,7 @@ export default function CumulativeGPA() {
             onPeriodChange={setSelectedPeriodId}
         >
             {tab === 'grades' && (<Grades students={students} periodId={selectedPeriod?.id} />)}
-            {tab === 'attendance' && (<Attendance date={initialDate} students={students} period={selectedPeriod} />)}
+            {tab === 'attendance' && (<Attendance students={students} period={selectedPeriod} />)}
             {tab === 'observations' && (<Observations />)}
         </CumulativeGPALayout>
     );

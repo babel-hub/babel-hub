@@ -1,9 +1,16 @@
 import type { IGradeRepository } from "../domain/IGradeRepository.js";
-import type {GradeByAssignment, GradeRecord, StudentGrade, ValidScales} from "../domain/Grade.types.js";
+import type {
+    GradeByAssignment,
+    GradeRecord,
+    StudentDailyGrade,
+    StudentGrade,
+    ValidScales
+} from "../domain/Grade.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
+import {getRawAsset} from "node:sea";
 
 export class PostgresGradeRepository implements IGradeRepository {
     async getGradesByClass(classId: string): Promise<GradeByAssignment[]> {
@@ -27,9 +34,19 @@ export class PostgresGradeRepository implements IGradeRepository {
         }
     }
 
-    async getStudentGrades(studentId: string, periodId: string): Promise<StudentGrade[]> {
+    async getStudentGrades(studentId: string, periodId: string, authUser: AuthUser): Promise<StudentGrade[]> {
         const client = await pool.connect();
         try {
+            const check = await client.query(`
+                SELECT 1
+                FROM parent_student ps
+                JOIN parent p ON ps.parent_id = p.id
+                WHERE p.profile_id = $1 AND ps.student_id = $2
+                    LIMIT 1;
+            `, [authUser.userId, studentId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+
             const result = await client.query(`
                 WITH CriteriaAverages AS (
                     SELECT
@@ -72,6 +89,47 @@ export class PostgresGradeRepository implements IGradeRepository {
             `, [studentId, periodId]);
 
             return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getStudentDailyGrades(studentId: string, date: string, authUser: AuthUser): Promise<StudentDailyGrade[]> {
+        const client = await pool.connect();
+        try {
+            const check = await client.query(`
+                SELECT 1
+                FROM parent_student ps
+                JOIN parent p ON ps.parent_id = p.id
+                WHERE p.profile_id = $1 AND ps.student_id = $2
+                LIMIT 1;
+            `, [authUser.userId, studentId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+
+            const grades = await client.query(`
+                SELECT
+                    c.id AS class_id,
+                    sub.name AS subject_name,
+                    ass.id AS assignment_id,
+                    ass.name AS assignment_name,
+                    ac.name AS criteria_name,
+                    g.value AS grade,
+                    g.comment AS comment,
+                    g.created_at AS graded_at
+                FROM student st
+                JOIN class c ON st.course_id = c.course_id
+                JOIN subject sub ON c.subject_id = sub.id
+                JOIN assignment ass ON c.id = ass.class_id
+                JOIN assessment_criteria ac ON ass.assessment_criteria_id = ac.id
+                JOIN grade g ON st.id = g.student_id AND ass.id = g.assignment_id
+                WHERE st.id = $1
+                  AND g.value IS NOT NULL
+                  AND (g.created_at AT TIME ZONE 'America/Bogota')::DATE = $2
+                ORDER BY sub.name ASC;
+            `, [studentId, date]);
+
+            return grades.rows;
         } finally {
             client.release();
         }

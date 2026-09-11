@@ -40,10 +40,17 @@ router.get(
 )
 
 router.get(
-    "/student/:studentId/attendance",
+    "/student/:studentId/daily/attendance",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getStudentAttendance
+    controllers.getStudentDailyAttendance
+)
+
+router.get(
+    "/student/:studentId/daily/grades",
+    authMiddleware,
+    authorizedRoles(['parent']),
+    controllers.getStudentDailyGrades
 )
 
 router.post(

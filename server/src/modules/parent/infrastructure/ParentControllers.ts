@@ -45,19 +45,33 @@ export class ParentControllers {
         }
     }
 
-    getStudentAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+    getStudentDailyGrades = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const studentId = request.params.studentId as string;
-
-            const startDate = request.query.startDate as string;
-            const endDate = request.query.endDate as string;
             const date = request.query.date as string;
 
             const userId = request.user!.userId as string;
             const userSchoolId = request.user!.schoolId as string;
             const userRole = request.user!.role as string;
 
-            const attendance = await this.parentService.getStudentAttendance(studentId, { start: startDate, end: endDate, date }, { userId, userRole, userSchoolId });
+            const grades = await this.parentService.getStudentDailyGrades(studentId, date, { userId, userRole, userSchoolId });
+            response.status(200).json({ grades });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    getStudentDailyAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const studentId = request.params.studentId as string;
+            const date = request.query.date as string;
+
+            const userId = request.user!.userId as string;
+            const userSchoolId = request.user!.schoolId as string;
+            const userRole = request.user!.role as string;
+
+            const attendance = await this.parentService.getStudentDailyAttendance(studentId, date, { userId, userRole, userSchoolId });
             response.status(200).json({ attendance });
         } catch (error : any) {
             next(error);
