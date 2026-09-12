@@ -1,8 +1,11 @@
 import type { ParentStudent } from "../../../shared/types/types.ts";
 import { useDailyGrades } from "../../hooks/grades/useDailyGrades.ts";
+import { useAccumulatedGrades } from "../../hooks/grades/useAccumulatedGrades.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import { useEffect, useMemo, useState } from "react";
+import { DayDetailPanel } from "./DayDetailPanel.tsx";
+import { AccumulatedPanel } from "./AccumulatedPanel.tsx";
 import type { StudentDailyGrade } from "../../types/types.ts";
 
 interface GradesProps {
@@ -10,29 +13,57 @@ interface GradesProps {
     date: string;
 }
 
-export function Grades({ students, date }: GradesProps) {
-    const studentId = students[0]?.student_id ?? '';
-    const { loading, grades } = useDailyGrades(studentId, date);
-    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+type SelectedSubject = {
+    classId: string;
+    subjectName: string;
+};
 
-    const gradesBySubject = useMemo(() => {
-        const map = new Map<string, StudentDailyGrade[]>();
+type SubjectGroup = {
+    classId: string;
+    subjectName: string;
+    grades: StudentDailyGrade[];
+};
+
+export function Grades({ students, date: initialDate }: GradesProps) {
+    const studentId = students[0]?.student_id ?? '';
+    const [date, setDate] = useState(initialDate);
+
+    const { loading, grades } = useDailyGrades(studentId, date);
+    const [selectedSubject, setSelectedSubject] = useState<SelectedSubject | null>(null);
+
+    const { accumulatedGrades: accumulated, loading: loadingAccumulated } =
+        useAccumulatedGrades(
+            studentId,
+            selectedSubject?.classId ?? '',
+            selectedSubject?.subjectName ?? '',
+        );
+
+    const subjectsByClass = useMemo(() => {
+        const map = new Map<string, SubjectGroup>();
         for (const g of grades) {
-            const list = map.get(g.subject_name) ?? [];
-            list.push(g);
-            map.set(g.subject_name, list);
+            const entry = map.get(g.class_id) ?? {
+                classId: g.class_id,
+                subjectName: g.subject_name,
+                grades: [],
+            };
+            entry.grades.push(g);
+            map.set(g.class_id, entry);
         }
         return map;
     }, [grades]);
 
-    const subjectNames = useMemo(() => Array.from(gradesBySubject.keys()), [gradesBySubject]);
+    const subjectGroups = useMemo(
+        () => Array.from(subjectsByClass.values()),
+        [subjectsByClass],
+    );
 
     useEffect(() => {
         setSelectedSubject((prev) => {
-            if (prev && subjectNames.includes(prev)) return prev;
-            return subjectNames.length > 0 ? subjectNames[0] : null;
+            if (prev && subjectsByClass.has(prev.classId)) return prev;
+            const first = subjectsByClass.values().next().value;
+            return first ? { classId: first.classId, subjectName: first.subjectName } : null;
         });
-    }, [subjectNames]);
+    }, [subjectsByClass]);
 
     if (students.length === 0) {
         return <NoResults title="No hay estudiantes registrados" />;
@@ -40,35 +71,40 @@ export function Grades({ students, date }: GradesProps) {
 
     if (loading) return <LoadingContent title="" />;
 
-    const selectedGrades = selectedSubject ? gradesBySubject.get(selectedSubject) ?? [] : [];
+    const selectedGrades = selectedSubject ? subjectsByClass.get(selectedSubject.classId)?.grades ?? [] : [];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 w-full">
-            <div className="flex flex-col gap-2 p-3 bg-white md:rounded-xl border border-gray-100">
+            <div className="flex flex-col gap-2 p-4 md:p-5 bg-white rounded-xl border border-gray-100">
                 <div>
                     <span className="text-primary-darker uppercase text-xs font-semibold">Calificaciones</span>
                     <h3 className="text-custom-black font-bold text-base md:text-xl">Materias</h3>
                     <p className="text-gray-500 text-sm">Selecciona una para ver su detalle</p>
                 </div>
-                <div className="flex flex-col gap-2">
-                    {subjectNames.length > 0 ? (
-                        subjectNames.map((subjectName) => {
-                            const subjectGrades = gradesBySubject.get(subjectName)!;
-                            const isSelected = subjectName === selectedSubject;
+                <div className="flex flex-col gap-1">
+                    {subjectGroups.length > 0 ? (
+                        subjectGroups.map(({ classId, subjectName, grades: subjectGrades }) => {
+                            const isSelected = classId === selectedSubject?.classId;
 
                             return (
                                 <button
-                                    key={subjectName}
-                                    onClick={() => setSelectedSubject(subjectName)}
+                                    key={classId}
+                                    onClick={() => setSelectedSubject({ classId, subjectName })}
                                     aria-pressed={isSelected}
-                                    className={`flex cursor-pointer p-2 rounded-xl border justify-between items-center gap-5 transition-colors
-                                        ${isSelected ? 'bg-primary/10 border-primary/20' : 'border-transparent hover:bg-gray-100 hover:border-gray-100'}`}
+                                    className={`flex cursor-pointer p-3 rounded-xl border justify-between items-center gap-3 transition-colors text-left
+                                        ${isSelected ? 'bg-primary-shadow border-primary-darker/10' : 'border-transparent hover:bg-gray-100 hover:border-gray-200'}`}
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
                                         <span className="w-2.5 h-2.5 bg-primary rounded-full" />
-                                        <p className='font-semibold text-sm md:text-base capitalize text-custom-black'>{subjectName}</p>
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-sm md:text-base capitalize text-custom-black truncate">
+                                                {subjectName}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p className="font-semibold">{subjectGrades[0]?.grade}</p>
+                                    <p className="font-bold text-custom-black shrink-0">
+                                        {subjectGrades[0]?.grade}
+                                    </p>
                                 </button>
                             );
                         })
@@ -78,32 +114,20 @@ export function Grades({ students, date }: GradesProps) {
                 </div>
             </div>
 
-            <div className="bg-white md:rounded-xl col-span-2 p-3 border border-gray-100">
-                {selectedGrades.length > 0 ? (
-                    <div className="flex flex-col gap-3">
-                        <h3 className="text-custom-black font-bold text-base md:text-lg capitalize">{selectedSubject}</h3>
-                        {selectedGrades.map((g) => (
-                            <div key={g.assignment_id} className="flex flex-col gap-1 p-3 rounded-lg border border-gray-100">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="font-semibold text-sm text-custom-black">{g.assignment_name}</p>
-                                        <p className="text-xs text-gray-500 capitalize">{g.criteria_name}</p>
-                                    </div>
-                                    <span className="font-bold text-base text-custom-black">{g.grade}</span>
-                                </div>
-                                {g.comment && (
-                                    <p className="text-xs text-gray-600 italic mt-1">"{g.comment}"</p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <NoResults title="No hay resultados" />
-                )}
-            </div>
+            <DayDetailPanel
+                subjectName={selectedSubject?.subjectName ?? null}
+                date={date}
+                onDateChange={setDate}
+                grades={selectedGrades}
+            />
 
-            <div className="bg-white md:rounded-xl border border-gray-100">
-            </div>
+            {loadingAccumulated ? (
+                <div className="bg-white rounded-xl border border-gray-100 p-4">
+                    <LoadingContent title="" />
+                </div>
+            ) : (
+                <AccumulatedPanel accumulated={accumulated} insight="El desempeño se mantiene estable. Revisa los comentarios de cada actividad para identificar el siguiente paso."/>
+            )}
         </div>
     );
 }

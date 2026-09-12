@@ -1,6 +1,6 @@
 import { reverseName } from "../../../../../types";
 import { LuClipboardPenLine } from "react-icons/lu";
-import { HiOutlineCalendar, HiOutlineClipboardList } from "react-icons/hi";
+import {HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiOutlineClipboardList} from "react-icons/hi";
 import React from "react";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
 
@@ -42,42 +42,60 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                     </div>
                 </div>
 
-                <div className="flex w-full sm:w-1/2 items-center gap-1 rounded-xl bg-gray-50 p-1">
-                    <button
-                        onClick={() => onButtonChange('attendance')}
-                        className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
-                            activeTab === 'attendance'
-                                ? 'bg-primary text-white shadow-sm'
-                                : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
-                        }`}
-                    >
-                        <LuClipboardPenLine className="size-4" />
-                        Asistencia
-                    </button>
+                <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center w-full max-w-lg rounded-xl gap-1 bg-gray-50">
+                        <button
+                            onClick={() => onButtonChange('attendance')}
+                            className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
+                                activeTab === 'attendance'
+                                    ? 'bg-primary text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
+                            }`}
+                        >
+                            <LuClipboardPenLine className="size-4" />
+                            Asistencia
+                        </button>
 
-                    <button
-                        onClick={() => onButtonChange('grades')}
-                        className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
-                            activeTab === 'grades'
-                                ? 'bg-primary text-white '
-                                : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
-                        }`}
-                    >
-                        <HiOutlineClipboardList className="size-4" />
-                        Calificaciones
-                    </button>
+                        <button
+                            onClick={() => onButtonChange('grades')}
+                            className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
+                                activeTab === 'grades'
+                                    ? 'bg-primary text-white '
+                                    : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
+                            }`}
+                        >
+                            <HiOutlineClipboardList className="size-4" />
+                            Calificaciones
+                        </button>
 
-                    <button
-                        onClick={() => onButtonChange('observations')}
-                        className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
-                            activeTab === 'observations'
-                                ? 'bg-primary text-white '
-                                : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
-                        }`}
-                    >
-                        <HiOutlineCalendar className="size-4" />
-                        Observaciones
-                    </button>
+                        <button
+                            onClick={() => onButtonChange('observations')}
+                            className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
+                                activeTab === 'observations'
+                                    ? 'bg-primary text-white '
+                                    : 'text-gray-500 hover:text-slate-900 hover:bg-gray-100/60'
+                            }`}
+                        >
+                            <HiOutlineCalendar className="size-4" />
+                            Observaciones
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-1 text-gray-500 text-sm">
+                        <button
+                            className="p-1 rounded-full hover:bg-gray-100 cursor-pointer"
+                            aria-label="Día anterior"
+                        >
+                            <HiChevronLeft />
+                        </button>
+                        <span>Miércoles, 3 de junio</span>
+                        <button
+                            disabled={true}
+                            className="p-1 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                            aria-label="Día siguiente"
+                        >
+                            <HiChevronRight />
+                        </button>
+                    </div>
                 </div>
             </div>
 
