@@ -2,8 +2,8 @@ import { useAttendance } from "../../hooks/attendance/useAttendance.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { BsCalendar4Week } from "react-icons/bs";
 import { GoClock, GoCheckCircle, GoXCircle, GoDash } from "react-icons/go";
-import { useState } from "react";
 import type { ParentStudent } from "../../../shared/types/types.ts";
+import { formatDayLabel } from "../../../../utils/utils.ts";
 
 interface AttendanceProps {
     students: ParentStudent[];
@@ -11,14 +11,7 @@ interface AttendanceProps {
 }
 
 export function Attendance({ students, date }: AttendanceProps) {
-    const [attendanceDate, setAttendanceDate] = useState<string>(date);
-    const { loading, attendance } = useAttendance(students[0]?.student_id, attendanceDate);
-
-    const formattedDate = new Intl.DateTimeFormat('es-ES', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    }).format(new Date(attendanceDate + 'T00:00:00'));
+    const { loading, attendance } = useAttendance(students[0]?.student_id, date);
 
     if (loading) return <LoadingContent title="" />;
 
@@ -56,16 +49,8 @@ export function Attendance({ students, date }: AttendanceProps) {
                             <BsCalendar4Week className="size-5 text-primary" />
                         </div>
                         <h2 className="capitalize font-bold text-base md:text-lg text-custom-black">
-                            {formattedDate}
+                            {formatDayLabel(date)}
                         </h2>
-                    </div>
-                    <div>
-                        <input
-                            type="date"
-                            value={attendanceDate}
-                            onChange={(e) => setAttendanceDate(e.target.value)}
-                            className="bg-gray-50 md:text-base text-sm border border-gray-200 text-gray-700 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
-                        />
                     </div>
                 </div>
 

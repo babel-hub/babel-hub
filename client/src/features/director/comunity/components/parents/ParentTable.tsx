@@ -1,9 +1,10 @@
 import type { Parent } from "../../types";
-import { formateDate, reverseName } from "../../../../../types";
+import { reverseName } from "../../../../../types";
 import { useEffect, useRef, useState } from "react";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import {FiPlus} from "react-icons/fi";
 import {ActionMenu, type MenuOption} from "../../../../../components/ui/menu/ActionMenu.tsx";
+import { formatFullDateString } from "../../../../utils/utils.ts";
 
 interface ParentsTableProps {
     parents: Parent[];
@@ -160,7 +161,7 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent 
             </td>
 
             <td className="p-4 text-gray-500 text-sm whitespace-nowrap">
-                {formateDate(parent.created_at)}
+                {formatFullDateString(parent.created_at)}
             </td>
 
             <td className="p-4">

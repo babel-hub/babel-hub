@@ -1,19 +1,17 @@
 import { useState } from "react";
 import {
-    type AssessmentCriteria,
-    type Assignment,
-    finalGradeForStudent,
+    type AssessmentCriteria, type Assignment,
     type GradeRecords,
-    type Student,
-    toneBgandText,
-    reverseName,
-    suggestedComment
+    reverseName
 } from "../../../types";
 import { AssignmentMenu } from "./ui/AssignmentMenu.tsx";
 import { HiPlus } from "react-icons/hi";
 import { GradeCell } from "./ui/GradeCell.tsx";
 import { LuSave } from "react-icons/lu";
 import toast from "react-hot-toast";
+import {suggestedComment, toneBgandText} from "./table.utils.ts";
+import type { Student } from "./table.types.ts";
+import { finalGradeForStudent } from "../../../utils/utils.ts";
 
 interface DirtyCell {
     value: number;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {getAttendanceClass} from "../api";
 import toast from "react-hot-toast";
-import type { AttendanceStatus } from "../../../types/types";
+import type { CourseAttendance, StudentPeriodAttendance } from "../../../types/types";
 
 interface AttendanceGridProps {
     courseId: string,
@@ -11,19 +11,9 @@ interface AttendanceGridProps {
     endDate: string
 }
 
-export interface CourseAttendance {
-    student_id: string;
-    student_first_name: string;
-    student_middle_name: string | null;
-    student_first_last_name: string;
-    student_second_last_name: string | null;
-    date: string;
-    status: AttendanceStatus;
-}
-
 export const useAttendanceGrid = ({ courseId, classId, students, startDate, endDate }: AttendanceGridProps) => {
     const [loading, setLoading] = useState(false);
-    const [attendance, setAttendance] = useState<any[]>([]);
+    const [attendance, setAttendance] = useState<StudentPeriodAttendance[]>([]);
     const [calendar, setCalendar] = useState<string[]>([]);
 
     useEffect(() => {
@@ -48,10 +38,11 @@ export const useAttendanceGrid = ({ courseId, classId, students, startDate, endD
                 const data = response.attendanceClass;
 
                 const datesSet = new Set<string>();
-                const studentMap = new Map();
+                const studentMap = new Map<string, StudentPeriodAttendance>();
 
                 data.forEach((row: CourseAttendance) => {
-                    datesSet.add(row.date);
+                    const dateKey = row.date.split('T')[0];
+                    datesSet.add(dateKey);
 
                     if (!studentMap.has(row.student_id)) {
                         studentMap.set(row.student_id, {
@@ -63,7 +54,10 @@ export const useAttendanceGrid = ({ courseId, classId, students, startDate, endD
                             records: []
                         });
                     }
-                    studentMap.get(row.student_id).records.push({ date: row.date, status: row.status });
+                    studentMap.get(row.student_id)!.records.push({
+                        date: dateKey,
+                        status: row.status
+                    });
                 });
 
                 setCalendar(Array.from(datesSet).sort());

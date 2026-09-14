@@ -1,5 +1,6 @@
 import api from "../../../../api/client.ts";
-import type { AssignmentsOverview, ClassDetailsData, Scales } from "../types";
+import type { ClassDetailsData } from "../types";
+import type { AssignmentsOverview, ClassAttendance, Scales } from "../../../types/types.ts";
 
 export const getClass = async (id: string): Promise<ClassDetailsData> => {
     const response = await api.get(`/classes/${id}`);
@@ -14,9 +15,13 @@ export const getAttendanceClass = async (courseId: string , classId: string, sta
     return  response.data;
 };
 
-export const getDailyAttendance = async (classId: string, date: string) => {
-    const response = await api.get(`/attendance/class/${classId}?date=${date}`);
-    return response.data;
+export const getDailyAttendance = async (classId: string, date: string): Promise<ClassAttendance[]> => {
+    const response = await api.get(`/attendance/class/${classId}`, {
+        params: {
+            date
+        }
+    });
+    return response.data.records;
 };
 
 // Assignment Endpoints

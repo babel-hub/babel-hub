@@ -1,6 +1,7 @@
-import { getStatusDotColor, reverseName } from "../../../../../types";
+import { reverseName } from "../../../../../types";
 import type { Student } from "../../types";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
+import {getStatusDotColor} from "../../../../utils/utils.ts";
 
 interface StudentsTableProps {
     students: Student[];

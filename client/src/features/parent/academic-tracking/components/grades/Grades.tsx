@@ -24,10 +24,8 @@ type SubjectGroup = {
     grades: StudentDailyGrade[];
 };
 
-export function Grades({ students, date: initialDate }: GradesProps) {
+export function Grades({ students, date }: GradesProps) {
     const studentId = students[0]?.student_id ?? '';
-    const [date, setDate] = useState(initialDate);
-
     const { loading, grades } = useDailyGrades(studentId, date);
     const [selectedSubject, setSelectedSubject] = useState<SelectedSubject | null>(null);
 
@@ -117,7 +115,6 @@ export function Grades({ students, date: initialDate }: GradesProps) {
             <DayDetailPanel
                 subjectName={selectedSubject?.subjectName ?? null}
                 date={date}
-                onDateChange={setDate}
                 grades={selectedGrades}
             />
 

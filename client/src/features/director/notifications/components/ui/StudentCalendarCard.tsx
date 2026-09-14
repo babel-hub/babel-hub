@@ -1,6 +1,6 @@
-import { formatDate, getStatusDotColor } from "../../../../../types";
 import { useAttendanceStudentCalendar } from "../../hooks/useAttendanceStudentCalendar.ts";
 import type { Period } from "../../../../../shared/types/types.ts";
+import { getStatusDotColor, formatDateParts } from "../../../../utils/utils.ts";
 
 export default function StudentCalendarCardComponent ({ studentId, period }: { studentId: string, period: Period }){
     const { attendance, loading, error } = useAttendanceStudentCalendar({
@@ -17,7 +17,7 @@ export default function StudentCalendarCardComponent ({ studentId, period }: { s
             <div className="flex gap-1.5">
                 {[...attendance].reverse().map(day => {
                     const statusColor = getStatusDotColor(day.daily_status);
-                    const { dayNum, month, weekday } = formatDate(day.date);
+                    const { dayNum, month, weekday } = formatDateParts(day.date);
 
                     return (
                         <div

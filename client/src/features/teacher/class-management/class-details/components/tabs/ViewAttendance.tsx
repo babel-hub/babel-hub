@@ -1,9 +1,10 @@
 import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
-import {formatDate, formatDatePeriod, reverseName} from "../../../../../../types";
-import {usePeriodAttendance} from "../../hooks/usePeriodAttendance.ts";
-import {usePeriods} from "../../../../../../shared/hooks/usePeriods.ts";
-import {useEffect, useState} from "react";
-import {NoResults} from "../../../../../../components/ui/blocks/NoResults.tsx";
+import { reverseName } from "../../../../../../types";
+import { usePeriodAttendance } from "../../hooks/usePeriodAttendance.ts";
+import { usePeriods } from "../../../../../../shared/hooks/usePeriods.ts";
+import { useEffect, useState } from "react";
+import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
+import { formatDateParts, formatDatePeriod } from "../../../../../utils/utils.ts";
 
 interface ViewAttendanceProps {
     courseId: string;
@@ -89,7 +90,7 @@ export function ViewAttendance({ courseId, classId }: ViewAttendanceProps) {
                                         Estudiante
                                     </th>
                                     {calendarDates.map(date => {
-                                        const { dayNum, month, weekday } = formatDate(date);
+                                        const { dayNum, month, weekday } = formatDateParts(date);
 
                                         return (
                                             <th key={date} className="p-1 border-b border-gray-100 text-center font-semibold w-8">

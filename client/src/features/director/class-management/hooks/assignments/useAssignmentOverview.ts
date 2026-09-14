@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AssessmentCriteria } from "../../types";
 import { getAssignmentOverview  } from "../../api";
 import toast from "react-hot-toast";
+import type { AssessmentCriteria } from "../../../../../types";
 
 export const useAssignmentOverview = (courseId: string, classId: string, periodId: string) => {
     const [loading, setLoading] = useState<boolean>(false);

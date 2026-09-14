@@ -1,4 +1,4 @@
-import type { AssessmentCriteria, Assignment } from "../../../../types/index.ts";
+import type { AssessmentCriteria, Assignment } from "../../../../types";
 import {HiDotsVertical, HiPencil, HiTrash} from "react-icons/hi";
 import {ActionMenu, type MenuOption} from "../../menu/ActionMenu.tsx";
 

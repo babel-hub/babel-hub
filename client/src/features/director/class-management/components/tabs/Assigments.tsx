@@ -1,7 +1,7 @@
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import { useAssignmentOverview } from "../../hooks/assignments/useAssignmentOverview.ts";
-import {type ModalModeTypes} from "../../../../../types";
-import type { AssessmentCriteria, Assignment, ClassDetailsData, GradeRecords } from "../../types";
+import type { AssessmentCriteria, Assignment, GradeRecords, ModalModeTypes } from "../../../../../types";
+import type { ClassDetailsData } from "../../types";
 import {useEffect, useState} from "react";
 import { AssignmentFormModal } from "../ui/AssignmentFormModal.tsx";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";

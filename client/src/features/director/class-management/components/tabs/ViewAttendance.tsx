@@ -1,10 +1,11 @@
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
-import {formatDate, formatDatePeriod, reverseName} from "../../../../../types";
+import { reverseName } from "../../../../../types";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import { useAttendanceGrid } from "../../hooks/useAttendanceGrid.ts";
 import type { ClassDetailsData } from "../../types";
 import {useEffect, useState} from "react";
 import { usePeriods } from "../../../../../shared/hooks/usePeriods.ts";
+import { formatDateParts, formatDatePeriod } from "../../../../utils/utils.ts";
 
 interface ViewAttendanceProps {
     classData: ClassDetailsData;
@@ -86,7 +87,7 @@ export function ViewAttendance({ classData, courseId }: ViewAttendanceProps) {
                                         Estudiante
                                     </th>
                                     {calendar.map(date => {
-                                        const { dayNum, month, weekday } = formatDate(date);
+                                        const { dayNum, month, weekday } = formatDateParts(date);
 
                                         return (
                                             <th key={date} className="p-1 border-b border-gray-100 text-center font-semibold w-8">

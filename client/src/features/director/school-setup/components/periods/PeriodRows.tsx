@@ -1,7 +1,7 @@
 import { HiPencil, HiTrash } from "react-icons/hi";
 import type { PeriodProps } from "../../types";
-import { formatDatePeriod } from "../../../../../types";
 import { ActionMenu, type MenuOption } from "../../../../../components/ui/menu/ActionMenu.tsx";
+import { formatDatePeriod } from "../../../../utils/utils.ts";
 
 interface PeriodRowsProps {
     period: PeriodProps;

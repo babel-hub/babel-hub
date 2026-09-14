@@ -1,8 +1,9 @@
 import { memo } from "react";
-import { formateDate, reverseName } from "../../../../../types";
+import { reverseName } from "../../../../../types";
 import type { TeacherRowProps } from "../../types";
 import {ActionMenu, type MenuOption} from "../../../../../components/ui/menu/ActionMenu.tsx";
 import {HiPencil, HiTrash} from "react-icons/hi";
+import { formatFullDateString } from "../../../../utils/utils.ts";
 
 export const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate }: TeacherRowProps) {
     const menuOptions: MenuOption[] = [
@@ -58,7 +59,7 @@ export const TeacherRow = memo(function ({ teacher, onEdit, onDelete, onNavigate
             </td>
 
             <td className="p-4 text-gray-500 text-sm font-medium">
-                {formateDate(teacher.created_at)}
+                {formatFullDateString(teacher.created_at)}
             </td>
 
             <td className="p-4">

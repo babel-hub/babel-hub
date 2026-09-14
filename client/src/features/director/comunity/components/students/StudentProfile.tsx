@@ -1,5 +1,4 @@
 import ButtonChevronBack from "../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
-import { getInitials } from "../../../../../types";
 import { useStudentProfile } from "../../hooks/students/useStudentProfile.ts";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
@@ -20,7 +19,7 @@ export function StudentProfileLayout() {
                 <div className="flex items-center gap-4">
                     <ButtonChevronBack onClick={() => navigate(-1)} />
                     <div className="w-16 h-16 bg-primary-shadow text-primary rounded-full flex items-center justify-center text-xl md:text-1xl xl:text-2xl font-bold">
-                        {getInitials(data.full_name)}
+                        UN
                     </div>
                     <div>
                         <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">{data.full_name}</h1>

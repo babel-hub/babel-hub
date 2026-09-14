@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getDailyAttendance, saveBulkAttendance } from "../api";
 import toast from "react-hot-toast";
-import type { Student } from "../types";
-import type { AttendanceStatus } from "../../../types/types.ts";
+import type { AttendanceStatus, Student } from "../../../types/types.ts";
 
 interface TakeAttendanceProps {
     classId: string;
@@ -23,13 +22,11 @@ export const useTakeAttendance = ({ classId, date, students }: TakeAttendancePro
             setLoading(true);
             try {
                 const response = await getDailyAttendance(classId, attendanceDate);
-
-                const fetchedRecords = response.records;
                 const newRecordsMap: Record<string, string> = {};
 
 
                 students.forEach(student => {
-                    const existingRecord = fetchedRecords.find((r: any) => r.student_id === student.student_id);
+                    const existingRecord = response.find((r: any) => r.student_id === student.student_id);
                     newRecordsMap[student?.student_id] = existingRecord?.status ?? 'present';
                 });
 

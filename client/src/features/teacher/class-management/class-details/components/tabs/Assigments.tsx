@@ -1,9 +1,9 @@
-import type { AssessmentCriteria, Assignment, ClassDetailsData, GradeRecords } from "../../types";
+import type { ClassDetailsData } from "../../types";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
 import { StudentGradeTable } from "../../../../../../components/ui/table/StudentGradeTable.tsx";
 import { ConfirmModal } from "../../../../../../components/ui/modals/ConfirmModal.tsx";
 import {useEffect, useState} from "react";
-import type { ModalModeTypes } from "../../../../../../types";
+import type { AssessmentCriteria, Assignment, GradeRecords, ModalModeTypes } from "../../../../../../types";
 import { useAssignmentOverview } from "../../hooks/assignments/useAssignmentOverview.ts";
 import { useClassScale } from "../../hooks/assignments/useClassScale.ts";
 import { useAssignmentDelete } from "../../hooks/assignments/useAssignmentDelete.ts";

@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { reverseName } from "../../../../../../types";
-import type { Student } from "../../types";
-import type { AttendanceStatus } from "../../../../../types/types.ts";
+import type { AttendanceStatus, Student } from "../../../../../types/types.ts";
 import {BsClock} from "react-icons/bs";
 import {CgDanger} from "react-icons/cg";
 import {IoDocumentTextOutline} from "react-icons/io5";

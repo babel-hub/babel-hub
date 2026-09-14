@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getPeriodAttendance } from "../api";
 import toast from "react-hot-toast";
-import type { CourseAttendance, StudentPeriodAttendance } from "../types";
+import type { CourseAttendance, StudentPeriodAttendance } from "../../../../types/types.ts";
 
 interface PeriodAttendanceProps {
     courseId: string,

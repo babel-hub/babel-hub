@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { bulkGrades } from "../../api";
-import type { GradeRecords } from "../../types";
 import toast from "react-hot-toast";
+import type { GradeRecords } from "../../../../../types";
 
 export const useBulkAssignments = (onSuccess: () => void) => {
     const [loadingSave, setLoadingSave] = useState<boolean>(false);

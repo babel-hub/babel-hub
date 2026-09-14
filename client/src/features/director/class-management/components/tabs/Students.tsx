@@ -1,6 +1,6 @@
 import { reverseName } from "../../../../../types";
-import type { Student } from "../../types";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
+import type { Student } from "../../../../types/types.ts";
 
 interface StudentsProps {
     students: Student[];

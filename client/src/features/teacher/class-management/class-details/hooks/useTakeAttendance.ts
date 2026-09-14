@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { bulkAttendance, getDailyAttendance } from "../api";
-import type { Student } from "../types";
 import toast from "react-hot-toast";
-import type { AttendanceStatus } from "../../../../types/types.ts";
+import type { AttendanceStatus, Student } from "../../../../types/types.ts";
 
 interface TakeAttendanceProps {
     classId: string;

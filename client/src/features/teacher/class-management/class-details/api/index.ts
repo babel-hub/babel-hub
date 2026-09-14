@@ -1,14 +1,18 @@
 import api from "../../../../../api/client.ts";
-import type { ClassAttendance, ClassDetailsData, CourseAttendance } from "../types";
-import type { AssignmentsOverview, Scales } from "../../../../../types";
+import type { ClassDetailsData } from "../types";
+import type { ClassAttendance, Scales, CourseAttendance, AssignmentsOverview } from "../../../../types/types.ts";
 
 export const getTeacherClass = async (id: string, controller: any): Promise<ClassDetailsData> => {
     const response = await api.get(`/classes/${id}/teacher`, { signal: controller.signal });
     return response.data.teacherClass;
 }
 
-export const getDailyAttendance = async (id: string, date:string): Promise<ClassAttendance[]> => {
-    const response = await api.get(`/attendance/class/${id}?date=${date}`);
+export const getDailyAttendance = async (classId: string, date: string): Promise<ClassAttendance[]> => {
+    const response = await api.get(`/attendance/class/${classId}`, {
+        params: {
+            date
+        }
+    });
     return response.data.records;
 }
 

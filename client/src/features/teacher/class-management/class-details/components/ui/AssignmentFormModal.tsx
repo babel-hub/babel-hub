@@ -1,8 +1,8 @@
 import type { modeTypes } from "../../../../../types/types.ts";
-import type { Assignment } from "../../types";
-import DynamicModalForm, {type FormField} from "../../../../../../components/ui/modals/ModalForm.tsx";
+import DynamicModalForm, { type FormField } from "../../../../../../components/ui/modals/ModalForm.tsx";
 import React, { useState } from "react";
 import { useCreateAssignment } from "../../hooks/assignments/useCreateAssignment.ts";
+import type { Assignment } from "../../../../../../types";
 
 interface AssignmentFormModalProps {
     mode: modeTypes;

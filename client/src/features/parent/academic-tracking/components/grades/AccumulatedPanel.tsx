@@ -1,13 +1,8 @@
 import { PieChart, Pie, Cell } from "recharts";
 import { HiOutlineInformationCircle } from "react-icons/hi";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
-// import { colorForIndex } from "../utils/gradesUi.utils.ts";
 import type { SubjectAccumulated } from "../../types/types.ts";
-import {CRITERIA_COLORS} from "./DayDetailPanel.tsx";
-
-export function colorForIndex(index: number): string {
-    return CRITERIA_COLORS[index % CRITERIA_COLORS.length];
-}
+import { colorForIndex } from "../../utils/utils.ts";
 
 interface AccumulatedPanelProps {
     accumulated: SubjectAccumulated | null;

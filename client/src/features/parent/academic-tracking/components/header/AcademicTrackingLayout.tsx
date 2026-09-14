@@ -1,17 +1,21 @@
 import { reverseName } from "../../../../../types";
 import { LuClipboardPenLine } from "react-icons/lu";
-import {HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiOutlineClipboardList} from "react-icons/hi";
+import { HiChevronLeft, HiChevronRight, HiOutlineCalendar, HiOutlineClipboardList } from "react-icons/hi";
 import React from "react";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
+import { isToday, shiftDay } from "../../utils/utils.ts";
+import { formatDayLabel } from "../../../../utils/utils.ts";
 
 interface AcademicTrackingLayoutProps {
     children: React.ReactNode;
     student: ParentStudent[];
     activeTab: CumulativeGPATypes;
-    onButtonChange: (tab: CumulativeGPATypes) => void;
+    onButtonTabChange: (tab: CumulativeGPATypes) => void;
+    date: string;
+    onButtonDateChange: (date: string) => void;
 }
 
-export function AcademicTrackingLayout({ children, student, activeTab, onButtonChange } : AcademicTrackingLayoutProps) {
+export function AcademicTrackingLayout({ children, student, activeTab, onButtonTabChange, date, onButtonDateChange } : AcademicTrackingLayoutProps) {
     return (
         <div className="flex flex-col md:rounded-xl h-[calc(100dvh-5rem)] md:h-[calc(100dvh-1.8rem)] w-full bg-gray-50">
             <div className="sticky top-0 z-10 p-3 bg-white md:rounded-xl border border-gray-100  flex flex-col gap-4">
@@ -45,7 +49,7 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                 <div className="flex w-full justify-between items-center">
                     <div className="flex items-center w-full max-w-lg rounded-xl gap-1 bg-gray-50">
                         <button
-                            onClick={() => onButtonChange('attendance')}
+                            onClick={() => onButtonTabChange('attendance')}
                             className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
                                 activeTab === 'attendance'
                                     ? 'bg-primary text-white shadow-sm'
@@ -57,7 +61,7 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                         </button>
 
                         <button
-                            onClick={() => onButtonChange('grades')}
+                            onClick={() => onButtonTabChange('grades')}
                             className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
                                 activeTab === 'grades'
                                     ? 'bg-primary text-white '
@@ -69,7 +73,7 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                         </button>
 
                         <button
-                            onClick={() => onButtonChange('observations')}
+                            onClick={() => onButtonTabChange('observations')}
                             className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200 cursor-pointer ${
                                 activeTab === 'observations'
                                     ? 'bg-primary text-white '
@@ -82,14 +86,16 @@ export function AcademicTrackingLayout({ children, student, activeTab, onButtonC
                     </div>
                     <div className="flex items-center gap-1 text-gray-500 text-sm">
                         <button
+                            onClick={() => onButtonDateChange(shiftDay(date, -1))}
                             className="p-1 rounded-full hover:bg-gray-100 cursor-pointer"
                             aria-label="Día anterior"
                         >
                             <HiChevronLeft />
                         </button>
-                        <span>Miércoles, 3 de junio</span>
+                        <span>{formatDayLabel(date)}</span>
                         <button
-                            disabled={true}
+                            onClick={() => onButtonDateChange(shiftDay(date, 1))}
+                            disabled={isToday(date)}
                             className="p-1 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                             aria-label="Día siguiente"
                         >

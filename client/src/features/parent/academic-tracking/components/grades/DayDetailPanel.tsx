@@ -1,67 +1,21 @@
-import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
+import { formatDayLabel, formatTime } from "../../../../utils/utils.ts";
 import type { StudentDailyGrade } from "../../types/types.ts";
-import {BsStars} from "react-icons/bs";
-
-export const CRITERIA_COLORS = ['#F5A524', '#F31260', '#F76B15', '#17C964'];
-
-export function formatDayLabel(dateStr: string): string {
-    const date = new Date(`${dateStr}T00:00:00`);
-    const formatted = date.toLocaleDateString('es-CO', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-    });
-    // "miércoles, 3 de junio" -> "Miércoles, 3 de junio"
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
-export function formatTime(isoStr: string): string {
-    return new Date(isoStr).toLocaleTimeString('es-CO', {
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-}
-
-export function shiftDay(dateStr: string, offset: number): string {
-    const date = new Date(`${dateStr}T00:00:00`);
-    date.setDate(date.getDate() + offset);
-    return date.toISOString().slice(0, 10);
-}
-
-export function isToday(dateStr: string): boolean {
-    return dateStr === new Date().toISOString().slice(0, 10);
-}
+import { BsStars } from "react-icons/bs";
 
 interface DayDetailPanelProps {
     subjectName: string | null;
     date: string;
-    onDateChange: (date: string) => void;
     grades: StudentDailyGrade[];
 }
 
-export function DayDetailPanel({ subjectName, date, onDateChange, grades }: DayDetailPanelProps) {
+export function DayDetailPanel({ subjectName, date, grades }: DayDetailPanelProps) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 col-span-1 md:col-span-2 flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <div className="flex items-center gap-1 text-gray-500 text-sm">
-                        <button
-                            onClick={() => onDateChange(shiftDay(date, -1))}
-                            className="p-1 rounded-full hover:bg-gray-100 cursor-pointer"
-                            aria-label="Día anterior"
-                        >
-                            <HiChevronLeft />
-                        </button>
                         <span>{formatDayLabel(date)}</span>
-                        <button
-                            onClick={() => onDateChange(shiftDay(date, 1))}
-                            disabled={isToday(date)}
-                            className="p-1 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                            aria-label="Día siguiente"
-                        >
-                            <HiChevronRight />
-                        </button>
                     </div>
                     <h3 className="text-custom-black font-bold text-xl md:text-2xl capitalize mt-1">
                         {subjectName ?? "Selecciona una materia"}

@@ -1,9 +1,10 @@
-import { finalGradeForStudent, reverseName } from "../../../../../../types";
-import type { Student } from "../../types";
+import { reverseName } from "../../../../../../types";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
 import {useAssignmentOverview} from "../../hooks/assignments/useAssignmentOverview.ts";
 import {useEffect, useState} from "react";
 import {usePeriods} from "../../../../../../shared/hooks/usePeriods.ts";
+import type { Student } from "../../../../../types/types.ts";
+import { finalGradeForStudent } from "../../../../../../utils/utils.ts";
 
 interface StudentsProps {
     students: Student[]

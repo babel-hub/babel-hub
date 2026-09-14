@@ -2,7 +2,7 @@ import DynamicModalForm, {type FormField} from "../../../../../components/ui/mod
 import type { modeTypes } from "../../../../types/types.ts";
 import React, { useState } from "react";
 import {useCreateAssignment} from "../../hooks/assignments/useCreateAssignment.ts";
-import type { Assignment } from "../../types";
+import type { Assignment } from "../../../../../types";
 
 interface AssignmentFormModalProps {
     mode: modeTypes;

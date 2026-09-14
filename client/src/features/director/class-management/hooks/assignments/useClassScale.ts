@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Scales } from "../../types";
 import { getClassScale } from "../../api";
+import type { Scales } from "../../../../types/types.ts";
 
 export const useClassScale = (classId: string) => {
     const [scale, setScale] = useState<Scales | null>(null);
