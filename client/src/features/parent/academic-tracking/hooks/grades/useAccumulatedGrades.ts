@@ -27,6 +27,7 @@ export const useAccumulatedGrades = (
             setError(null);
             try {
                 // await getAccumulatedData(studentId, classId, subjectName, controller)
+                // The call to the server hasnt been done yet
                 const data = MOCK_ACCUMULATED;
                 if (!cancelled) setAccumulatedGrades(data);
             } catch (err: any) {

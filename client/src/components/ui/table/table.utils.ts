@@ -1,5 +1,3 @@
-import type { GradeScale } from "../../../types";
-
 const MESSAGES = {
     bajo: [
         "Incumplimiento de los criterios de evaluación.",
@@ -25,25 +23,6 @@ const MESSAGES = {
         "Demuestra dominio sobresaliente de los aprendizajes y capacidad para aplicarlos en diferentes contextos."
     ]
 };
-
-export function toneBgandText(value: number | null | undefined, scale: GradeScale): string {
-    if (value === null || value === undefined || Number.isNaN(value) || typeof value !== "number") {
-        return 'bg-gray-50';
-    }
-
-    if (value < scale.passing) return 'bg-red-50 text-red-700';
-
-    const passingRange = scale.max - scale.passing;
-
-    if (passingRange <= 0) return 'bg-emerald-50 text-emerald-700';
-
-    const ratio = (value - scale.passing) / passingRange;
-
-    if (ratio >= 0.75) return 'bg-emerald-50 text-emerald-700';
-    if (ratio >= 0.33) return 'bg-lime-50 text-lime-700';
-
-    return 'bg-amber-50 text-amber-700';
-}
 
 export function suggestedComment(value: number, min: number, max: number, passing: number): string {
     if (max <= min || passing <= min) return "";

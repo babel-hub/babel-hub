@@ -72,11 +72,11 @@ export function Grades({ students, date }: GradesProps) {
     const selectedGrades = selectedSubject ? subjectsByClass.get(selectedSubject.classId)?.grades ?? [] : [];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 w-full">
+        <div className="grid grid-cols-1 lg:grid-rows-1 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             <div className="flex flex-col gap-2 p-4 md:p-5 bg-white rounded-xl border border-gray-100">
                 <div>
-                    <span className="text-primary-darker uppercase text-xs font-semibold">Calificaciones</span>
-                    <h3 className="text-custom-black font-bold text-base md:text-xl">Materias</h3>
+                    <span className="text-primary-darker text-sm font-semibold">Calificaciones</span>
+                    <h3 className="text-custom-black font-bold text-lg md:text-xl">Materias</h3>
                     <p className="text-gray-500 text-sm">Selecciona una para ver su detalle</p>
                 </div>
                 <div className="flex flex-col gap-1">

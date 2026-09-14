@@ -18,7 +18,7 @@ export default function ParentLayout() {
         { id: "4", icon: <BiBell />, path: "/unknow", label: "Notificaciones" },
         { id: "5", icon: <BiMessageDetail />, path: "/unknow", label: "Mensajes" },
         { id: "6", icon: <RiApps2Line />, path: "/parent/acumulado", label: "Acumulado" },
-        { id: "7", icon: <PiListMagnifyingGlassBold />, path: "/parent/seguimiento-academico", label: "Seguimiento Academico" }
+        { id: "7", icon: <PiListMagnifyingGlassBold />, path: "/parent/seguimiento-academico", label: "Seguimiento" }
     ];
 
     return (

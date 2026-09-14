@@ -11,13 +11,13 @@ interface AccumulatedPanelProps {
 
 export function AccumulatedPanel({ accumulated, insight }: AccumulatedPanelProps) {
     return (
-        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 flex flex-col gap-4">
+        <div className="bg-white md:col-span-3 lg:col-auto rounded-xl border border-gray-100 p-4 md:p-5 flex flex-col gap-4">
             <div>
                 <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">Acumulado</span>
+                    <span className="text-gray-400 font-semibold text-sm">Acumulado</span>
                     <HiOutlineInformationCircle className="text-gray-300 text-lg" />
                 </div>
-                <h3 className="text-custom-black font-bold text-xl capitalize">
+                <h3 className="text-custom-black font-bold text-lg lg:text-xl capitalize">
                     {accumulated?.subject_name ?? "—"}
                 </h3>
             </div>

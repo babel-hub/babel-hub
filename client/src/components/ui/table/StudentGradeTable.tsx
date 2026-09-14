@@ -9,9 +9,9 @@ import { HiPlus } from "react-icons/hi";
 import { GradeCell } from "./ui/GradeCell.tsx";
 import { LuSave } from "react-icons/lu";
 import toast from "react-hot-toast";
-import {suggestedComment, toneBgandText} from "./table.utils.ts";
+import { suggestedComment } from "./table.utils.ts";
 import type { Student } from "./table.types.ts";
-import { finalGradeForStudent } from "../../../utils/utils.ts";
+import { finalGradeForStudent, toneBgandText } from "../../../utils/utils.ts";
 
 interface DirtyCell {
     value: number;

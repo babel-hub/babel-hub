@@ -11,7 +11,7 @@ export default function AcademicTracking () {
     const [tab, setTab] = useState<CumulativeGPATypes>('attendance');
     const { loading, students } = useStudentData();
     const initialDate = formatterDate.format(new Date());
-    const [tabDate, setTabDate] = useState<string>(initialDate)
+    const [tabDate, setTabDate] = useState<string>(initialDate);
 
     if (loading) return <LoadingContent title="" />;
     if (students.length === 0) return <NoResults title='Estudiantes no asignados a este acudiante' />;
@@ -25,7 +25,7 @@ export default function AcademicTracking () {
             onButtonDateChange={setTabDate}
         >
             {tab === 'grades' && (<Grades students={students} date={tabDate} />)}
-            {tab === 'attendance' && (<Attendance date={tabDate} students={students} />)}
+            {tab === 'attendance' && (<Attendance students={students} date={tabDate} />)}
             {tab === 'observations' && (<Observations />)}
         </AcademicTrackingLayout>
     )

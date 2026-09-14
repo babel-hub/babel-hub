@@ -1,3 +1,5 @@
+import { formatterDate } from "../../../../types";
+
 export const CRITERIA_COLORS = ['#F5A524', '#F31260', '#F76B15', '#17C964'];
 
 export function colorForIndex(index: number): string {
@@ -11,5 +13,6 @@ export function shiftDay(dateStr: string, offset: number): string {
 }
 
 export function isToday(dateStr: string): boolean {
-    return dateStr === new Date().toISOString().slice(0, 10);
+    const today = formatterDate.format(new Date());
+    return dateStr === today;
 }

@@ -11,13 +11,13 @@ interface DayDetailPanelProps {
 
 export function DayDetailPanel({ subjectName, date, grades }: DayDetailPanelProps) {
     return (
-        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 col-span-1 md:col-span-2 flex flex-col gap-4">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 md:col-span-2 flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <div className="flex items-center gap-1 text-gray-500 text-sm">
-                        <span>{formatDayLabel(date)}</span>
+                    <div className="flex items-center text-gray-400 font-medium text-sm">
+                        <span>Detalle del día {formatDayLabel(date)}</span>
                     </div>
-                    <h3 className="text-custom-black font-bold text-xl md:text-2xl capitalize mt-1">
+                    <h3 className="text-custom-black font-bold text-lg md:text-xl lg:text-2xl capitalize mt-1">
                         {subjectName ?? "Selecciona una materia"}
                     </h3>
                     {grades.length > 0 && (
@@ -60,12 +60,12 @@ export function DayDetailPanel({ subjectName, date, grades }: DayDetailPanelProp
                         </div>
                     ))
                 ) : (
-                    <NoResults title="No hay calificaciones este día" />
+                    <NoResults title="No hay calificaciones para este día" />
                 )}
             </div>
 
             <div className="bg-primary-shadow rounded-xl p-2 text-primary-darker flex items-start gap-2">
-                <BsStars className="size-6 mt-0.5"/>
+                <BsStars className="size-4 md:size-6 min-w-4 md:min-w-6 mt-0.5"/>
                 <p className="text-sm">Puedes encontrar más información sobre cada calificación en su criterio, actividad y comentario docente.</p>
             </div>
         </div>
