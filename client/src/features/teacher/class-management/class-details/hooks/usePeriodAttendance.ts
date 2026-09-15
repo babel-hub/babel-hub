@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getPeriodAttendance } from "../api";
 import toast from "react-hot-toast";
 import type { CourseAttendance, StudentPeriodAttendance } from "../../../../types/types.ts";
+import { formatterDate } from "../../../../../types";
 
 interface PeriodAttendanceProps {
     courseId: string,
@@ -16,25 +17,33 @@ export const usePeriodAttendance = ({ courseId, classId, startDate, endDate }: P
     const [calendarDates, setCalendarDates] = useState<string[]>([]);
 
     useEffect(() => {
+        const controller = new AbortController();
+        let isMounted = true;
+
         const loadPeriodAttendance = async () => {
             if (!courseId || !classId || !startDate || !endDate) return;
 
-            const today = new Date();
-            const periodStart = new Date(startDate);
+            const todayStr = formatterDate.format(new Date());
+            const periodStartStr = startDate.split('T')[0];
+            const periodEndStr = endDate.split('T')[0];
 
-            if (today < periodStart) {
+            if (todayStr < periodStartStr) {
                 setPeriodAttendance([]);
                 setCalendarDates([]);
                 return;
             }
 
-            const todayStr = today.toISOString().split('T')[0];
-            const periodEndStr = endDate.split('T')[0];
             const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
 
             setLoading(true);
             try {
-                const attendance: CourseAttendance[] = await getPeriodAttendance(courseId, classId, startDate, effectiveEndDate);
+                const attendance: CourseAttendance[] = await getPeriodAttendance(
+                    courseId,
+                    classId,
+                    startDate,
+                    effectiveEndDate,
+                    controller.signal
+                );
 
                 const dates = new Set<string>();
                 const studentMap = new Map<string, StudentPeriodAttendance>();
@@ -60,16 +69,29 @@ export const usePeriodAttendance = ({ courseId, classId, startDate, endDate }: P
                     });
                 });
 
-                setCalendarDates(Array.from(dates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime()));
-                setPeriodAttendance(Array.from(studentMap.values()));
-            } catch (error : any) {
+                if (isMounted) {
+                    setCalendarDates(Array.from(dates).sort((a, b) => new Date(a).getTime() - new Date(b).getTime()));
+                    setPeriodAttendance(Array.from(studentMap.values()));
+                }
+            } catch (error: any) {
+                if (error.name === "CanceledError" || error.name === "AbortError") return;
+
                 console.error("Error GETTING the caledar ", error);
-                toast.error("Error al cargar el calendario");
+
+                if (isMounted) {
+                    toast.error("Error al cargar el calendario");
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
+
         loadPeriodAttendance();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
     }, [courseId, classId, startDate, endDate]);
 
     return { loading, periodAttendance, calendarDates };

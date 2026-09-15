@@ -1,29 +1,18 @@
 import { reverseName } from "../../../../../../types";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
 import {useAssignmentOverview} from "../../hooks/assignments/useAssignmentOverview.ts";
-import {useEffect, useState} from "react";
-import {usePeriods} from "../../../../../../shared/hooks/usePeriods.ts";
 import type { Student } from "../../../../../types/types.ts";
-import { finalGradeForStudent } from "../../../../../../utils/utils.ts";
+import {finalGradeForStudent, toneBgandText} from "../../../../../../utils/utils.ts";
 
 interface StudentsProps {
     students: Student[]
     courseId: string;
     classId: string;
+    periodId: string;
 }
 
-export function Students({ students, courseId, classId }: StudentsProps) {
-    const { periods } = usePeriods();
-    const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
-
-    useEffect(() => {
-        if (periods && periods.length > 0 && !selectedPeriodId) {
-            const activePeriod = periods.find(p => p.is_current);
-            setSelectedPeriodId(activePeriod ? activePeriod.id : periods[0].id);
-        }
-    }, [periods, selectedPeriodId]);
-
-    const { assignmentsOverview } = useAssignmentOverview(courseId, classId, selectedPeriodId, students);
+export function Students({ students, courseId, classId, periodId }: StudentsProps) {
+    const { assignmentsOverview, scale } = useAssignmentOverview(courseId, classId, periodId, students);
 
     if (!assignmentsOverview) return null;
 
@@ -65,7 +54,17 @@ export function Students({ students, courseId, classId }: StudentsProps) {
                                     </td>
 
                                     <td className="py-3 text-center px-6">
-                                        <span className={`text-xs md:text-sm lg:text-base font-medium text-gray-700`}>{finalGrade?.toFixed(1) ?? '-'}</span>
+                                        {
+                                            (finalGrade ?? 0) > 0 ? (
+                                                <span className={`text-xs md:text-sm lg:text-base p-2 rounded-xl font-medium text-gray-700 ${toneBgandText(finalGrade, {
+                                                    max: scale?.max_value ?? 0,
+                                                    min: scale?.min_value ?? 0,
+                                                    passing: scale?.passing_value ?? 0
+                                                })}`}>{finalGrade}</span>
+                                            ) : (
+                                                <span className={`text-xs md:text-sm lg:text-base font-medium text-gray-700}`}>-</span>
+                                            )
+                                        }
                                     </td>
                                 </tr>
                             )

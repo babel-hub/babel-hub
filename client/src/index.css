@@ -5,6 +5,12 @@
 --color-primary-darker: #4f39f6;
 */
 
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
 @utility no-scrollbar {
     &::-webkit-scrollbar {
         display: none;

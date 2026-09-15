@@ -28,13 +28,13 @@ export function AccumulatedPanel({ accumulated, insight }: AccumulatedPanelProps
                         <PieChart width={176} height={176}>
                             <Pie
                                 data={accumulated.breakdown}
-                                dataKey="weight"
+                                dataKey="average"
                                 nameKey="criteria_name"
                                 innerRadius={58}
                                 outerRadius={82}
                                 paddingAngle={2}
                                 stroke="none"
-                                isAnimationActive={false}
+                                isAnimationActive={true}
                             >
                                 {accumulated.breakdown.map((_, i) => (
                                     <Cell key={i} fill={colorForIndex(i)} />
@@ -43,9 +43,9 @@ export function AccumulatedPanel({ accumulated, insight }: AccumulatedPanelProps
                         </PieChart>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-3xl font-bold text-custom-black">
-                                {accumulated.period_average.toFixed(1)}
+                                {accumulated.period_average}
                             </span>
-                            <span className="text-xs text-gray-400">de {accumulated.scale_max.toFixed(1)}</span>
+                            <span className="text-xs text-gray-400">de {Number(accumulated.scale_max).toFixed(0)}</span>
                         </div>
                     </div>
 
@@ -63,7 +63,7 @@ export function AccumulatedPanel({ accumulated, insight }: AccumulatedPanelProps
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <span className="text-gray-400">{b.weight}%</span>
-                                    <span className="font-bold text-custom-black">{b.average.toFixed(1)}</span>
+                                    <span className="font-bold min-w-8 text-right text-custom-black">{b.average > 0 ? b.average : '-'}</span>
                                 </div>
                             </div>
                         ))}

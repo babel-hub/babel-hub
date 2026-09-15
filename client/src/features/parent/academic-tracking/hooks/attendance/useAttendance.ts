@@ -8,27 +8,36 @@ export const useAttendance = (studentId: string, date: string) => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        const controller = new AbortController();
+        let isMounted = true;
+
         const fetchAttendance = async () => {
             if (!studentId || !date) return;
 
             setLoading(true);
             setError(null);
             try {
-                const result = await getStudentDailyAttendance(studentId, date);
-                setAttendance(result);
-            } catch (error : any) {
-                console.error(error);
+                const result = await getStudentDailyAttendance(studentId, date, controller.signal);
+                if (isMounted) setAttendance(result);
+            } catch (error: any) {
+                if (error.name === "CanceledError" || error.name === "AbortError") return;
 
+                console.error(error);
                 const backendMessage = error.response?.data?.message
                     || error.response?.data?.error
                     || "Ocurrió un error inesperado al cargar la asistencia.";
 
-                setError(backendMessage);
+                if (isMounted) setError(backendMessage);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
         fetchAttendance();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
     }, [studentId, date]);
 
     return { loading, attendance, error };

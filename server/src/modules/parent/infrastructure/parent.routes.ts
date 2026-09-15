@@ -53,6 +53,13 @@ router.get(
     controllers.getStudentDailyGrades
 )
 
+router.get(
+    "/student/:studentId/accumulated",
+    authMiddleware,
+    authorizedRoles(['parent']),
+    controllers.getAccumulatedGradesBySubject
+)
+
 router.post(
     "/",
     strictLimiter,

@@ -2,27 +2,26 @@ import type { ClassDetailsData } from "../../types";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
 import { StudentGradeTable } from "../../../../../../components/ui/table/StudentGradeTable.tsx";
 import { ConfirmModal } from "../../../../../../components/ui/modals/ConfirmModal.tsx";
-import {useEffect, useState} from "react";
+import { useState } from "react";
 import type { AssessmentCriteria, Assignment, GradeRecords, ModalModeTypes } from "../../../../../../types";
 import { useAssignmentOverview } from "../../hooks/assignments/useAssignmentOverview.ts";
-import { useClassScale } from "../../hooks/assignments/useClassScale.ts";
 import { useAssignmentDelete } from "../../hooks/assignments/useAssignmentDelete.ts";
 import { useBulkAssignments } from "../../hooks/assignments/useBulkAssignments.ts";
 import {AssignmentFormModal} from "../ui/AssignmentFormModal.tsx";
-import {usePeriods} from "../../../../../../shared/hooks/usePeriods.ts";
+import type { Period } from "../../../../../../shared/types/types.ts";
 
 interface AssignmentsProps {
     classData: ClassDetailsData;
     classId: string;
     courseId: string;
+    periodId: string;
+    periods: Period[];
+    setPeriod: (periodId: string) => void;
 }
 
-export function Assignments({ classData, courseId, classId }: AssignmentsProps) {
-    const { periods } = usePeriods();
-    const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
+export function Assignments({ classData, courseId, classId, setPeriod, periodId, periods }: AssignmentsProps) {
+    const { assignmentsOverview, scale, loading, refetch } = useAssignmentOverview(courseId, classId, periodId, classData.students);
 
-    const { assignmentsOverview, loading, refetch } = useAssignmentOverview(courseId, classId, selectedPeriodId, classData.students);
-    const { scale, loadingScale } = useClassScale(classId);
     const { loadingDelete, deleteAssignmentById } = useAssignmentDelete(refetch);
     const { bulkUpsertGrades } = useBulkAssignments(refetch);
 
@@ -31,18 +30,7 @@ export function Assignments({ classData, courseId, classId }: AssignmentsProps) 
     const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
     const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
 
-    useEffect(() => {
-        if (periods && periods.length > 0 && !selectedPeriodId) {
-            const activePeriod = periods.find(p => p.is_current);
-            setSelectedPeriodId(activePeriod ? activePeriod.id : periods[0].id);
-        }
-    }, [periods, selectedPeriodId]);
-
-    if (!periods || periods.length === 0) return <NoResults title="No se encontraron periodos" />;
-
-    if (!selectedPeriodId) return null;
-
-    if (loading || loadingScale || !scale) return null;
+    if (loading || !scale) return null;
 
     if (!assignmentsOverview || assignmentsOverview.length === 0) {
         return (
@@ -52,7 +40,7 @@ export function Assignments({ classData, courseId, classId }: AssignmentsProps) 
         );
     }
 
-    const selectedPeriod = periods.find(p => p.id === selectedPeriodId) || periods[0];
+    const selectedPeriod = periods.find(p => p.id === periodId);
 
     const onAddAssignment = (assessment: AssessmentCriteria) => {
         setAssessmentId(assessment.id);
@@ -86,7 +74,7 @@ export function Assignments({ classData, courseId, classId }: AssignmentsProps) 
                     className="bg-white text-sm capitalize appearance-none text-custom-black border border-gray-200 rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
                     value={selectedPeriod?.id || ""}
                     disabled={classData.students.length === 0}
-                    onChange={(e) => setSelectedPeriodId(e.target.value)}
+                    onChange={(e) => setPeriod(e.target.value)}
                 >
                     {periods?.map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
@@ -127,7 +115,7 @@ export function Assignments({ classData, courseId, classId }: AssignmentsProps) 
             {modalMode !== "none" && (
                 <AssignmentFormModal
                     mode={modalMode}
-                    periodId={selectedPeriodId}
+                    periodId={periodId}
                     onClose={() => {
                         setAssignmentToEdit(null);
                         setModalMode("none");

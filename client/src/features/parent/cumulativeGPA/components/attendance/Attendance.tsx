@@ -1,13 +1,12 @@
 import type { Period } from "../../../../../shared/types/types";
-import type { ParentStudent } from "../../../shared/types/types.ts";
 
 interface AttendanceProps {
-    students: ParentStudent[];
+    studentId: string;
     period: Period;
 }
 
-export function Attendance({ students, period }: AttendanceProps) {
-    console.log(period, students);
+export function Attendance({ studentId, period }: AttendanceProps) {
+    console.log(period, studentId);
 
     return (
         <></>

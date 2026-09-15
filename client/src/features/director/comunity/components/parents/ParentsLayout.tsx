@@ -19,8 +19,6 @@ export function ParentsLayout() {
     const { parents, loading, refetch } = useParentsData();
     const { deleteParentById, loadingDelete } = useParentDelete(refetch);
 
-    console.log(parents);
-
     const [searchTerm, setSearchTerm] = useState("");
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [parentToEdit, setParentToEdit] = useState<Parent | null>(null);

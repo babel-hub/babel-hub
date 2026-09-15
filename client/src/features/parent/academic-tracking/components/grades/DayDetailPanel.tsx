@@ -2,14 +2,16 @@ import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import { formatDayLabel, formatTime } from "../../../../utils/utils.ts";
 import type { StudentDailyGrade } from "../../types/types.ts";
 import { BsStars } from "react-icons/bs";
+import {toneBgandText} from "../../../../../utils/utils.ts";
 
 interface DayDetailPanelProps {
     subjectName: string | null;
     date: string;
     grades: StudentDailyGrade[];
+    scales: { max: number; min: number, passing: number };
 }
 
-export function DayDetailPanel({ subjectName, date, grades }: DayDetailPanelProps) {
+export function DayDetailPanel({ subjectName, date, grades, scales }: DayDetailPanelProps) {
     return (
         <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-5 md:col-span-2 flex flex-col gap-4">
             <div className="flex items-start justify-between gap-3">
@@ -27,14 +29,19 @@ export function DayDetailPanel({ subjectName, date, grades }: DayDetailPanelProp
                     )}
                 </div>
             </div>
-
             <div className="flex flex-col gap-3">
                 {grades.length > 0 ? (
                     grades.map((g) => (
                         <div key={g.assignment_id} className="border border-gray-100 rounded-xl p-4 flex flex-col gap-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-start gap-3">
-                                    <span className="w-9 h-9 shrink-0 rounded-lg bg-primary-shadow text-primary font-bold text-sm flex items-center justify-center">
+                                    <span className={`w-9 h-9 shrink-0 rounded-lg font-bold text-sm flex items-center justify-center ${
+                                        toneBgandText(Number(g.grade), {
+                                            max: scales.max,
+                                            min: scales.min,
+                                            passing: scales.passing
+                                        })
+                                    }`}>
                                         {g.grade}
                                     </span>
                                     <div>

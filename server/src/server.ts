@@ -39,7 +39,6 @@ app.use("/healthcheck", (req, res, next) => {
 
 //CRUD of attendance and grades
 app.use("/attendance", attendanceRoutes);
-// app.use("/grades", gradesRoutes);
 
 //GET current user info
 app.use("/user", userRoutes);

@@ -1,28 +1,20 @@
 import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
 import { reverseName } from "../../../../../../types";
 import { usePeriodAttendance } from "../../hooks/usePeriodAttendance.ts";
-import { usePeriods } from "../../../../../../shared/hooks/usePeriods.ts";
-import { useEffect, useState } from "react";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
 import { formatDateParts, formatDatePeriod } from "../../../../../utils/utils.ts";
+import type { Period } from "../../../../../../shared/types/types.ts";
 
 interface ViewAttendanceProps {
     courseId: string;
     classId: string;
+    periodId: string;
+    periods: Period[];
+    setPeriod: (periodId: string) => void;
 }
 
-export function ViewAttendance({ courseId, classId }: ViewAttendanceProps) {
-    const { periods } = usePeriods();
-    const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
-
-    useEffect(() => {
-        if (periods && periods.length > 0 && !selectedPeriodId) {
-            const activePeriod = periods.find(p => p.is_current);
-            setSelectedPeriodId(activePeriod ? activePeriod.id : periods[0].id);
-        }
-    }, [periods, selectedPeriodId]);
-
-    const selectedPeriod = periods?.find(p => p.id === selectedPeriodId);
+export function ViewAttendance({ courseId, classId, periodId, periods, setPeriod }: ViewAttendanceProps) {
+    const selectedPeriod = periods?.find(p => p.id === periodId);
 
     const startDate = selectedPeriod?.start_date ? selectedPeriod.start_date.slice(0, 10) : "";
     const endDate = selectedPeriod?.end_date ? selectedPeriod.end_date.slice(0, 10) : "";
@@ -38,7 +30,7 @@ export function ViewAttendance({ courseId, classId }: ViewAttendanceProps) {
         return <NoResults title="No se encontraron periodos" />;
     }
 
-    if (!selectedPeriodId || loading || !selectedPeriod) {
+    if (!periodId || loading || !selectedPeriod) {
         return null;
     }
 
@@ -63,7 +55,7 @@ export function ViewAttendance({ courseId, classId }: ViewAttendanceProps) {
                             className="bg-white text-sm capitalize appearance-none border-2 border-gray-100 text-custom-black rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
                             value={selectedPeriod?.id || ""}
                             disabled={periodAttendance.length === 0}
-                            onChange={(e) => setSelectedPeriodId(e.target.value)}
+                            onChange={(e) => setPeriod(e.target.value)}
                         >
                             {periods?.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>

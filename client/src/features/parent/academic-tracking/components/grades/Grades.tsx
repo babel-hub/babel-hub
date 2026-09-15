@@ -1,4 +1,3 @@
-import type { ParentStudent } from "../../../shared/types/types.ts";
 import { useDailyGrades } from "../../hooks/grades/useDailyGrades.ts";
 import { useAccumulatedGrades } from "../../hooks/grades/useAccumulatedGrades.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
@@ -9,8 +8,9 @@ import { AccumulatedPanel } from "./AccumulatedPanel.tsx";
 import type { StudentDailyGrade } from "../../types/types.ts";
 
 interface GradesProps {
-    students: ParentStudent[];
+    studentId: string;
     date: string;
+    periodId: string;
 }
 
 type SelectedSubject = {
@@ -24,8 +24,7 @@ type SubjectGroup = {
     grades: StudentDailyGrade[];
 };
 
-export function Grades({ students, date }: GradesProps) {
-    const studentId = students[0]?.student_id ?? '';
+export function Grades({ studentId, date, periodId }: GradesProps) {
     const { loading, grades } = useDailyGrades(studentId, date);
     const [selectedSubject, setSelectedSubject] = useState<SelectedSubject | null>(null);
 
@@ -33,6 +32,7 @@ export function Grades({ students, date }: GradesProps) {
         useAccumulatedGrades(
             studentId,
             selectedSubject?.classId ?? '',
+            periodId,
             selectedSubject?.subjectName ?? '',
         );
 
@@ -63,11 +63,7 @@ export function Grades({ students, date }: GradesProps) {
         });
     }, [subjectsByClass]);
 
-    if (students.length === 0) {
-        return <NoResults title="No hay estudiantes registrados" />;
-    }
-
-    if (loading) return <LoadingContent title="" />;
+    if (loading || loadingAccumulated) return <LoadingContent title="" />;
 
     const selectedGrades = selectedSubject ? subjectsByClass.get(selectedSubject.classId)?.grades ?? [] : [];
 
@@ -100,9 +96,22 @@ export function Grades({ students, date }: GradesProps) {
                                             </p>
                                         </div>
                                     </div>
-                                    <p className="font-bold text-custom-black shrink-0">
-                                        {subjectGrades[0]?.grade}
-                                    </p>
+                                    <div className="font-bold text-custom-black shrink-0">
+                                        {
+                                            (subjectGrades?.length ?? 0) > 0 ? (
+                                                subjectGrades.length > 1 ? (
+                                                    <div className="relative flex gap-2 items-center">
+                                                        <p className="text-sm md:text-base">{subjectGrades[0]?.grade}</p>
+                                                        <span className="bg-primary rounded-full text-[10px] px-1 text-white absolute -top-4 -right-4">{subjectGrades.length}</span>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm md:text-base">{subjectGrades[0]?.grade}</p>
+                                                )
+                                            ) : (
+                                                <p className="text-sm md:text-base">-</p>
+                                            )
+                                        }
+                                    </div>
                                 </button>
                             );
                         })
@@ -116,6 +125,11 @@ export function Grades({ students, date }: GradesProps) {
                 subjectName={selectedSubject?.subjectName ?? null}
                 date={date}
                 grades={selectedGrades}
+                scales={{
+                    max: accumulated?.scale_max ?? 0,
+                    min: accumulated?.scale_min ?? 0,
+                    passing: accumulated?.scale_passing ?? 0
+                }}
             />
 
             {loadingAccumulated ? (

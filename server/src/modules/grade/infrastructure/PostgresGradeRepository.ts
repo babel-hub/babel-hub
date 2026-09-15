@@ -3,7 +3,7 @@ import type {
     GradeByAssignment,
     GradeRecord,
     StudentDailyGrade,
-    StudentGrade,
+    StudentGrade, SubjectAccumulated,
     ValidScales
 } from "../domain/Grade.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
@@ -29,6 +29,77 @@ export class PostgresGradeRepository implements IGradeRepository {
             `, [classId]);
 
             return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getAccumulatedGradesBySubject(studentId: string, classId: string, periodId: string, subjectName: string, authUser: AuthUser): Promise<SubjectAccumulated> {
+        const client = await pool.connect();
+        try {
+            const check = await client.query(`
+                SELECT 1
+                FROM parent_student ps
+                         JOIN parent p ON ps.parent_id = p.id
+                WHERE p.profile_id = $1 AND ps.student_id = $2
+                    LIMIT 1;
+            `, [authUser.userId, studentId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+
+            const accumulated = await client.query(`
+                WITH CriteriaAverages AS (
+                    SELECT
+                        sub.name AS subject_name,
+                        ac.name AS criteria_name,
+                        ac.weight AS weight,
+                        COALESCE(AVG(g.value), 0) AS criteria_avg,
+                        sc.max_value::float,
+                        sc.min_value::float,
+                        sc.passing_value::float
+                    FROM student s
+                    JOIN class c ON s.course_id = c.course_id
+                    JOIN subject sub ON c.subject_id = sub.id
+                    JOIN grading_template gt ON sub.grading_template_id = gt.id
+                    JOIN scale sc ON gt.scale_id = sc.id
+                    JOIN assessment_criteria ac ON gt.id = ac.grading_template_id
+                    LEFT JOIN assignment a 
+                        ON c.id = a.class_id 
+                               AND ac.id = a.assessment_criteria_id
+                                AND a.period_id = $3
+                        
+                    LEFT JOIN grade g ON a.id = g.assignment_id AND g.student_id = s.id
+                    WHERE s.id = $1 AND c.id = $2
+                    GROUP BY
+                        sub.name,
+                        ac.name,
+                        ac.weight,
+                        sc.max_value,
+                        sc.min_value,
+                        sc.passing_value
+                )
+                SELECT
+                    subject_name,
+                    max_value AS scale_max,
+                    min_value AS scale_min,
+                    passing_value AS scale_passing,
+                    COALESCE(ROUND(SUM(criteria_avg * (weight / 100.0))::numeric, 2)::float, 0) AS period_average,
+                    json_agg(
+                            json_build_object(
+                                    'criteria_name', criteria_name,
+                                    'weight', weight,
+                                    'average', ROUND(criteria_avg::numeric, 2)::float
+                            )
+                    ) AS breakdown
+                FROM CriteriaAverages
+                GROUP BY
+                    subject_name,
+                    scale_max,
+                    scale_min,
+                    scale_passing;
+            `, [studentId, classId, periodId]);
+
+            return accumulated.rows[0];
         } finally {
             client.release();
         }
@@ -79,7 +150,7 @@ export class PostgresGradeRepository implements IGradeRepository {
                 SELECT
                     class_id,
                     subject_name,
-                    COALESCE(ROUND(SUM(criteria_avg * (weight / 100.0))::numeric, 1)::float, 0) AS final_grade,
+                    COALESCE(ROUND(SUM(criteria_avg * (weight / 100.0))::numeric, 2)::float, 0) AS final_grade,
                     max_value AS scale_max,
                     min_value AS scale_min,
                     passing_value

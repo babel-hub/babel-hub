@@ -5,43 +5,62 @@ import React from "react";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
 import { isToday, shiftDay } from "../../utils/utils.ts";
 import { formatDayLabel } from "../../../../utils/utils.ts";
-import {BiCommentDetail} from "react-icons/bi";
+import { BiCommentDetail } from "react-icons/bi";
 import { TbCalendarFilled } from "react-icons/tb";
 
 interface AcademicTrackingLayoutProps {
     children: React.ReactNode;
-    student: ParentStudent[];
+    students: ParentStudent[];
+    activeStudent: ParentStudent;
+    onStudentChange: (id: string) => void;
     activeTab: CumulativeGPATypes;
     onButtonTabChange: (tab: CumulativeGPATypes) => void;
     date: string;
     onButtonDateChange: (date: string) => void;
 }
 
-export function AcademicTrackingLayout({ children, student, activeTab, onButtonTabChange, date, onButtonDateChange } : AcademicTrackingLayoutProps) {
+export function AcademicTrackingLayout({
+                                           children, students, activeStudent, onStudentChange,
+                                           activeTab, onButtonTabChange, date, onButtonDateChange
+                                       } : AcademicTrackingLayoutProps) {
+
+    const formatStudentName = (s: ParentStudent) => reverseName({
+        middleName: s.student_middle_name,
+        secondLastName: s.student_second_last_name,
+        firstName: s.student_first_name,
+        firstLastName: s.student_first_last_name
+    });
+
     return (
         <div className="flex flex-col md:rounded-xl h-[calc(100dvh-5rem)] md:h-[calc(100dvh-1.8rem)] w-full bg-gray-50">
-            <div className="sticky top-0 z-10 p-3 lg:p-4 bg-white md:rounded-xl border border-gray-100  flex flex-col gap-4">
+            <div className="sticky top-0 z-10 p-3 lg:p-4 bg-white md:rounded-xl border border-gray-100 flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex items-center w-full justify-between">
                         <div className="flex gap-4 items-center">
                             <div>
                                 <h1 className="text-sm font-semibold text-primary-darker">
-                                    Seguimiento Academico
+                                    Seguimiento Académico
                                 </h1>
-                                <div className="w-full">
-                                    <p className="text-custom-black font-bold capitalize text-xl md:text-2xl">
-                                        {
-                                            reverseName({
-                                                middleName: student[0].student_middle_name,
-                                                secondLastName: student[0].student_second_last_name,
-                                                firstName: student[0].student_first_name,
-                                                firstLastName: student[0].student_first_last_name
-                                            })
-                                        }
-                                    </p>
-                                    <div className="flex items-center w-full gap-2">
-                                        <p className="text-custom-black text-xs md:text-sm ">Estudiante - {student[0].course_name}</p>
-                                    </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-gray-500 text-xs md:text-sm">Estudiante:</span>
+
+                                    {students.length > 1 ? (
+                                        <select
+                                            className="bg-gray-50 text-sm capitalize border border-gray-200 text-custom-black rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
+                                            value={activeStudent?.student_id || ""}
+                                            onChange={(e) => onStudentChange(e.target.value)}
+                                        >
+                                            {students.map(s => (
+                                                <option key={s.student_id} value={s.student_id}>
+                                                    {formatStudentName(s)} - {s.course_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <span className="font-medium capitalize text-sm text-gray-700">
+                                            {activeStudent ? `${formatStudentName(activeStudent)} - ${activeStudent.course_name}` : 'Cargando...'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

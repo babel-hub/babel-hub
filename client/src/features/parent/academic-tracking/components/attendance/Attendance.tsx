@@ -1,17 +1,16 @@
 import { useAttendance } from "../../hooks/attendance/useAttendance.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { GoClock, GoCheckCircle, GoXCircle, GoDash } from "react-icons/go";
-import type { ParentStudent } from "../../../shared/types/types.ts";
 import { formatDayLabel } from "../../../../utils/utils.ts";
 import {NoResults} from "../../../../../components/ui/blocks/NoResults.tsx";
 
 interface AttendanceProps {
-    students: ParentStudent[];
+    studentId: string;
     date: string;
 }
 
-export function Attendance({ students, date }: AttendanceProps) {
-    const { loading, attendance } = useAttendance(students[0]?.student_id, date);
+export function Attendance({ studentId, date }: AttendanceProps) {
+    const { loading, attendance } = useAttendance(studentId, date);
 
     if (loading) return <LoadingContent title="" />;
 
@@ -127,7 +126,7 @@ export function Attendance({ students, date }: AttendanceProps) {
                                             ? new Date(block.recorded_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
                                             : '—';
                                         return (
-                                            <tr key={block.class_id || index} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                            <tr key={block.class_id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                                                 <td className="py-4 px-4 font-bold text-custom-black">{index + 1}</td>
                                                 <td className="py-4 px-4 text-gray-700 capitalize font-medium">{block.class_name}</td>
                                                 <td className="py-4 px-4">

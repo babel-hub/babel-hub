@@ -37,3 +37,18 @@ export interface StudentDailyGrade {
     comment: string | null;
     graded_at: string;
 }
+
+export interface CriteriaBreakdown {
+    criteria_name: string;
+    weight: number;
+    average: number;
+}
+
+export interface SubjectAccumulated {
+    subject_name: string;
+    period_average: number;
+    scale_max: number;
+    scale_min: number;
+    scale_passing: number;
+    breakdown: CriteriaBreakdown[];
+}

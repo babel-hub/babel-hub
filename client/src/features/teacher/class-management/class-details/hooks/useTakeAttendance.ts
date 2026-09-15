@@ -16,12 +16,15 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
     const [attendanceDate, setAttendanceDate] = useState(date);
 
     useEffect(() => {
+        const controller = new AbortController();
+        let isMounted = true;
+
         const getAttendance = async () => {
             if (!classId || !date || students.length === 0) return;
 
             setLoading(true);
             try {
-                const rawAttendance = await getDailyAttendance(classId, attendanceDate);
+                const rawAttendance = await getDailyAttendance(classId, attendanceDate, controller.signal);
 
                 const attendance: Record<string, string> = {};
 
@@ -30,16 +33,23 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
                     attendance[student.student_id] = studentItem?.status ?? 'present';
                 });
 
-                setDailyAttendance(attendance);
-            } catch (error : any) {
+                if (isMounted) setDailyAttendance(attendance);
+            } catch (error: any) {
+                if (error.name === "CanceledError" || error.name === "AbortError") return;
+
                 console.error("Error GETTING daily attendance", error);
-                toast.error("Error al cargar asistencia");
+                if (isMounted) toast.error("Error al cargar asistencia");
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
         getAttendance();
-    }, [classId, attendanceDate]);
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        }
+    }, [classId, attendanceDate, date, students.length]);
 
     const handleUpdateStatus = useCallback((studentId: string, status: AttendanceStatus) => {
         setDailyAttendance(prev => ({...prev, [studentId]: status }));
@@ -53,7 +63,7 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
             const formattedRecords = Object.entries(dailyAttendance).map(([id, status]) => ({ studentId: id, status }));
             await bulkAttendance(classId, attendanceDate, formattedRecords);
             toast.success("Asistencia guardada correctamente.");
-        } catch (error : any) {
+        } catch (error: any) {
             console.error("Error SENDING the attendance", error);
             toast.error("Error al guardar la asistencia");
         } finally {

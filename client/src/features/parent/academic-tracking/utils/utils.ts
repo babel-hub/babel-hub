@@ -1,6 +1,6 @@
 import { formatterDate } from "../../../../types";
 
-export const CRITERIA_COLORS = ['#F5A524', '#F31260', '#F76B15', '#17C964'];
+export const CRITERIA_COLORS = ['#bbd926', '#4426d9', '#6e26d9', '#17C964'];
 
 export function colorForIndex(index: number): string {
     return CRITERIA_COLORS[index % CRITERIA_COLORS.length];

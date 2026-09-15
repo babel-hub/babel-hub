@@ -16,6 +16,24 @@ export class ParentControllers {
         }
     }
 
+    getAccumulatedGradesBySubject = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const studentId = request.params.studentId as string;
+            const classId = request.query.classId as string;
+            const periodId = request.query.periodId as string;
+            const subjectName = request.query.subjectName as string;
+
+            const userId = request.user!.userId as string;
+            const userSchoolId = request.user!.schoolId as string;
+            const userRole = request.user!.role as string;
+
+            const accumulated = await this.parentService.getAccumulatedGradesBySubject(studentId, classId, periodId, subjectName, { userId, userRole, userSchoolId });
+            response.status(200).json({ accumulated });
+        } catch (error : any) {
+            next(error);
+        }
+    }
+
     getParentStudents = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const userId = request.user!.userId as string;

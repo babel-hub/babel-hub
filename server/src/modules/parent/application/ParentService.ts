@@ -1,12 +1,12 @@
 import type { IParentRepository } from "../domain/IParentRepository.js";
 import type { AuthUser, ParentCredentials } from "../../shared/domain/Shared.types.js";
-import {NotFoundError, UnauthorizedError, ValidationError} from "../../errors/domain/CustomErrors.js";
+import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { Parent, ParentStudent, RelationTypes } from "../domain/Parent.types.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
-import type {StudentDailyGrade, StudentGrade} from "../../grade/domain/Grade.types.js";
+import type {StudentDailyGrade, StudentGrade, SubjectAccumulated} from "../../grade/domain/Grade.types.js";
 import type { DailyAttendance } from "../../attendance/domain/Attendance.types.js";
-import {normalizeOptionalText, normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
+import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class ParentService {
     constructor(
@@ -26,6 +26,14 @@ export class ParentService {
 
         return await this.parentRepository.getParentStudents(authUser);
     }
+
+    async getAccumulatedGradesBySubject(studentId: string, classId: string, periodId: string, subjectName: string, authUser: AuthUser): Promise<SubjectAccumulated> {
+        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        if (!studentId || !classId || !subjectName || !periodId) throw new ValidationError("Hay campos que no estan siendo enviados");
+
+        return await this.gradeRepository.getAccumulatedGradesBySubject(studentId, classId, periodId, subjectName, authUser);
+    }
+
 
     async getStudentGrades(studentId: string, periodId: string, authUser: AuthUser): Promise<StudentGrade[]> {
         if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario");

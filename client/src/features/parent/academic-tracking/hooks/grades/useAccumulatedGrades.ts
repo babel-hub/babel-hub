@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-// import { getAccumulatedData } from "../../api";
-import {MOCK_ACCUMULATED, type SubjectAccumulated} from "../../types/types.ts";
+import { getAccumulatedData } from "../../api";
+import type { SubjectAccumulated } from "../../types/types.ts";
 
 export const useAccumulatedGrades = (
     studentId: string,
     classId: string,
+    periodId: string,
     subjectName: string,
 ) => {
     const [loading, setLoading] = useState(false);
@@ -12,7 +13,7 @@ export const useAccumulatedGrades = (
     const [accumulatedGrades, setAccumulatedGrades] = useState<SubjectAccumulated | null>(null);
 
     useEffect(() => {
-        if (!studentId || !classId || !subjectName) {
+        if (!studentId || !classId || !subjectName || !periodId) {
             setAccumulatedGrades(null);
             setError(null);
             setLoading(false);
@@ -26,9 +27,7 @@ export const useAccumulatedGrades = (
             setLoading(true);
             setError(null);
             try {
-                // await getAccumulatedData(studentId, classId, subjectName, controller)
-                // The call to the server hasnt been done yet
-                const data = MOCK_ACCUMULATED;
+                const data = await getAccumulatedData(studentId, classId, periodId, subjectName, controller);
                 if (!cancelled) setAccumulatedGrades(data);
             } catch (err: any) {
                 if (cancelled || err.name === "CanceledError" || err.name === "AbortError") return;
