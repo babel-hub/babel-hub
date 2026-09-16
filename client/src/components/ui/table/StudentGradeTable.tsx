@@ -156,7 +156,7 @@ export function StudentGradeTable({
             <div className="w-full overflow-auto relative no-scrollbar">
                 <table className="w-full text-left relative border-collapse min-w-max">
                     <thead>
-                    <tr className="border-y border-gray-200">
+                    <tr className="border-b border-gray-200">
                         <th className="sticky left-0 z-10 bg-white p-3" />
                         {assessments.map((ac) => {
                             const has = ac.assignments.length > 0;

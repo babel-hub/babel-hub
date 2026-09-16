@@ -3,7 +3,6 @@ import { CancelButton } from "../buttons/Buttons.tsx";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
 import toast from "react-hot-toast";
 
-
 export interface FormField {
     name: string;
     label: string;

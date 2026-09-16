@@ -1,26 +1,30 @@
 import React from "react";
-import ButtonChevronBack from "../../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { HiOutlineCalendar, HiOutlineClipboardList, HiOutlineDocumentText, HiOutlineUsers } from "react-icons/hi";
-import { useNavigate } from "react-router-dom";
 import type { ClassDetailsData } from "../../types";
 import type { TabTypes } from "../../../../../types/types.ts";
+import type {Period} from "../../../../../../shared/types/types.ts";
+import { CustomSelect } from "../../../../../../components/ui/selector/CustomSelect.tsx";
 
 interface ClassLayoutProps {
     children: React.ReactNode;
     classDetails: ClassDetailsData;
     activeTab: TabTypes;
     onTabChange: (tab: TabTypes) => void;
+    periods: Period[];
+    periodId: string;
+    onPeriodChange: (periodId: string) => void;
+    showPeriodSelector: boolean;
+    showCalendar: boolean;
+    date: string;
+    setDate: (date: string) => void;
 }
 
-export function ClassLayout ({ children, onTabChange, classDetails, activeTab }: ClassLayoutProps) {
-    const navigate = useNavigate();
-
+export function ClassLayout ({ children, onTabChange, classDetails, activeTab, onPeriodChange, periods, periodId, setDate, date, showPeriodSelector, showCalendar }: ClassLayoutProps) {
     return (
         <div className="flex flex-col h-full w-full ">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-100 flex flex-col gap-4">
                 <div className="flex flex-col pt-5 px-5 md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex gap-4 items-center">
-                        <ButtonChevronBack onClick={() => navigate(-1)} />
                         <div>
                             <h1 className="text-xl md:text-1xl xl:text-2xl capitalize font-bold text-custom-black">
                                 {classDetails.subject_name}
@@ -31,6 +35,29 @@ export function ClassLayout ({ children, onTabChange, classDetails, activeTab }:
                             </p>
                         </div>
                     </div>
+
+                    {showPeriodSelector && (
+                        <div className="w-full md:max-w-48 shrink-0">
+                            <CustomSelect
+                                options={periods.map(p => ({ value: p.id, label: p.name }))}
+                                value={periodId}
+                                onChange={onPeriodChange}
+                                disabled={classDetails.students.length === 0}
+                            />
+                        </div>
+                    )}
+
+                    {showCalendar && (
+                        <div className="w-full md:max-w-48 shrink-0">
+                            <input
+                                type="date"
+                                disabled={classDetails.students.length === 0}
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="bg-gray-50 w-full text-sm border border-gray-200 text-gray-700 rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex overflow-x-auto bg-white w-full no-scrollbar">

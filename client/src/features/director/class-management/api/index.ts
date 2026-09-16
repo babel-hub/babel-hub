@@ -10,13 +10,20 @@ export const saveBulkAttendance = async (id: string, date: string, records: any[
     return await api.post(`/attendance/class/${id}/bulk`, { date, records });
 };
 
-export const getAttendanceClass = async (courseId: string , classId: string, startDate: string, endDate: string) => {
-    const response = await api.get(`/attendance/course/${courseId}/class/${classId}?startDate=${startDate}&endDate=${endDate}`);
+export const getAttendanceClass = async (courseId: string , classId: string, startDate: string, endDate: string, signal?: AbortSignal) => {
+    const response = await api.get(`/attendance/course/${courseId}/class/${classId}`, {
+        signal,
+        params: {
+            startDate,
+            endDate
+        }
+    });
     return  response.data;
 };
 
-export const getDailyAttendance = async (classId: string, date: string): Promise<ClassAttendance[]> => {
+export const getDailyAttendance = async (classId: string, date: string, signal?: AbortSignal): Promise<ClassAttendance[]> => {
     const response = await api.get(`/attendance/class/${classId}`, {
+        signal,
         params: {
             date
         }
@@ -26,8 +33,9 @@ export const getDailyAttendance = async (classId: string, date: string): Promise
 
 // Assignment Endpoints
 
-export const getAssignmentOverview = async (courseId: string, classId: string, periodId: string): Promise<AssignmentsOverview> => {
+export const getAssignmentOverview = async (courseId: string, classId: string, periodId: string, signal?: AbortSignal): Promise<AssignmentsOverview> => {
     const response = await api.get(`/assignments/periods/${periodId}/overview`, {
+        signal,
         params: {
             courseId,
             classId,
@@ -50,8 +58,10 @@ export const deleteAssignment = async (assignmentId: string): Promise<void> => {
 
 // Grade Endpoint
 
-export const getClassScale = async (classId: string): Promise<Scales> => {
-    const records = await api.get(`/scales/class/${classId}`);
+export const getClassScale = async (classId: string, signal?: AbortSignal): Promise<Scales> => {
+    const records = await api.get(`/scales/class/${classId}`, {
+        signal
+    });
     return records.data.scale;
 }
 

@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from "react-hot-toast";
 import type { AssessmentCriteria } from "../../../../../../types";
 import { getAssignmentOverview, getClassScale } from "../../api";
-import type { Scales, Student } from "../../../../../types/types.ts";
+import type { Scales } from "../../../../../types/types.ts";
 
-export const useAssignmentOverview = (courseId: string, classId: string, periodId: string, students: Student[]) => {
+export const useAssignmentOverview = (courseId: string, classId: string, periodId: string, students: number) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [assignmentsOverview, setAssignmentsOverview] = useState<AssessmentCriteria[] | null>(null);
     const [trigger, setTrigger] = useState<number>(0);
@@ -19,7 +19,7 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
         let isMounted = true;
 
         const getTeacherAssignments = async () => {
-            if (!courseId || !classId || !periodId || students.length === 0) return;
+            if (!courseId || !classId || !periodId || students === 0) return;
 
             setLoading(true);
             try {
@@ -80,7 +80,7 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
             isMounted = false;
             controller.abort();
         }
-    }, [courseId, classId, trigger, periodId, students.length])
+    }, [courseId, classId, trigger, periodId, students])
 
     return { assignmentsOverview, loading, refetch, scale };
 }

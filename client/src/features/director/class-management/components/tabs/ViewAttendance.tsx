@@ -1,29 +1,21 @@
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
-import { reverseName } from "../../../../../types";
+import { formatterDate, reverseName } from "../../../../../types";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import { useAttendanceGrid } from "../../hooks/useAttendanceGrid.ts";
 import type { ClassDetailsData } from "../../types";
-import {useEffect, useState} from "react";
-import { usePeriods } from "../../../../../shared/hooks/usePeriods.ts";
 import { formatDateParts, formatDatePeriod } from "../../../../utils/utils.ts";
+import type { Period } from "../../../../../shared/types/types.ts";
 
 interface ViewAttendanceProps {
     classData: ClassDetailsData;
     courseId: string;
+    periodId: string;
+    periods: Period[];
 }
 
-export function ViewAttendance({ classData, courseId }: ViewAttendanceProps) {
-    const { periods } = usePeriods();
-    const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
-
-    useEffect(() => {
-        if (periods && periods.length > 0 && !selectedPeriodId) {
-            const activePeriod = periods.find(p => p.is_current);
-            setSelectedPeriodId(activePeriod ? activePeriod.id : periods[0].id);
-        }
-    }, [periods, selectedPeriodId]);
-
-    const selectedPeriod = periods?.find(p => p.id === selectedPeriodId);
+export function ViewAttendance({ classData, courseId, periodId, periods }: ViewAttendanceProps) {
+    const selectedPeriod = periods?.find(p => p.id === periodId);
+    const todayStr = formatterDate.format(new Date());
 
     const startDate = selectedPeriod?.start_date ? selectedPeriod.start_date.slice(0, 10) : "";
     const endDate = selectedPeriod?.end_date ? selectedPeriod.end_date.slice(0, 10) : "";
@@ -36,8 +28,7 @@ export function ViewAttendance({ classData, courseId }: ViewAttendanceProps) {
         endDate
     });
 
-    if (!periods || periods.length === 0) return <NoResults title="No se encontraron periodos" />;
-    if (!selectedPeriodId || loading || !selectedPeriod) return null;
+    if (loading || !selectedPeriod) return null;
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -47,30 +38,18 @@ export function ViewAttendance({ classData, courseId }: ViewAttendanceProps) {
                 </div>
             ) : (
                 <div>
-                    <div className="w-full flex justify-between items-center p-2">
-                        <div className="flex gap-2 items-center">
-                            <div className="pl-2">
-                                <p className="text-primary-darker uppercase text-[10px] sm:text-xs font-bold">rango de periodo</p>
-                                <p className="text-custom-black capitalize font-semibold text-xs sm:text-sm">
-                                    {formatDatePeriod(selectedPeriod.start_date, selectedPeriod.end_date)}
-                                </p>
+                    <div className="bg-white">
+                        <div className="flex items-center border-b-2 border-gray-100 py-2 px-3 md:px-4 justify-end sm:justify-between">
+                            <div className="w-full hidden md:flex justify-between items-center">
+                                <div className="flex gap-2 items-center">
+                                    <div>
+                                        <p className="text-primary-darker capitalize text-xs font-semibold">rango de periodo</p>
+                                        <p className="text-custom-black capitalize font-semibold text-xs">
+                                            {formatDatePeriod(selectedPeriod.start_date, selectedPeriod.end_date)}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <select
-                            className="text-sm capitalize appearance-none text-custom-black border border-gray-200 rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                            value={selectedPeriod?.id || ""}
-                            onChange={(e) => setSelectedPeriodId(e.target.value)}
-                            disabled={classData.students.length === 0}
-                        >
-                            {periods?.map(p => (
-                                <option className="bg-white text-primary-darker" key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="bg-white border-t-2 border-gray-100">
-                        <div className="flex items-center border-b-2 border-gray-100 p-3 md:p-4 justify-end sm:justify-between">
-                            <p className="text-custom-black text-sm hidden sm:block md:text-base font-semibold">Registro Diario</p>
                             <div className="flex items-center gap-2 md:gap-4">
                                 <div className="flex items-center gap-1"><span className="w-2 h-2 block rounded-full bg-green-500" /><p className="text-custom-black text-xs">Presente</p></div>
                                 <div className="flex items-center gap-1"><span className="w-2 h-2 block rounded-full bg-red-500" /><p className="text-custom-black text-xs">Ausente</p></div>
@@ -137,24 +116,17 @@ export function ViewAttendance({ classData, courseId }: ViewAttendanceProps) {
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={calendar.length > 0 ? calendar.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500">
-                                                {
-                                                    (selectedPeriod?.start_date && new Date() < new Date(selectedPeriod.start_date))
-                                                        ? (
-                                                            <div className="md:col-span-2 lg:col-span-3">
-                                                                <NoResults title="Este periodo aún no ha comenzado"/>
-                                                            </div>
-                                                        )
-                                                        : (
-                                                            <div className="md:col-span-2 lg:col-span-3">
-                                                                <NoResults title="No hay estudiantes para mostrar su asistencia"/>
-                                                            </div>
-                                                        )
-                                                }
+                                            <td colSpan={calendar.length > 0 ? calendar.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 py-8">
+                                                {selectedPeriod?.start_date && todayStr < selectedPeriod.start_date.slice(0, 10) ? (
+                                                    <NoResults title="Este periodo aún no ha comenzado"/>
+                                                ) : (
+                                                    <NoResults title="No hay estudiantes para mostrar su asistencia"/>
+                                                )}
                                             </td>
                                         </tr>
                                     )
                                 }
+
                                 </tbody>
                             </table>
                         </div>

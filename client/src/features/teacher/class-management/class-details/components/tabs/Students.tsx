@@ -3,6 +3,7 @@ import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx"
 import {useAssignmentOverview} from "../../hooks/assignments/useAssignmentOverview.ts";
 import type { Student } from "../../../../../types/types.ts";
 import {finalGradeForStudent, toneBgandText} from "../../../../../../utils/utils.ts";
+import {LoadingContent} from "../../../../../../components/ui/Loadings.tsx";
 
 interface StudentsProps {
     students: Student[]
@@ -12,9 +13,16 @@ interface StudentsProps {
 }
 
 export function Students({ students, courseId, classId, periodId }: StudentsProps) {
-    const { assignmentsOverview, scale } = useAssignmentOverview(courseId, classId, periodId, students);
+    const { assignmentsOverview, scale, loading } = useAssignmentOverview(
+        courseId,
+        classId,
+        periodId,
+        students.length
+    );
 
-    if (!assignmentsOverview) return null;
+    if (loading || !assignmentsOverview) {
+        return <LoadingContent title="" />;
+    }
 
     return (
         <div className="bg-white overflow-hidden ">

@@ -1,8 +1,8 @@
 import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
-import { reverseName } from "../../../../../../types";
+import { formatterDate, reverseName } from "../../../../../../types";
 import { usePeriodAttendance } from "../../hooks/usePeriodAttendance.ts";
 import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
-import { formatDateParts, formatDatePeriod } from "../../../../../utils/utils.ts";
+import {formatDateParts, formatDatePeriod} from "../../../../../utils/utils.ts";
 import type { Period } from "../../../../../../shared/types/types.ts";
 
 interface ViewAttendanceProps {
@@ -10,11 +10,11 @@ interface ViewAttendanceProps {
     classId: string;
     periodId: string;
     periods: Period[];
-    setPeriod: (periodId: string) => void;
 }
 
-export function ViewAttendance({ courseId, classId, periodId, periods, setPeriod }: ViewAttendanceProps) {
+export function ViewAttendance({ courseId, classId, periodId, periods }: ViewAttendanceProps) {
     const selectedPeriod = periods?.find(p => p.id === periodId);
+    const todayStr = formatterDate.format(new Date());
 
     const startDate = selectedPeriod?.start_date ? selectedPeriod.start_date.slice(0, 10) : "";
     const endDate = selectedPeriod?.end_date ? selectedPeriod.end_date.slice(0, 10) : "";
@@ -42,30 +42,18 @@ export function ViewAttendance({ courseId, classId, periodId, periods, setPeriod
                 </div>
             ) : (
                 <div>
-                    <div className="w-full flex justify-between items-center p-2">
-                        <div className="flex gap-2 items-center">
-                            <div className="md:pl-2">
-                                <p className="text-primary uppercase text-[10px] sm:text-xs font-bold">rango de periodo</p>
-                                <p className="text-custom-black capitalize font-semibold text-xs sm:text-sm">
-                                    {formatDatePeriod(selectedPeriod.start_date, selectedPeriod.end_date)}
-                                </p>
+                    <div className="bg-white border-b-2 border-gray-100">
+                        <div className="flex items-center border-b-2 border-gray-100 py-2 px-3 md:p-4 justify-end sm:justify-between">
+                            <div className="w-full hidden sm:flex justify-between items-center">
+                                <div className="flex gap-2 items-center">
+                                    <div>
+                                        <p className="text-primary-darker capitalize text-xs font-semibold">rango de periodo</p>
+                                        <p className="text-custom-black capitalize font-semibold text-sm">
+                                            {formatDatePeriod(selectedPeriod.start_date, selectedPeriod.end_date)}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <select
-                            className="bg-white text-sm capitalize appearance-none border-2 border-gray-100 text-custom-black rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                            value={selectedPeriod?.id || ""}
-                            disabled={periodAttendance.length === 0}
-                            onChange={(e) => setPeriod(e.target.value)}
-                        >
-                            {periods?.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="bg-white border-y-2 border-gray-100">
-                        <div className="flex items-center border-b-2 border-gray-100 p-3 md:p-4 justify-end sm:justify-between">
-                            <p className="text-custom-black text-sm hidden sm:block md:text-base font-semibold">Registro Diario</p>
                             <div className="flex items-center gap-2 md:gap-4">
                                 <div className="flex items-center gap-1"><span className="w-2 h-2 block rounded-full bg-green-500" /><p className="text-custom-black text-xs">Presente</p></div>
                                 <div className="flex items-center gap-1"><span className="w-2 h-2 block rounded-full bg-red-500" /><p className="text-custom-black text-xs">Ausente</p></div>
@@ -132,9 +120,9 @@ export function ViewAttendance({ courseId, classId, periodId, periods, setPeriod
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500">
+                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 py-8">
                                                 {
-                                                    (selectedPeriod?.start_date && new Date() < new Date(selectedPeriod.start_date))
+                                                    (selectedPeriod?.start_date && todayStr < selectedPeriod.start_date.slice(0, 10))
                                                         ? (
                                                             <div className="md:col-span-2 lg:col-span-3">
                                                                 <NoResults title="Este periodo aún no ha comenzado"/>

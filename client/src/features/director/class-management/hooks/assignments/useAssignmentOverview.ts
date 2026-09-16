@@ -1,24 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAssignmentOverview  } from "../../api";
+import { getAssignmentOverview, getClassScale } from "../../api";
 import toast from "react-hot-toast";
 import type { AssessmentCriteria } from "../../../../../types";
+import type { Scale } from "../../../school-setup/types";
 
-export const useAssignmentOverview = (courseId: string, classId: string, periodId: string) => {
+export const useAssignmentOverview = (courseId: string, classId: string, periodId: string, students: number) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [assignmentsOverview, setAssignmentsOverview] = useState<AssessmentCriteria[] | null>(null);
     const [trigger, setTrigger] = useState<number>(0);
+    const [scale, setScale] = useState<Scale>();
 
     const refetch = useCallback(() => {
         setTrigger((prev) => prev + 1);
     }, []);
 
     useEffect(() => {
+        const controller = new AbortController();
+        let isMounted = true;
+
         const getAssignments = async () => {
-            if (!courseId || !classId || !periodId) return;
+            if (!courseId || !classId || !periodId || students === 0) return;
 
             setLoading(true);
             try {
-                const record = await getAssignmentOverview(courseId, classId, periodId);
+                const [record, scale] = await Promise.all([
+                    getAssignmentOverview(courseId, classId, periodId, controller.signal),
+                    getClassScale(classId, controller.signal)
+                ]);
+
                 const { assessment_criteria, grades } = record;
 
                 const gradesByAssignment = new Map<string, any[]>();
@@ -48,17 +57,26 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
                     })),
                 }))
 
-                setAssignmentsOverview(criteriaWithGrades);
+                if (isMounted) {
+                    setAssignmentsOverview(criteriaWithGrades);
+                    setScale(scale);
+                }
             } catch (error : any) {
-                const msg = error.response?.data?.message || error.message || "Error al cargar las asignaciones"
-                toast.error(msg);
-                console.error(msg);
+                if (error.name === "CanceledError" || error.name === "AbortError") return;
+
+                console.error("Error GETTING daily attendance", error);
+                if (isMounted) toast.error("Error al cargar las asignaciones");
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
         getAssignments();
-    }, [courseId, classId, trigger, periodId])
 
-    return { assignmentsOverview, loading, refetch };
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, [courseId, classId, trigger, periodId, students]);
+
+    return { assignmentsOverview, loading, refetch, scale };
 }

@@ -17,9 +17,12 @@ export const useAttendanceGrid = ({ courseId, classId, students, startDate, endD
     const [calendar, setCalendar] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!startDate || !endDate || students === 0) return;
+        const controller = new AbortController();
+        let isMounted = true;
 
         const showAttendance = async () => {
+            if (!startDate || !endDate || students === 0) return;
+
             const today = new Date();
             const periodStart = new Date(startDate);
 
@@ -34,7 +37,7 @@ export const useAttendanceGrid = ({ courseId, classId, students, startDate, endD
 
             setLoading(true);
             try {
-                const response = await getAttendanceClass(courseId, classId, startDate, effectiveEndDate);
+                const response = await getAttendanceClass(courseId, classId, startDate, effectiveEndDate, controller.signal);
                 const data = response.attendanceClass;
 
                 const datesSet = new Set<string>();
@@ -60,17 +63,26 @@ export const useAttendanceGrid = ({ courseId, classId, students, startDate, endD
                     });
                 });
 
-                setCalendar(Array.from(datesSet).sort());
-                setAttendance(Array.from(studentMap.values()));
-            } catch (error) {
-                console.error("Error GETTING the caledar ", error);
-                toast.error("Error al cargar el calendario");
+                if (isMounted) {
+                    setCalendar(Array.from(datesSet).sort());
+                    setAttendance(Array.from(studentMap.values()));
+                }
+            } catch (error: any) {
+                if (error.name === "CanceledError" || error.name === "AbortError") return;
+
+                console.error("Error GETTING calendar", error);
+                if (isMounted) toast.error("Error al cargar el calendario");
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         }
         showAttendance();
-    }, [courseId, classId, startDate, endDate]);
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, [courseId, classId, startDate, endDate, students]);
 
     return {
         loading,

@@ -14,8 +14,6 @@ interface RegisterAttendanceProps {
 
 export function RegisterAttendance ({ classData, date }: RegisterAttendanceProps) {
     const {
-        attendanceDate,
-        setAttendanceDate,
         saving,
         records,
         loading,
@@ -30,21 +28,11 @@ export function RegisterAttendance ({ classData, date }: RegisterAttendanceProps
 
     return (
         <div className="max-w-4xl mx-auto space-y-2">
-            <div className="pt-2 px-2 w-full flex items-center justify-end">
-                <input
-                    type="date"
-                    disabled={classData.students.length === 0}
-                    value={attendanceDate}
-                    onChange={(e) => setAttendanceDate(e.target.value)}
-                    className="bg-gray-50 md:text-base text-sm border border-gray-200 text-gray-700 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
-                />
-            </div>
-
             {loading ? (
                 <LoadingContent title="Cargando..." />
             ) : (
                 <div className="relative">
-                    <div className="flex bg-white items-center border-y-2 border-gray-100 p-3 md:p-4 justify-end sm:justify-between">
+                    <div className="flex bg-white items-center border-b-2 border-gray-100 p-3 md:p-4 justify-end sm:justify-between">
                         <div className="sm:block hidden">
                             <p className="text-custom-black text-sm md:text-base font-semibold">Lista de estudiantes</p>
                             <p className="text-xs text-custom-black">{classData.students.length} estudiantes</p>

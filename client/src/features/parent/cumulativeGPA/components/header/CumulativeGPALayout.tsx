@@ -1,15 +1,16 @@
 import React from "react";
-import {LuClipboardCheck } from "react-icons/lu";
+import { LuClipboardCheck } from "react-icons/lu";
 
 import { reverseName } from "../../../../../types";
 import type { CumulativeGPATypes, ParentStudent } from "../../../shared/types/types.ts";
-import {TbCalendarFilled} from "react-icons/tb";
-import {BiCommentDetail} from "react-icons/bi";
+import { TbCalendarFilled } from "react-icons/tb";
+import { BiCommentDetail } from "react-icons/bi";
+import { CustomSelect } from "../../../../../components/ui/selector/CustomSelect.tsx";
 
 interface CumulativeGPALayoutProps {
     children: React.ReactNode;
     students: ParentStudent[];
-    activeStudent?: ParentStudent;
+    activeStudent: ParentStudent;
     onStudentChange: (studentId: string) => void;
     activeTab: CumulativeGPATypes;
     onButtonChange: (tab: CumulativeGPATypes) => void;
@@ -29,6 +30,7 @@ export function CumulativeGPALayout({
                                         selectedPeriodId,
                                         onPeriodChange
                                     }: CumulativeGPALayoutProps) {
+
     const formatStudentName = (s: ParentStudent) => reverseName({
         middleName: s.student_middle_name,
         secondLastName: s.student_second_last_name,
@@ -43,44 +45,44 @@ export function CumulativeGPALayout({
                     <div className="flex items-center w-full justify-between">
                         <div className="flex gap-4 items-center">
                             <div>
-                                <h1 className="text-xl md:text-1xl xl:text-2xl capitalize font-bold text-custom-black">
+                                <h1 className="text-sm font-semibold text-primary-darker">
                                     Acumulado
                                 </h1>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-gray-500 text-xs md:text-sm">Estudiante:</span>
 
-                                    {students.length > 1 ? (
-                                        <select
-                                            className="bg-gray-50 text-xs md:text-sm capitalize border border-gray-200 text-custom-black rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                                            value={activeStudent?.student_id || ""}
-                                            onChange={(e) => onStudentChange(e.target.value)}
-                                        >
-                                            {students.map(s => (
-                                                <option key={s.student_id} value={s.student_id}>
-                                                    {formatStudentName(s)} - {s.course_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <span className="font-medium capitalize text-xs md:text-sm text-gray-700">
-                                            {activeStudent ? `${formatStudentName(activeStudent)} - ${activeStudent.course_name}` : 'Cargando...'}
-                                        </span>
-                                    )}
+                                    <div className="w-full md:min-w-64">
+                                        {students.length > 1 ? (
+                                            <CustomSelect
+                                                options={students.map(s => ({
+                                                    value: s.student_id,
+                                                    label: `${formatStudentName(s)} - ${s.course_name}`
+                                                }))}
+                                                value={activeStudent.student_id}
+                                                onChange={onStudentChange}
+                                            />
+                                        ) : (
+                                            <>
+                                                <p className="text-custom-black font-bold capitalize text-sm">
+                                                    {formatStudentName(activeStudent)} - {activeStudent.course_name}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className={`self-end sm:self-auto ${activeTab === 'attendance' ? 'hidden' : ''}`}>
-                            <select
-                                className="bg-white text-xs md:text-sm capitalize appearance-none text-custom-black border border-gray-200 rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
+                        <div className={`self-end sm:self-auto w-full sm:w-48 shrink-0 ${activeTab === 'attendance' ? 'hidden' : ''}`}>
+                            <CustomSelect
+                                options={periods.map(p => ({
+                                    value: p.id,
+                                    label: p.name
+                                }))}
                                 value={selectedPeriodId}
+                                onChange={onPeriodChange}
                                 disabled={activeTab === 'attendance'}
-                                onChange={(e) => onPeriodChange(e.target.value)}
-                            >
-                                {periods?.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                            </select>
+                            />
                         </div>
                     </div>
                 </div>

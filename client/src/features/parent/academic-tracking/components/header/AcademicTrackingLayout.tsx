@@ -7,6 +7,7 @@ import { isToday, shiftDay } from "../../utils/utils.ts";
 import { formatDayLabel } from "../../../../utils/utils.ts";
 import { BiCommentDetail } from "react-icons/bi";
 import { TbCalendarFilled } from "react-icons/tb";
+import { CustomSelect } from "../../../../../components/ui/selector/CustomSelect.tsx";
 
 interface AcademicTrackingLayoutProps {
     children: React.ReactNode;
@@ -44,23 +45,24 @@ export function AcademicTrackingLayout({
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="text-gray-500 text-xs md:text-sm">Estudiante:</span>
 
-                                    {students.length > 1 ? (
-                                        <select
-                                            className="bg-gray-50 text-sm capitalize border border-gray-200 text-custom-black rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                                            value={activeStudent?.student_id || ""}
-                                            onChange={(e) => onStudentChange(e.target.value)}
-                                        >
-                                            {students.map(s => (
-                                                <option key={s.student_id} value={s.student_id}>
-                                                    {formatStudentName(s)} - {s.course_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <span className="font-medium capitalize text-sm text-gray-700">
-                                            {activeStudent ? `${formatStudentName(activeStudent)} - ${activeStudent.course_name}` : 'Cargando...'}
-                                        </span>
-                                    )}
+                                    <div className="w-full md:min-w-64">
+                                        {students.length > 1 ? (
+                                            <CustomSelect
+                                                options={students.map(s => ({
+                                                    value: s.student_id,
+                                                    label: `${formatStudentName(s)} - ${s.course_name}`
+                                                }))}
+                                                value={activeStudent.student_id}
+                                                onChange={onStudentChange}
+                                            />
+                                        ) : (
+                                            <>
+                                                <p className="text-custom-black font-bold capitalize text-sm">
+                                                    {formatStudentName(activeStudent)} - {activeStudent.course_name}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -5,15 +5,36 @@ import { useNavigate } from "react-router-dom";
 import type { ClassDetailsData } from "../../types";
 import type { TabTypes } from "../../../../types/types.ts";
 import { reverseName } from "../../../../../types";
+import type { Period } from "../../../../../shared/types/types.ts";
+import {CustomSelect} from "../../../../../components/ui/selector/CustomSelect.tsx";
 
-interface ClassLayout {
+interface ClassLayoutProps {
     children: React.ReactNode;
     data: ClassDetailsData;
     activeTab: TabTypes;
     onTabChange: (tab: TabTypes) => void;
+    periods: Period[];
+    periodId: string;
+    onPeriodChange: (periodId: string) => void;
+    showPeriodSelector: boolean;
+    showCalendar: boolean;
+    date: string;
+    setDate: (date: string) => void;
 }
 
-export function ClassLayout({ children, data, activeTab, onTabChange }: ClassLayout) {
+export function ClassLayout({
+                                children,
+                                data,
+                                activeTab,
+                                onTabChange,
+                                periods,
+                                date,
+                                periodId,
+                                onPeriodChange,
+                                showPeriodSelector,
+                                showCalendar,
+                                setDate,
+                            }: ClassLayoutProps) {
     const navigate = useNavigate();
 
     return (
@@ -41,6 +62,29 @@ export function ClassLayout({ children, data, activeTab, onTabChange }: ClassLay
                             </p>
                         </div>
                     </div>
+
+                    {showPeriodSelector && (
+                        <div className="w-full md:max-w-48 shrink-0">
+                            <CustomSelect
+                                options={periods.map(p => ({ value: p.id, label: p.name }))}
+                                value={periodId}
+                                onChange={onPeriodChange}
+                                disabled={data.students.length === 0}
+                            />
+                        </div>
+                    )}
+
+                    {showCalendar && (
+                        <div className="w-full md:max-w-48 shrink-0">
+                            <input
+                                type="date"
+                                disabled={data.students.length === 0}
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="bg-gray-50 w-full text-sm border border-gray-200 text-gray-700 rounded-xl py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex overflow-x-auto bg-white w-full no-scrollbar">

@@ -8,19 +8,22 @@ import { useAssignmentOverview } from "../../hooks/assignments/useAssignmentOver
 import { useAssignmentDelete } from "../../hooks/assignments/useAssignmentDelete.ts";
 import { useBulkAssignments } from "../../hooks/assignments/useBulkAssignments.ts";
 import {AssignmentFormModal} from "../ui/AssignmentFormModal.tsx";
-import type { Period } from "../../../../../../shared/types/types.ts";
+import {LoadingContent} from "../../../../../../components/ui/Loadings.tsx";
 
 interface AssignmentsProps {
     classData: ClassDetailsData;
     classId: string;
     courseId: string;
     periodId: string;
-    periods: Period[];
-    setPeriod: (periodId: string) => void;
 }
 
-export function Assignments({ classData, courseId, classId, setPeriod, periodId, periods }: AssignmentsProps) {
-    const { assignmentsOverview, scale, loading, refetch } = useAssignmentOverview(courseId, classId, periodId, classData.students);
+export function Assignments({ classData, courseId, classId, periodId }: AssignmentsProps) {
+    const { assignmentsOverview, scale, loading, refetch } = useAssignmentOverview(
+        courseId,
+        classId,
+        periodId,
+        classData.students.length
+    );
 
     const { loadingDelete, deleteAssignmentById } = useAssignmentDelete(refetch);
     const { bulkUpsertGrades } = useBulkAssignments(refetch);
@@ -30,7 +33,9 @@ export function Assignments({ classData, courseId, classId, setPeriod, periodId,
     const [assignmentToEdit, setAssignmentToEdit] = useState<Assignment | null>(null);
     const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
 
-    if (loading || !scale) return null;
+    if (loading || !scale) {
+        return <LoadingContent title="" />;
+    }
 
     if (!assignmentsOverview || assignmentsOverview.length === 0) {
         return (
@@ -39,8 +44,6 @@ export function Assignments({ classData, courseId, classId, setPeriod, periodId,
             </div>
         );
     }
-
-    const selectedPeriod = periods.find(p => p.id === periodId);
 
     const onAddAssignment = (assessment: AssessmentCriteria) => {
         setAssessmentId(assessment.id);
@@ -68,20 +71,6 @@ export function Assignments({ classData, courseId, classId, setPeriod, periodId,
 
     return (
         <div>
-            <div className="flex items-center justify-end p-2 w-full">
-                <select
-                    name="teacher_periods_assignments"
-                    className="bg-white text-sm capitalize appearance-none text-custom-black border border-gray-200 rounded-xl md:px-4 p-2 md:py-2.5 focus:outline-none focus:ring-1 focus:ring-primary font-semibold cursor-pointer"
-                    value={selectedPeriod?.id || ""}
-                    disabled={classData.students.length === 0}
-                    onChange={(e) => setPeriod(e.target.value)}
-                >
-                    {periods?.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                </select>
-            </div>
-
             {classData.students.length > 0 && assignmentsOverview.length > 0 ? (
                 <StudentGradeTable
                     students={classData.students}

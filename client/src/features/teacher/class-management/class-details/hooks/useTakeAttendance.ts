@@ -13,7 +13,6 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [dailyAttendance, setDailyAttendance] = useState<Record<string, string>>({});
-    const [attendanceDate, setAttendanceDate] = useState(date);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -24,7 +23,7 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
 
             setLoading(true);
             try {
-                const rawAttendance = await getDailyAttendance(classId, attendanceDate, controller.signal);
+                const rawAttendance = await getDailyAttendance(classId, date, controller.signal);
 
                 const attendance: Record<string, string> = {};
 
@@ -49,7 +48,7 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
             isMounted = false;
             controller.abort();
         }
-    }, [classId, attendanceDate, date, students.length]);
+    }, [classId, date, students.length]);
 
     const handleUpdateStatus = useCallback((studentId: string, status: AttendanceStatus) => {
         setDailyAttendance(prev => ({...prev, [studentId]: status }));
@@ -61,7 +60,7 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
         setSaving(true);
         try {
             const formattedRecords = Object.entries(dailyAttendance).map(([id, status]) => ({ studentId: id, status }));
-            await bulkAttendance(classId, attendanceDate, formattedRecords);
+            await bulkAttendance(classId, date, formattedRecords);
             toast.success("Asistencia guardada correctamente.");
         } catch (error: any) {
             console.error("Error SENDING the attendance", error);
@@ -71,5 +70,5 @@ export const useTakeAttendance = ({classId, date, students}: TakeAttendanceProps
         }
     }
 
-    return { loading, saving, bulkAttendanceClass, handleUpdateStatus, setAttendanceDate, attendanceDate, dailyAttendance };
+    return { loading, saving, bulkAttendanceClass, handleUpdateStatus, dailyAttendance };
 }
