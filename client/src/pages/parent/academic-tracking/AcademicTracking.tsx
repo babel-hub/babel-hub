@@ -42,7 +42,6 @@ export default function AcademicTracking() {
             students={students}
             activeStudent={activeStudent}
             onStudentChange={setSelectedStudentId}
-
             activeTab={tab}
             onButtonTabChange={setTab}
             date={tabDate}

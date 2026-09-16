@@ -32,17 +32,14 @@ export default function CumulativeGPA() {
     if (periods.length === 0) return <NoResults title="No se encontraron periodos" />;
 
     const selectedPeriod = periods.find(p => p.id === selectedPeriodId);
-
     const activeStudent = students.find(s => s.student_id === selectedStudentId);
-
-    if (!selectedPeriod || !selectedPeriodId || !selectedStudentId) return null;
+    if (!selectedPeriod || !selectedPeriodId || !selectedStudentId || !activeStudent) return null;
 
     return (
         <CumulativeGPALayout
             students={students}
             activeStudent={activeStudent}
             onStudentChange={setSelectedStudentId}
-
             activeTab={tab}
             onButtonChange={setTab}
             periods={periods}
