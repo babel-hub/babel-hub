@@ -10,3 +10,7 @@ export const getCourse = async (): Promise<TeacherCourse> => {
     const response = await api.get("/courses/teacher/course");
     return response.data.teacherCourse;
 }
+
+export const createClassSchedule = async (payload: any) => {
+    await api.post("/class-schedule", payload)
+}

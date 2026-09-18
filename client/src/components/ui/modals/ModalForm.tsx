@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 export interface FormField {
     name: string;
     label: string;
-    type: "text" | "email" | "password" | "number" | "select" | "date";
+    type: "text" | "email" | "password" | "number" | "select" | "date" | "time";
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
@@ -94,14 +94,14 @@ export default function DynamicModalForm({
                                             </option>
                                         ))}
                                     </select>
-                                ) : field.type === "date" ? (
+                                ) : (field.type === "date" || field.type === "time") ? (
                                     <input
                                         id={`${field.name}_`}
-                                        type="date"
+                                        type={field.type}
                                         name={field.name}
                                         value={formData[field.name] || ""}
                                         onChange={onChange}
-                                        className="bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
+                                        className="w-full bg-gray-50 border border-gray-200 text-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
                                     />
                                 ) : field.type === "password" ? (
                                     <div className="w-full relative">

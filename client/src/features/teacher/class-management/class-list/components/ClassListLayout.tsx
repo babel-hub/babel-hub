@@ -3,12 +3,16 @@ import { LoadingPage } from "../../../../../components/ui/Loadings.tsx";
 import { InteractiveHomeList } from "../../../../../components/ui/lists/InteractiveHomeList.tsx";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { NoOutletInfo } from "../../../../../components/ui/blocks/NoOutletInfo.tsx";
-import {HiOutlineClipboardList} from "react-icons/hi";
-import {LuClipboardPenLine} from "react-icons/lu";
+import { HiOutlineClipboardList } from "react-icons/hi";
+import { LuClipboardPenLine } from "react-icons/lu";
+import { useState } from "react";
+import {ClassScheduleModal} from "./ClassScheduleModal.tsx";
 
 export function ClassListLayout() {
     const { id: activeCourseId } = useParams();
     const navigate = useNavigate();
+
+    const [scheduleClassId, setScheduleClassId] = useState<string | null>(null);
 
     const { loading, error, classes, course } = useTeacherClasses();
 
@@ -63,6 +67,10 @@ export function ClassListLayout() {
                                             label: "Ver notas",
                                             disabled: true,
                                             icon: <LuClipboardPenLine className="size-4" />
+                                        },
+                                        {
+                                            label: "Asignar Horario",
+                                            onClick: () => setScheduleClassId(item.class_id)
                                         }
                                     ]}
                                 />
@@ -76,6 +84,19 @@ export function ClassListLayout() {
                     <Outlet key={activeCourseId} />
                 ) : ( <NoOutletInfo title="Selecciona una clase" paragraph="Haz clic en una clase de la lista para ver sus detalles y estudiante." /> )}
             </div>
+
+            {scheduleClassId && (
+                <ClassScheduleModal
+                    mode={"create"}
+                    classId={scheduleClassId}
+                    onSuccess={() => {
+                        setScheduleClassId(null);
+                    }}
+                    onClose={() => {
+                        setScheduleClassId(null);
+                    }}
+                />
+            )}
         </div>
     )
 }
