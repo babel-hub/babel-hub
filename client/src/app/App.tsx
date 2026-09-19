@@ -32,6 +32,7 @@ import ParentDashboard from "../pages/parent/dashboard/ParentDashboard.tsx";
 import Parents from "../pages/principal/community/parents/parents.tsx";
 import CumulativeGPA from "../pages/parent/cumulativeGPA/CumulativeGPA.tsx";
 import AcademicTracking from "../pages/parent/academic-tracking/AcademicTracking.tsx";
+import TeacherCalendar from "../pages/teacher/calendar/TeacherCalendar.tsx";
 
 const queryClient = new QueryClient();
 
@@ -111,6 +112,9 @@ function App() {
                         <Route path="clases" element={<TeacherClasses />}>
                             <Route path=":id" element={<ClassDetails />}/>
                         </Route>
+
+                        <Route path="calendar" element={<TeacherCalendar />}/>
+
                     </Route>
 
                     <Route

@@ -33,15 +33,34 @@ export class TeacherControllers {
         }
     }
 
+    getTeacherSchedule = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const teacherId = request.params.teacherId as string;
+
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string
+            };
+
+            const schedule = await this.teacherServices.getTeacherSchedule(teacherId, authUser);
+            response.status(200).json({ schedule });
+        } catch (error : any) {
+            next(error);
+        }
+    }
+
     createTeacher = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const { email, password, firstName, middleName, firstLastName, secondLastName, userName, phone } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string
+            };
 
-            const record = await this.teacherServices.createTeacher({ firstName, middleName, firstLastName, secondLastName, password, email, userName, phone }, { userId, userRole, userSchoolId });
+            const record = await this.teacherServices.createTeacher({ firstName, middleName, firstLastName, secondLastName, password, email, userName, phone }, authUser);
             response.status(201).json({ teacher: record });
         } catch (error : any) {
             next(error);

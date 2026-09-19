@@ -1,0 +1,1 @@
+export { TeacherClassesSchedule } from './components/TeacherClassesSchedule.tsx'

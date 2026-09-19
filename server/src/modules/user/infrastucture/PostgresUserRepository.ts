@@ -32,7 +32,7 @@ export class PostgresUserRepository implements IUserRepository {
             const isActive = profile.rows[0].is_active;
             const dbSchoolId = profile.rows[0].school_id;
 
-            let profileId: string | null = null;
+            let profileId: string = "";
 
             switch (realRole) {
                 case "admin": {
@@ -65,8 +65,8 @@ export class PostgresUserRepository implements IUserRepository {
             }
 
             return {
-                // This id is from the main table, that gathers all the users
-                id: internalUserId,
+                // And this id is from the specific role table of the user admin, teacher, student etc.
+                id: profileId,
                 first_name: firstName,
                 middle_name: middleName,
                 first_last_name: firstLastName,
@@ -75,8 +75,8 @@ export class PostgresUserRepository implements IUserRepository {
                 email: email,
                 is_active: isActive,
                 school_id: dbSchoolId,
-                // And this id is from the specific role table of the user admin, teacher, student etc.
-                profile_id: profileId,
+                // This id is from the main table, that gathers all the users
+                profile_id: internalUserId,
                 is_profile_complete: !!profileId
             };
         } finally {

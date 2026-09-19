@@ -3,6 +3,7 @@ import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import { normalizeOptionalText } from "../../shared/domain/normalize.js";
 import { validateTimeRange } from "../domain/ClassSchedule.rules.js";
+import type { TeacherSchedule } from "../domain/ClassSchedule.types.js";
 
 export class ClassScheduleService {
     constructor(private readonly classScheduleRepository: IClassScheduleRepository ) {}
@@ -14,6 +15,8 @@ export class ClassScheduleService {
 
         const hasOverlap = await this.classScheduleRepository.checkTeacherOverlap(classId, day, startTime, endTime);
         if (hasOverlap) throw new ValidationError("El profesor ya tiene una clase asignada que cruza con este horario");
+        const hasCourseOverlap = await this.classScheduleRepository.checkCourseOverlap(classId, day, startTime, endTime);
+        if (hasCourseOverlap) throw new ValidationError("El curso ya tiene otra clase asignada que cruza con este horario");
 
         const normalize = {
             room: normalizeOptionalText(room)

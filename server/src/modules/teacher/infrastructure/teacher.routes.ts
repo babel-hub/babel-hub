@@ -6,9 +6,11 @@ import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 import { PostgresTeacherRepository } from "./PostgresTeacherRepository.js";
 import { TeacherServices } from "../application/TeacherServices.js";
 import { TeacherControllers } from "./TeacherControllers.js";
+import { PostgresClassScheduleRepository } from "../../class-schedule/infrastructure/PostgresClassScheduleRepository.js";
 
-const repository = new PostgresTeacherRepository();
-const service = new TeacherServices(repository);
+const teacherRepository = new PostgresTeacherRepository();
+const scheduleRepository = new PostgresClassScheduleRepository();
+const service = new TeacherServices(teacherRepository, scheduleRepository);
 const controllers = new TeacherControllers(service);
 
 const router: Router = Router();
@@ -26,6 +28,13 @@ router.get(
     authorizedRoles(["principal", "admin"]),
     controllers.getTeacherDetails
 );
+
+router.get(
+    "/:teacherId/schedule",
+    authMiddleware,
+    authorizedRoles(["principal", "teacher"]),
+    controllers.getTeacherSchedule
+)
 
 router.post(
     "/",

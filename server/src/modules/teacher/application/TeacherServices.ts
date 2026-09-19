@@ -2,13 +2,32 @@ import type { ITeacherRepository } from "../domain/ITeacherRepository.js";
 import type { CreateTeacher, TeacherDetails, Teachers } from "../domain/Teacher.types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } from "../../shared/domain/Shared.types.js";
-import {normalizeOptionalText, normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
+import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
+import type { IClassScheduleRepository } from "../../class-schedule/domain/IClassScheduleRepository.js";
 
 export class TeacherServices {
-    constructor( private readonly teacherRepository : ITeacherRepository ) {}
-
+    constructor(
+        private readonly teacherRepository: ITeacherRepository,
+        private readonly classScheduleRepository: IClassScheduleRepository
+    ) {}
     async getTeachers(userSchoolId: string, available: string | undefined, includeTeacherId: string | undefined, isActive: boolean): Promise<Teachers[]> {
         return await this.teacherRepository.getTeachers(userSchoolId, available, includeTeacherId, isActive);
+    }
+
+    async getTeacherSchedule(teacherId: string, authUser: AuthUser) {
+        if (!teacherId) throw new ValidationError("El ID del profesor es obligatorio");
+        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Credenciales inválidas");
+
+        if (authUser.userRole === 'teacher' && authUser.userId !== teacherId) {
+            throw new UnauthorizedError("No tienes permiso para ver el horario de otros profesores");
+        }
+
+        /*if (authUser.userRole === 'principal') {
+            const isValid = await this.teacherRepository.verifyTeacherSchool(teacherId, authUser.userSchoolId);
+            if (!isValid) throw new UnauthorizedError("Este profesor no pertenece a tu institución");
+        }*/
+
+        return await this.classScheduleRepository.getTeacherSchedule(teacherId);
     }
 
     async getTeacherDetails(teacherId: string, userSchoolId: string): Promise<TeacherDetails> {

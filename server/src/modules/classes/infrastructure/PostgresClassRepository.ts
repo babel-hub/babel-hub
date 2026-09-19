@@ -43,7 +43,7 @@ export class PostgresClassRepository implements IClassRepository {
                 FROM student st
                 JOIN profile p ON st.profile_id = p.id
                 WHERE st.course_id = $1 AND p.is_active = $2
-                ORDER BY p.first_last_name ASC;
+                ORDER BY p.first_last_name ASC, p.second_last_name ASC;
             `, [courseId, isActive])
 
             return {

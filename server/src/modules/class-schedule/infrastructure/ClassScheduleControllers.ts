@@ -9,13 +9,13 @@ export class ClassScheduleControllers {
         try {
             const { classId, day, startTime, endTime, room } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string
+            };
 
-            console.log(classId, day, startTime, endTime, room);
-
-            await this.classScheduleService.createClassSchedule(classId, day, startTime, endTime, room, { userId, userRole, userSchoolId });
+            await this.classScheduleService.createClassSchedule(classId, day, startTime, endTime, room, authUser);
             response.status(201).send();
         } catch (error : any) {
             next(error);

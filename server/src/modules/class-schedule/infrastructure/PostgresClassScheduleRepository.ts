@@ -2,9 +2,66 @@ import type { IClassScheduleRepository } from "../domain/IClassScheduleRepositor
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { UnauthorizedError } from "../../errors/domain/CustomErrors.js";
-import {createAuditLog} from "../../../services/audit.service.js";
+import { createAuditLog } from "../../../services/audit.service.js";
+import type { TeacherSchedule } from "../domain/ClassSchedule.types.js";
 
 export class PostgresClassScheduleRepository implements IClassScheduleRepository {
+    async getTeacherSchedule(teacherProfileId: string): Promise<TeacherSchedule[]> {
+        const client = await pool.connect();
+        try {
+            const query = `
+                SELECT 
+                    c.course_id,
+                    co.name AS course_name,
+                    cs.class_id,
+                    s.name AS subject_name,
+                    cs.day_of_week,
+                    cs.start_time,
+                    cs.end_time,
+                    cs.room
+                FROM class_schedule cs
+                JOIN class c ON cs.class_id = c.id
+                JOIN subject s ON c.subject_id = s.id
+                JOIN course co ON c.course_id = co.id
+                JOIN teacher t ON c.teacher_id = t.id
+                WHERE t.profile_id = $1
+                ORDER BY cs.day_of_week ASC, cs.start_time ASC;
+            `;
+
+            const result = await client.query(query, [teacherProfileId]);
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+
+    async checkCourseOverlap(classId: string, day: number, startTime: string, endTime: string, excludeScheduleId?: string): Promise<boolean> {
+        const client = await pool.connect();
+        try {
+            let query = `
+                SELECT 1
+                FROM class_schedule cs
+                JOIN class c ON cs.class_id = c.id
+                WHERE c.course_id = (SELECT course_id FROM class WHERE id = $1)
+                  AND cs.day_of_week = $2
+                  AND cs.start_time < $4
+                  AND cs.end_time > $3
+            `;
+            const params: any[] = [classId, day, startTime, endTime];
+
+            if (excludeScheduleId) {
+                params.push(excludeScheduleId);
+                query += ` AND cs.id != $5`;
+            }
+
+            const result = await client.query(query, params);
+            return result.rowCount !== null && result.rowCount > 0;
+        } finally {
+            client.release();
+        }
+    }
+
     async checkTeacherOverlap(classId: string, day: number, startTime: string, endTime: string, excludeScheduleId?: string): Promise<boolean> {
         const client = await pool.connect();
         try {
