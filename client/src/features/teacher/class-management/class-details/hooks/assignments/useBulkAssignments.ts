@@ -14,10 +14,13 @@ export const useBulkAssignments = (onSuccess: () => void) => {
 
             onSuccess();
         } catch (error : any) {
-            const msg = error.response?.data?.message || "Error cargar las notas";
-            console.error(msg);
-            toast.error(msg);
-            throw error;
+            console.error("Error al subir la nota", error);
+
+            const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "Error al subir la nota";
+            toast.error(errorMessage);
         } finally {
             setLoadingSave(false);
         }

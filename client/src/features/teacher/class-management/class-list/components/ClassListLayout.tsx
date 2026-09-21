@@ -19,9 +19,9 @@ export function ClassListLayout() {
     if (loading) return <LoadingPage title="Cargando..."/>
 
     return (
-        <div className="flex flex-col lg:flex-row gap-3 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-1.8rem)]">
+        <div className="flex flex-col lg:flex-row gap-3 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-1.5rem)]">
             <div className={`bg-white md:rounded-xl shadow-xs border border-gray-100 flex h-full flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/4`}>
-                <div className="flex flex-col h-full p-3 space-y-2">
+                <div className="flex flex-col h-full px-2 pt-2 space-y-2">
                     {course ? (
                         <InteractiveHomeList
                             isActive={activeCourseId === course.id}

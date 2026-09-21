@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 const HOUR_HEIGHT = 112;
 
@@ -29,6 +29,7 @@ export interface TeacherSchedule {
     course_name: string;
     class_id: string;
     subject_name: string;
+    area_name: string;
     day_of_week: number;
     start_time: string;
     end_time: string;
@@ -81,26 +82,13 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
         { num: 6, label: 'Sábado' }
     ];
 
-    const [now, setNow] = useState(new Date());
-
-    useEffect(() => {
-        const interval = setInterval(() => setNow(new Date()), 60000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const currentDayNum = now.getDay() === 0 ? 7 : now.getDay();
-    const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const currentTopPx = timeToPosition(currentTimeStr);
-
     return (
-        <div className="flex flex-col h-full bg-white rounded-xl w-full min-w-2xl max-w-7xl overflow-auto no-scrollbar border border-gray-100">
-
-            <div className="grid grid-cols-[50px_repeat(6,1fr)] border-b border-gray-100 sticky top-0 bg-white z-30">
+        <div className="flex flex-col rounded-xl h-full bg-white w-full min-w-2xl">
+            <div className="grid grid-cols-[50px_repeat(6,1fr)] sticky top-0 bg-white z-30">
                 <div className="p-4 border-r border-gray-100 sticky left-0 bg-white z-40"></div>
                 {days.map(day => {
-                    const isToday = day.num === currentDayNum;
                     return (
-                        <div key={day.num} className={`p-3 text-center text-sm border-r border-gray-100 transition-colors ${isToday ? 'bg-primary-shadow text-primary-darker font-bold' : 'text-gray-600 font-semibold'}`}>
+                        <div key={day.num} className={`p-3 text-center text-sm border-r last:border-r-0 border-gray-100 transition-colors text-gray-600 font-semibold`}>
                             {day.label}
                         </div>
                     )
@@ -117,7 +105,7 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
                 </div>
 
                 {days.map(day => (
-                    <div key={day.num} className={`relative ${day.num === currentDayNum ? 'bg-primary-shadow/30' : ''}`}>
+                    <div key={day.num} className="relative">
 
                         {hours.map(hour => {
                             const topOffset = (hour - 5) * HOUR_HEIGHT;
@@ -129,12 +117,6 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
                             )
                         })}
 
-                        {day.num === currentDayNum && currentTopPx >= 0 && currentTopPx <= (hours.length * HOUR_HEIGHT) && (
-                            <div className="absolute left-0 w-full z-30 flex items-center pointer-events-none" style={{ top: `${currentTopPx}px`, transform: 'translateY(-50%)' }}>
-                                <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-[5px]"></div>
-                                <div className="flex-1 border-b-2 border-red-500"></div>
-                            </div>
-                        )}
 
                         {calculateOverlaps(schedule.filter(s => s.day_of_week === day.num))
                             .map((cls) => {

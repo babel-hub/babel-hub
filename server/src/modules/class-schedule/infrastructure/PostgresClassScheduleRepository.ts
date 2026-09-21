@@ -15,6 +15,7 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
                     co.name AS course_name,
                     cs.class_id,
                     s.name AS subject_name,
+                    a.name AS area_name,
                     cs.day_of_week,
                     cs.start_time,
                     cs.end_time,
@@ -22,6 +23,7 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
                 FROM class_schedule cs
                 JOIN class c ON cs.class_id = c.id
                 JOIN subject s ON c.subject_id = s.id
+                JOIN area a ON s.area_id = a.id
                 JOIN course co ON c.course_id = co.id
                 JOIN teacher t ON c.teacher_id = t.id
                 WHERE t.profile_id = $1
