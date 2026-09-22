@@ -24,11 +24,13 @@ export class AssignmentController {
         try {
             const { assignmentName, assignmentDueAt, classId, assessmentId, periodId } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role! as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role! as string,
+                userSchoolId: request.user!.schoolId as string
+            }
 
-            await this.assignmentService.createAssignment(assignmentName, assignmentDueAt, classId, assessmentId, periodId, userId, userRole, userSchoolId);
+            await this.assignmentService.createAssignment(assignmentName, assignmentDueAt, classId, assessmentId, periodId, authUser);
             response.status(201).send();
         } catch (error: any) {
             next(error);
@@ -40,15 +42,18 @@ export class AssignmentController {
             const assignmentId = request.params.assignmentId as string;
             const { assignmentName, assignmentDueAt } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role! as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role! as string,
+                userSchoolId: request.user!.schoolId as string
+            }
 
             await this.assignmentService.updateAssignment(
                 assignmentId,
                 { assignmentName, assignmentDueAt },
-                userId, userRole, userSchoolId
+                authUser
             );
+
             response.status(200).send();
         } catch (error) {
             next(error);
@@ -59,11 +64,13 @@ export class AssignmentController {
         try {
             const assignmentId = request.params.assignmentId as string;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role! as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role! as string,
+                userSchoolId: request.user!.schoolId as string
+            }
 
-            await this.assignmentService.deleteAssignment(assignmentId, userId, userRole, userSchoolId);
+            await this.assignmentService.deleteAssignment(assignmentId, authUser);
             response.status(200).send();
         } catch (error) {
             next(error);

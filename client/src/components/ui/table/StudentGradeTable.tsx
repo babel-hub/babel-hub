@@ -251,9 +251,8 @@ export function StudentGradeTable({
                         const final = finalGradeForStudent(assessments, student.student_id);
                         return (
                             <tr key={student.student_id} className="border-t border-gray-100 transition-colors hover:bg-gray-50">
-                                <td className="sticky left-0 border-r z-10 border-gray-200 bg-white px-2 py-3 md:p-3">
+                                <td className="sticky left-0 border-r z-10 border-gray-200 bg-white px-2 py-3 md:p-4">
                                     <div className="max-w-[150px] md:max-w-[220px] truncate text-sm font-medium capitalize text-gray-900">{displayName}</div>
-                                    <div className="truncate text-xs text-gray-500">{student.email}</div>
                                 </td>
 
                                 {assessments.map((ac) =>
@@ -287,10 +286,10 @@ export function StudentGradeTable({
                                     ),
                                 )}
 
-                                <td className="border-l border-gray-200 bg-white text-center">
-                                        <span className={`text-sm font-bold tabular-nums rounded-md px-3 py-1.5 ${toneBgandText(final, scale)}`}>
-                                            {final === null ? '—' : final.toFixed(1)}
-                                        </span>
+                                <td className="border-l border-gray-200 bg-white px-2 text-center">
+                                    <span className={`text-sm font-bold tabular-nums rounded-md px-3 py-1.5 ${toneBgandText(final, scale)}`}>
+                                        {final === null ? '—' : final.toFixed(2)}
+                                    </span>
                                 </td>
                             </tr>
                         );

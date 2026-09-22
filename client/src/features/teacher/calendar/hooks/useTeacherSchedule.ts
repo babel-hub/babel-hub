@@ -10,6 +10,7 @@ export const useTeacherSchedule = (teacherId: string) => {
     useEffect(() => {
         const fetchSchedule = async () => {
             if (!teacherId) return;
+
             setLoading(true);
             try {
                 const data = await getTeacherSchedule(teacherId);

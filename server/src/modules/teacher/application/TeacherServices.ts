@@ -4,11 +4,14 @@ import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/
 import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } from "../../shared/domain/Shared.types.js";
 import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
 import type { IClassScheduleRepository } from "../../class-schedule/domain/IClassScheduleRepository.js";
+import type { IAssignmentRepository } from "../../assignments/domain/IAssignmentRepository.js";
+import type {AssignmentsByTeacherAndDate} from "../../assignments/domain/Assignment.types.js";
 
 export class TeacherServices {
     constructor(
         private readonly teacherRepository: ITeacherRepository,
-        private readonly classScheduleRepository: IClassScheduleRepository
+        private readonly classScheduleRepository: IClassScheduleRepository,
+        private readonly assignmentRepository: IAssignmentRepository,
     ) {}
     async getTeachers(userSchoolId: string, available: string | undefined, includeTeacherId: string | undefined, isActive: boolean): Promise<Teachers[]> {
         return await this.teacherRepository.getTeachers(userSchoolId, available, includeTeacherId, isActive);
@@ -28,6 +31,22 @@ export class TeacherServices {
         }*/
 
         return await this.classScheduleRepository.getTeacherSchedule(teacherId);
+    }
+
+    async getTeacherCalendar(teacherId: string, startDate: string, endDate: string, authUser: AuthUser) {
+        if (!teacherId || !startDate || !endDate) throw new ValidationError("El ID del profesor y fecha son obligatorios");
+
+        if (authUser.userRole === 'teacher' && authUser.userId !== teacherId) {
+            throw new UnauthorizedError("No tienes permiso para ver el horario de otros profesores");
+        }
+
+        const assignments = await this.assignmentRepository.getAssignmentsByTeacherAndDate(teacherId, startDate, endDate);
+
+        const calendarActivities = [
+            ...assignments.map(a => ({ type: 'assignment', ...a })),
+        ];
+
+        return calendarActivities;
     }
 
     async getTeacherDetails(teacherId: string, userSchoolId: string): Promise<TeacherDetails> {

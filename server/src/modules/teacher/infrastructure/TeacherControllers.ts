@@ -50,6 +50,25 @@ export class TeacherControllers {
         }
     }
 
+    getTeacherCalendar = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const teacherId = request.params.teacherId as string;
+            const startDate = request.query.startDate as string;
+            const endDate = request.query.endDate as string;
+
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string
+            };
+
+            const calendar = await this.teacherServices.getTeacherCalendar(teacherId, startDate, endDate, authUser);
+            response.status(200).json({ calendar });
+        } catch (error : any) {
+            next(error)
+        }
+    }
+
     createTeacher = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const { email, password, firstName, middleName, firstLastName, secondLastName, userName, phone } = request.body;

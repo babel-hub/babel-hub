@@ -42,7 +42,7 @@ export function CumulativeGPALayout({
         <div className="flex flex-col shadow-xs gap-3 md:rounded-xl h-[calc(100dvh-5rem)] md:h-[calc(100dvh-1.8rem)] w-full bg-gray-50">
             <div className="sticky top-0 z-10 p-3 bg-white md:rounded-t-xl flex flex-col gap-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center w-full justify-between">
+                    <div className="flex flex-col md:flex-row gap-3 items-start md:items-center w-full justify-between">
                         <div className="flex gap-4 items-center">
                             <div>
                                 <h1 className="text-sm font-semibold text-primary-darker">

@@ -68,7 +68,7 @@ export function Students({ students, courseId, classId, periodId }: StudentsProp
                                                     max: scale?.max_value ?? 0,
                                                     min: scale?.min_value ?? 0,
                                                     passing: scale?.passing_value ?? 0
-                                                })}`}>{finalGrade}</span>
+                                                })}`}>{Number(finalGrade).toFixed(2)}</span>
                                             ) : (
                                                 <span className={`text-xs md:text-sm lg:text-base font-medium text-gray-700}`}>-</span>
                                             )
