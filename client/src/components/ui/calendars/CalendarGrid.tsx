@@ -1,71 +1,6 @@
 import React from "react";
-
-const HOUR_HEIGHT = 112;
-
-const timeToPosition = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const startHour = 5;
-    return (hours - startHour) * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT + 1.2;
-};
-
-const SUBJECT_COLORS = [
-    { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-200' },
-    { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-200' },
-    { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-200' },
-    { bg: 'bg-amber-100', text: 'text-amber-800', border: 'border-amber-200' },
-    { bg: 'bg-pink-100', text: 'text-pink-800', border: 'border-pink-200' },
-    { bg: 'bg-teal-100', text: 'text-teal-800', border: 'border-teal-200' },
-    { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-200' },
-];
-
-const getSubjectColor = (name: string) => {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return SUBJECT_COLORS[Math.abs(hash) % SUBJECT_COLORS.length];
-};
-
-export interface TeacherSchedule {
-    course_id: string;
-    course_name: string;
-    class_id: string;
-    subject_name: string;
-    area_name: string;
-    day_of_week: number;
-    start_time: string;
-    end_time: string;
-    room: string | null;
-}
-
-const calculateOverlaps = (events: TeacherSchedule[]) => {
-    const sorted = [...events].sort((a, b) => a.start_time.localeCompare(b.start_time));
-    const result: (TeacherSchedule & { col: number; maxCol: number })[] = [];
-
-    let currentCluster: typeof result = [];
-    let clusterEnd = "00:00";
-
-    sorted.forEach(event => {
-        if (event.start_time >= clusterEnd) {
-            currentCluster.forEach(c => c.maxCol = Math.max(...currentCluster.map(x => x.col)) + 1);
-            currentCluster = [];
-            clusterEnd = event.end_time;
-        } else {
-            if (event.end_time > clusterEnd) clusterEnd = event.end_time;
-        }
-
-        let col = 0;
-        while (currentCluster.some(c => c.col === col && c.end_time > event.start_time)) {
-            col++;
-        }
-
-        const eventWithCols = { ...event, col, maxCol: 1 };
-        currentCluster.push(eventWithCols);
-        result.push(eventWithCols);
-    });
-
-    currentCluster.forEach(c => c.maxCol = Math.max(...currentCluster.map(x => x.col)) + 1);
-
-    return result;
-};
+import { calculateOverlaps, getAreaColor, HOUR_HEIGHT, timeToPosition } from "./calendar.utils.ts";
+import type { TeacherSchedule } from "./calendar.types.ts";
 
 interface CalendarGridProps {
     schedule: TeacherSchedule[];
@@ -88,7 +23,7 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
                 <div className="p-4 border-r border-gray-100 sticky left-0 bg-white z-40"></div>
                 {days.map(day => {
                     return (
-                        <div key={day.num} className={`p-3 text-center text-sm border-r last:border-r-0 border-gray-100 transition-colors text-gray-600 font-semibold`}>
+                        <div key={day.num} className="p-3 text-center text-sm border-r last:border-r-0 border-gray-100 transition-colors text-gray-600 font-semibold">
                             {day.label}
                         </div>
                     )
@@ -117,13 +52,12 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
                             )
                         })}
 
-
                         {calculateOverlaps(schedule.filter(s => s.day_of_week === day.num))
                             .map((cls) => {
                                 const topPx = timeToPosition(cls.start_time);
                                 const bottomPx = timeToPosition(cls.end_time);
                                 const heightPx = bottomPx - topPx;
-                                const colors = getSubjectColor(cls.subject_name);
+                                const colors = getAreaColor(cls.area_name);
 
                                 const width = `calc(${100 / cls.maxCol}% - 4px)`;
                                 const left = `calc(${(100 / cls.maxCol) * cls.col}% + 2px)`;

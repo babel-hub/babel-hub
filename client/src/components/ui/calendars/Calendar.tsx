@@ -1,7 +1,7 @@
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { formatterDate } from "../../../types";
-import type { TeacherSchedule } from "./CalendarGrid.tsx";
 import {useState} from "react";
+import type { TeacherSchedule } from "./calendar.types.ts";
 
 interface CalendarProps {
     schedule: TeacherSchedule[];
