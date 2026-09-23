@@ -1,4 +1,4 @@
-import type {TeacherSchedule} from "./CalendarGrid.tsx";
+import type { TeacherSchedule } from "./calendar.types.ts";
 
 export const HOUR_HEIGHT = 112;
 
