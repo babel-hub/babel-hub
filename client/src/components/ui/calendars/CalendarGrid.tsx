@@ -83,7 +83,7 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
     ];
 
     return (
-        <div className="flex flex-col md:rounded-xl h-full bg-white w-full min-w-2xl">
+        <div className="flex flex-col h-auto bg-white w-full min-w-2xl">
             <div className="grid grid-cols-[50px_repeat(6,1fr)] sticky top-0 bg-white z-30">
                 <div className="p-4 border-r border-gray-100 sticky left-0 bg-white z-40"></div>
                 {days.map(day => {
@@ -95,7 +95,7 @@ export function CalendarGrid({ schedule }: CalendarGridProps) {
                 })}
             </div>
 
-            <div className="grid grid-cols-[50px_repeat(6,1fr)] relative bg-gray-50/30">
+            <div className="grid grid-cols-[50px_repeat(6,1fr)] relative bg-white">
                 <div className="border-r border-gray-100 flex flex-col relative z-20 bg-white sticky left-0 shadow-[1px_0_2px_rgba(0,0,0,0.02)]">
                     {hours.map(hour => (
                         <div key={hour} className="h-28 first:invisible relative pr-3 text-right">
