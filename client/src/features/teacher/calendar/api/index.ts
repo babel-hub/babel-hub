@@ -15,3 +15,11 @@ export const getTeacherCalendar = async (teacherId: string, startDate: string, e
     });
     return response.data.calendar;
 }
+
+export const updateSchedule = async (scheduleId: string, payload: any): Promise<void> => {
+    return await api.put(`/class-schedule/${scheduleId}`, payload);
+}
+
+export const deleteSchedule = async (scheduleId: string): Promise<void> => {
+    return await api.delete(`/class-schedule/${scheduleId}`);
+}

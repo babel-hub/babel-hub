@@ -1,4 +1,5 @@
 export interface TeacherSchedule {
+    id: string;
     course_id: string;
     course_name: string;
     class_id: string;

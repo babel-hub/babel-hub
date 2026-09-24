@@ -113,7 +113,7 @@ export function ActionMenu({ options, customIcon }: ActionMenuProps) {
             <button
                 ref={buttonRef}
                 onClick={openMenu}
-                className={`rounded p-1 text-custom-black transition-colors cursor-pointer ${isOpen ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
+                className={`rounded p-1 text-custom-black transition-colors cursor-pointer`}
             >
                 {customIcon || <HiDotsVertical className="size-4" />}
             </button>

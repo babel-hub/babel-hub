@@ -21,4 +21,20 @@ router.post(
     controller.createClassSchedule
 )
 
+router.delete(
+    "/:scheduleId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.deleteClassSchedule
+)
+
+router.put(
+    "/:scheduleId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.updateClassSchedule
+)
+
 export default router;

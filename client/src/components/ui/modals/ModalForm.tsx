@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { CancelButton } from "../buttons/Buttons.tsx";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
-import toast from "react-hot-toast";
+import {GiCancel} from "react-icons/gi";
 
 export interface FormField {
     name: string;
@@ -41,10 +41,6 @@ export default function DynamicModalForm({
     if (!isOpen) return null;
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [policyAccepted, setPolicyAccepted] = useState(false);
-
-    useEffect(() => {
-        if (formError) toast.error(formError);
-    }, [formError])
 
     const togglePassword = (fieldName: string) => {
         setPasswordVisibility((prev) => ({
@@ -166,6 +162,17 @@ export default function DynamicModalForm({
                             </label>
                         )}
                     </form>
+
+                    {
+                        formError.length > 0 && (
+                            <div className="text-sm mt-3 bg-red-100 flex items-start gap-2 p-2 rounded-xl text-red-700">
+                                <div className="min-w-4 mt-1">
+                                    <GiCancel className="size-4"/>
+                                </div>
+                                {formError}
+                            </div>
+                        )
+                    }
                 </div>
 
                 <div className="px-5 pb-3 flex justify-end gap-3">

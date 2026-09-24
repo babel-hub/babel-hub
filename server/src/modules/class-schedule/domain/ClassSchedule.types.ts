@@ -1,4 +1,5 @@
 export interface TeacherSchedule {
+    id: string;
     course_id: string;
     course_name: string;
     class_id: string;
@@ -8,4 +9,15 @@ export interface TeacherSchedule {
     start_time: string;
     end_time: string;
     room: string | null;
+}
+
+export interface UpsertSchedule {
+    day: number,
+    startTime: string,
+    endTime: string,
+    room: string | null
+}
+
+export interface UpdateSchedule extends UpsertSchedule {
+    class_id: string;
 }

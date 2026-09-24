@@ -1,19 +1,27 @@
-import { useState } from "react";
+import {useCallback, useState} from "react";
 import { useAuth } from "../../../../auth/useAuth.ts";
 import { useTeacherSchedule } from "../hooks/useTeacherSchedule.ts";
 import { useTeacherCalendar } from "../hooks/useTeacherCalendar.ts";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
-import { CalendarGrid } from "../../../../components/ui/calendars/CalendarGrid.tsx";
+import { Schedule } from "../../../../components/ui/calendars/Schedule.tsx";
 import { Calendar } from "../../../../components/ui/calendars/Calendar.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
-import { formatterDate } from "../../../../types";
+import {formatterDate } from "../../../../types";
 import { LuBookOpen } from "react-icons/lu";
+import type { TeacherSchedule } from "../types/types.ts";
+import {ConfirmModal} from "../../../../components/ui/modals/ConfirmModal.tsx";
+import {useDeleteSchedule} from "../hooks/useDeleteSchedule.ts";
+import {TeacherModalForm} from "./TeacherModalForm.tsx";
 
 export function TeacherClassesSchedule() {
     const { user } = useAuth();
 
+    const [scheduleToEdit, setScheduleToEdit] = useState<TeacherSchedule | null>(null);
+    const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(formatterDate.format(new Date()));
-    const { loading, schedule } = useTeacherSchedule(user?.profile_id || "");
+
+    const { loading, schedule, refetch } = useTeacherSchedule(user?.profile_id || "");
+    const { loading: loadingDelete, deleteScheduleById } = useDeleteSchedule(refetch);
 
     const [viewingMonth, setViewingMonth] = useState(new Date());
     const { loading: loadingCalendar, monthActivities } = useTeacherCalendar(user?.profile_id || "", viewingMonth);
@@ -22,6 +30,14 @@ export function TeacherClassesSchedule() {
         activity => activity.assignment_due_date.startsWith(selectedDate)
     );
 
+    const handleEditClass = useCallback((schedule: TeacherSchedule) => {
+        setScheduleToEdit(schedule);
+    }, []);
+
+    const handleDeleteClass = useCallback((scheduleId: string) => {
+        setScheduleToDelete(scheduleId)
+    }, []);
+
     if (loading) return <LoadingContent title="" />;
     if (!schedule || schedule.length === 0) return <NoResults title="No tienes horarios asignados" />;
 
@@ -29,7 +45,11 @@ export function TeacherClassesSchedule() {
         <div className="h-[calc(100dvh-4rem)] md:rounded-xl no-scrollbar md:h-[calc(100dvh-1.5rem)] grid lg:gap-3 grid-cols-1 lg:grid-cols-4">
 
             <div className="lg:col-span-3 overflow-auto no-scrollbar border border-gray-100 lg:rounded-xl h-full order-2 lg:order-1">
-                <CalendarGrid schedule={schedule} />
+                <Schedule
+                    schedule={schedule}
+                    onEdit={handleEditClass}
+                    onDelete={handleDeleteClass}
+                />
             </div>
 
             <div className="relative lg:rounded-xl flex flex-col max-h-[36vh] lg:max-h-full h-full overflow-visible lg:overflow-hidden order-1 lg:order-2">
@@ -93,6 +113,31 @@ export function TeacherClassesSchedule() {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={scheduleToDelete !== null}
+                onClose={() => setScheduleToDelete(null)}
+                title="¿Estás seguro?"
+                message={`¿Quieres eliminar este horario? Esta acción no se puede deshacer.`}
+                onConfirm={async () => {
+                    if (scheduleToDelete) {
+                        await deleteScheduleById(scheduleToDelete);
+                        setScheduleToDelete(null);
+                    }
+                }}
+                loadingDelete={loadingDelete}
+            />
+
+            {scheduleToEdit && (
+                <TeacherModalForm
+                    initialData={scheduleToEdit}
+                    onClose={() => setScheduleToEdit(null)}
+                    onSuccess={async () => {
+                        setScheduleToEdit(null);
+                        refetch();
+                    }}
+                />
+            )}
         </div>
     );
 }

@@ -51,7 +51,7 @@ export function ClassScheduleModal({ mode, classId, onSuccess, onClose }: ClassS
             return;
         }
 
-        if(formData.endTime < formData.startTime) {
+        if (formData.endTime <= formData.startTime) {
             setError("La hora de fin debe ser mayor a la de inicio");
             return;
         }

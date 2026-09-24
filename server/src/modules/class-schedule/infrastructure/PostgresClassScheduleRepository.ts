@@ -1,16 +1,43 @@
 import type { IClassScheduleRepository } from "../domain/IClassScheduleRepository.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
-import { UnauthorizedError } from "../../errors/domain/CustomErrors.js";
+import { ForbiddenError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
-import type { TeacherSchedule } from "../domain/ClassSchedule.types.js";
+import type { TeacherSchedule, UpdateSchedule, UpsertSchedule} from "../domain/ClassSchedule.types.js";
+import type { PoolClient } from "pg";
 
 export class PostgresClassScheduleRepository implements IClassScheduleRepository {
+    private async verifyClassAccess(client: PoolClient, classId: string, authUser: AuthUser): Promise<void> {
+        if (authUser.userRole === 'teacher') {
+            const check = await client.query(`
+                SELECT 1 FROM class c
+                JOIN teacher t ON c.teacher_id = t.id
+                JOIN profile p ON t.profile_id = p.id
+                WHERE p.id = $1 AND p.school_id = $2 AND c.id = $3
+            `, [authUser.userId, authUser.userSchoolId, classId]);
+
+            if (check.rowCount === 0) {
+                throw new ForbiddenError("No tienes permisos para modificar los horarios de esta clase");
+            }
+        } else if (authUser.userRole === 'principal') {
+            const checkSchool = await client.query(`
+                SELECT 1 FROM class c
+                JOIN course co ON c.course_id = co.id
+                WHERE c.id = $1 AND co.school_id = $2
+            `, [classId, authUser.userSchoolId]);
+
+            if (checkSchool.rowCount === 0) {
+                throw new ForbiddenError("La clase no pertenece a tu institución");
+            }
+        }
+    }
+
     async getTeacherSchedule(teacherProfileId: string): Promise<TeacherSchedule[]> {
         const client = await pool.connect();
         try {
             const query = `
                 SELECT 
+                    cs.id,
                     c.course_id,
                     co.name AS course_name,
                     cs.class_id,
@@ -90,49 +117,87 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
         }
     }
 
-    async createClassSchedule(classId: string, day: number, startTime: string, endTime: string, room: string, authUser: AuthUser): Promise<void> {
+    async createClassSchedule(classId: string, schedule: UpsertSchedule, authUser: AuthUser): Promise<void> {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            if (authUser.userRole === 'teacher') {
-                const check = await client.query(`
-                    SELECT 1 FROM class c
-                    JOIN teacher t ON c.teacher_id = t.id
-                    JOIN profile p ON t.profile_id = p.id
-                    WHERE p.id = $1 AND p.school_id = $2 AND c.id = $3
-                `, [authUser.userId, authUser.userSchoolId, classId]);
-
-                if (check.rowCount === 0) throw new UnauthorizedError("No tienes permisos para asignar horarios a esta clase");
-            } else if (authUser.userRole === 'principal') {
-                const checkSchool = await client.query(`
-                    SELECT 1 FROM class c
-                    JOIN course co ON c.course_id = co.id
-                    WHERE c.id = $1 AND co.school_id = $2
-                `, [classId, authUser.userSchoolId]);
-
-                if (checkSchool.rowCount === 0) throw new UnauthorizedError("La clase no pertenece a tu institución");
-            }
+            await this.verifyClassAccess(client, classId, authUser);
 
             await client.query(`
                 INSERT INTO class_schedule (day_of_week, start_time, end_time, room, class_id)
                 VALUES ($1, $2, $3, $4, $5);
-            `, [day, startTime, endTime, room, classId]);
+            `, [schedule.day, schedule.startTime, schedule.endTime, schedule.room, classId]);
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
                 actorRole: authUser.userRole,
                 action: "CREATE_CLASS_SCHEDULE",
                 schoolId: authUser.userSchoolId,
-                metadata: {
-                    classId,
-                    room,
-                }
-            })
+                metadata: { classId, room: schedule.room }
+            });
 
             await client.query('COMMIT');
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async updateClassSchedule(scheduleId: string, schedule: UpdateSchedule, authUser: AuthUser): Promise<void> {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            await this.verifyClassAccess(client, schedule.class_id, authUser);
+
+            await client.query(`
+                UPDATE class_schedule
+                SET day_of_week = $1, room = $2, start_time = $3, end_time = $4
+                WHERE id = $5
+            `, [schedule.day, schedule.room, schedule.startTime, schedule.endTime, scheduleId]);
+
+            await createAuditLog(client, {
+                actorUserId: authUser.userId,
+                actorRole: authUser.userRole,
+                action: "UPDATE_CLASS_SCHEDULE",
+                schoolId: authUser.userSchoolId,
+                metadata: { classScheduleId: scheduleId, room: schedule.room }
+            });
+
+            await client.query('COMMIT');
+        } catch (error: any) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteClassSchedule(scheduleId: string, authUser: AuthUser): Promise<void> {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const classQuery = await client.query('SELECT class_id FROM class_schedule WHERE id = $1', [scheduleId]);
+            if (classQuery.rowCount === 0) throw new ValidationError("El horario a eliminar no existe");
+
+            await this.verifyClassAccess(client, classQuery.rows[0].class_id, authUser);
+
+            await client.query('DELETE FROM class_schedule WHERE id = $1', [scheduleId]);
+
+            await createAuditLog(client, {
+                actorUserId: authUser.userId,
+                actorRole: authUser.userRole,
+                action: "DELETE_CLASS_SCHEDULE",
+                schoolId: authUser.userSchoolId,
+                metadata: { classScheduleId: scheduleId }
+            });
+
+            await client.query('COMMIT');
+        } catch (error: any) {
             await client.query('ROLLBACK');
             throw error;
         } finally {

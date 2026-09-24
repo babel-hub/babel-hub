@@ -5,7 +5,6 @@ import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } fro
 import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
 import type { IClassScheduleRepository } from "../../class-schedule/domain/IClassScheduleRepository.js";
 import type { IAssignmentRepository } from "../../assignments/domain/IAssignmentRepository.js";
-import type {AssignmentsByTeacherAndDate} from "../../assignments/domain/Assignment.types.js";
 
 export class TeacherServices {
     constructor(

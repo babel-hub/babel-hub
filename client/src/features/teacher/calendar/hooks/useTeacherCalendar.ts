@@ -27,7 +27,7 @@ export const useTeacherCalendar = (teacherId: string, viewingMonth: Date) => {
                 const errorMessage =
                     error.response?.data?.message ||
                     error.message ||
-                    "Ocurrió al cargar el calendario";
+                    "Ocurrió un error al cargar el calendario";
 
                 setError(errorMessage);
             } finally {

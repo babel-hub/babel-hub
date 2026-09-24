@@ -52,6 +52,7 @@ export interface Teacher {
     created_at: string;
     total_classes: number;
 }
+
 export interface TeacherRowProps {
     teacher: Teacher;
     onEdit: (teacher: Teacher) => void;

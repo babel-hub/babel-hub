@@ -61,7 +61,7 @@ export function Calendar({
                 </div>
             </div>
 
-            <div className={`absolute lg:relative w-full top-full z-50 left-0 bg-white rounded-b-xl lg:rounded-none border-b lg:border-none border-gray-200 py-3 lg:py-0 ${showCalendar ? 'block' : 'hidden lg:block'}`}>
+            <div className={`absolute lg:relative w-full top-full z-50 lg:z-0 left-0 bg-white rounded-b-xl lg:rounded-none border-b lg:border-none border-gray-200 py-3 lg:py-0 ${showCalendar ? 'block' : 'hidden lg:block'}`}>
                 <div className="grid grid-cols-7 px-2">
                     {['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'].map(d => (
                         <div key={d} className="text-center text-xs font-semibold text-gray-400">{d}</div>

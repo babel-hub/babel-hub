@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect, useCallback} from "react";
 import type { TeacherSchedule } from "../types/types.ts";
 import { getTeacherSchedule } from "../api";
 
@@ -6,6 +6,11 @@ export const useTeacherSchedule = (teacherId: string) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [schedule, setSchedule] = useState<TeacherSchedule[]>([]);
+    const [trigger, setTrigger] = useState<number>(0);
+
+    const refetch = useCallback(() => {
+        setTrigger((prev) => prev + 1);
+    }, []);
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -21,7 +26,7 @@ export const useTeacherSchedule = (teacherId: string) => {
                 const errorMessage =
                     error.response?.data?.message ||
                     error.message ||
-                    "Ocurrió al cargar el horario";
+                    "Ocurrió un error al cargar el horario";
 
                 setError(errorMessage);
             } finally {
@@ -29,7 +34,7 @@ export const useTeacherSchedule = (teacherId: string) => {
             }
         }
         fetchSchedule();
-    }, [teacherId]);
+    }, [teacherId, trigger]);
 
-    return { loading, error, schedule };
+    return { loading, error, schedule, refetch };
 }
