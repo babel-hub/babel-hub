@@ -10,6 +10,14 @@ export interface ValidScales {
     max_value: number;
 }
 
+export interface StudentGradeRow {
+    assignment_id: string;
+    assignment_title: string;
+    class_name: string;
+    value: string | number;
+    graded_at: Date;
+}
+
 export interface GradeByAssignment {
     id: string;
     student_id: string;

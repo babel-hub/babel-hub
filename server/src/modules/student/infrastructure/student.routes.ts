@@ -4,11 +4,27 @@ import { authMiddleware } from "../../../middleware/auth.middleware.js";
 import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 
 import { PostgresStudentRepository } from "./PostgresStudentRepository.js";
+import { PostgresAttendanceRepository } from "../../attendance/infrastructure/PostgresAttendanceRepository.js";
+import { PostgresClassRepository } from "../../classes/infrastructure/PostgresClassRepository.js";
+import { PostgresGradeRepository } from "../../grade/infrastructure/PostgresGradeRepository.js";
+import { PostgresParentRepository } from "../../parent/infrastructure/PostgresParentRepository.js";
+
 import { StudentService } from "../application/StudentService.js";
 import { StudentControllers } from "./StudentControllers.js";
 
-const repository = new PostgresStudentRepository();
-const service = new StudentService(repository);
+const studentRepository = new PostgresStudentRepository();
+const attendanceRepository = new PostgresAttendanceRepository();
+const gradeRepository = new PostgresGradeRepository();
+const parentRepository = new PostgresParentRepository();
+const classRepository = new PostgresClassRepository();
+
+const service = new StudentService(
+    studentRepository,
+    parentRepository,
+    gradeRepository,
+    classRepository,
+    attendanceRepository
+);
 const controllers = new StudentControllers(service);
 
 const router: Router = Router();

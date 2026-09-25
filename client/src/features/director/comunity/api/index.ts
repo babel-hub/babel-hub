@@ -8,9 +8,15 @@ export const getStudents = async (): Promise<StudentProps[]> => {
     return response.data.students;
 }
 
-export const getStudentById = async (id: string) => {
-    const response = await api.get(`/student/${id}`);
-    return response.data.record;
+export const getStudentById = async (id: string, periodId: string, startDate: string, endDate: string) => {
+    const response = await api.get(`/student/${id}`, {
+        params: {
+            periodId,
+            startDate,
+            endDate
+        }
+    });
+    return response.data.studentProfile;
 }
 
 export const getCourses = async (): Promise<Courses[]> => {

@@ -33,3 +33,13 @@ export interface ParentStudent {
     course_id: string;
     course_name: string;
 }
+
+export interface StudentParentRow {
+    parent_id: string;
+    first_name: string;
+    middle_name: string | null;
+    first_last_name: string;
+    second_last_name: string | null;
+    phone: string | null;
+    relationship_type: 'father' | 'mother' | 'other';
+}

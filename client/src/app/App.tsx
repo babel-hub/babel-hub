@@ -18,7 +18,6 @@ import StudentDashboard from "../pages/student/dashboard/StudentDashboard.tsx";
 import Students from "../pages/principal/community/students/Students.tsx";
 import Teachers from "../pages/principal/community/teachers/Teachers.tsx";
 import TeacherProfile from "../pages/principal/community/teachers/TeacherProfile.tsx";
-import StudentProfile from "../pages/principal/community/students/StudentProfile.tsx";
 import Courses from "../pages/principal/courses/Courses.tsx";
 import CourseDetails from "../pages/principal/courses/CourseDetails.tsx";
 import Setup from "../pages/principal/files/Setup.tsx";
@@ -33,6 +32,7 @@ import Parents from "../pages/principal/community/parents/parents.tsx";
 import CumulativeGPA from "../pages/parent/cumulativeGPA/CumulativeGPA.tsx";
 import AcademicTracking from "../pages/parent/academic-tracking/AcademicTracking.tsx";
 import TeacherCalendar from "../pages/teacher/calendar/TeacherCalendar.tsx";
+import StudentProfile from "../pages/principal/community/students/StudentProfile.tsx";
 
 const queryClient = new QueryClient();
 

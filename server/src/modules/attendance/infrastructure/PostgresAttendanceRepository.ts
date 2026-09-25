@@ -5,7 +5,7 @@ import type {
     AttendanceSummary,
     CalendarAttendance,
     CourseAttendance,
-    DailyAttendance
+    DailyAttendance, StudentAttendanceRow
 } from "../domain/Attendance.types.js";
 import type { IAttendanceRepository } from "../domain/IAttendanceRepository.js";
 import { pool } from "../../../db/index.js";
@@ -14,6 +14,25 @@ import { NotFoundError } from "../../errors/domain/CustomErrors.js";
 import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class PostgresAttendanceRepository implements IAttendanceRepository {
+    async getStudentProfileAttendance(studentId: string, startDate: string, endDate: string): Promise<StudentAttendanceRow[]> {
+        const client = await pool.connect();
+        try {
+            const attendance = await client.query(`
+                SELECT status, COUNT(*) as count
+                FROM attendance
+                WHERE student_id = $1
+                  AND date >= $2::DATE
+                  AND date <= $3::DATE
+                GROUP BY status
+            `, [studentId, startDate, endDate]);
+
+            return attendance.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+
     async getDailyClassAttendance(classId: string, schoolId: string, date: string, isActive: boolean): Promise<ClassAttendance[]> {
         const client = await pool.connect();
         try {

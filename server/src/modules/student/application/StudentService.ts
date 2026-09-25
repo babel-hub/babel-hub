@@ -1,11 +1,26 @@
 import type { IStudentRepository } from "../domain/IStudentRepository.js";
-import type { CreateStudent, StudentByName, StudentDetails, Students } from "../domain/Student.types.js";
+import type {
+    CreateStudent, StudentBaseRow,
+    StudentByName,
+    StudentProfileData,
+    Students
+} from "../domain/Student.types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type { AuthUser, StudentCreateCredentials, StudentUpdateCredentials } from "../../shared/domain/Shared.types.js";
-import {normalizeOptionalText, normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
+import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
+import type { IParentRepository } from "../../parent/domain/IParentRepository.js";
+import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
+import type { IClassRepository } from "../../classes/domain/IClassRepository.js";
+import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
 
 export class StudentService {
-    constructor( private readonly studentRepository: IStudentRepository ) {}
+    constructor (
+        private readonly studentRepository: IStudentRepository,
+        private readonly parentRepository: IParentRepository,
+        private readonly gradesRepository: IGradeRepository,
+        private readonly classRepository: IClassRepository,
+        private readonly attendanceRepository: IAttendanceRepository
+    ) {}
 
     async getStudents(userSchoolId: string, isActive: boolean): Promise<Students[]> {
         if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
@@ -13,14 +28,37 @@ export class StudentService {
         return await this.studentRepository.getStudents(userSchoolId, isActive);
     }
 
-    async getStudentDetails(studentId: string, userSchoolId: string): Promise<StudentDetails> {
+    async getStudentDetails(studentId: string, periodId: string, startDate: string, endDate: string, userSchoolId: string): Promise<StudentProfileData> {
         if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!studentId) throw new ValidationError("El ID del estudiante es obligatorio");
+        if (!studentId || !periodId) throw new ValidationError("El ID del estudiante y el periodo son obligatorios");
 
-        const student = await this.studentRepository.getStudentDetails(studentId, userSchoolId);
-
+        const student = await this.studentRepository.getStudentProfile(studentId, userSchoolId);
         if (!student) throw new NotFoundError("El estudiante no existe");
-        return student;
+
+        const [classes, grades, attendance, parents] = await Promise.all([
+            this.classRepository.getStudentProfileClasses(student.course_id),
+            this.gradesRepository.getStudentProfileGrades(studentId, periodId),
+            this.attendanceRepository.getStudentProfileAttendance(studentId, startDate, endDate),
+            this.parentRepository.getParentByStudentId(studentId)
+        ]);
+
+        const attendanceSummary = { total_classes: 0, present: 0, absent: 0, late: 0, excused: 0 };
+        attendance.forEach(row => {
+            const count = parseInt(row.count);
+            attendanceSummary.total_classes += count;
+            if (row.status === 'present') attendanceSummary.present = count;
+            if (row.status === 'absent') attendanceSummary.absent = count;
+            if (row.status === 'late') attendanceSummary.late = count;
+            if (row.status === 'excused') attendanceSummary.excused = count;
+        });
+
+        return {
+            ...student,
+            parents: parents,
+            current_classes: classes,
+            recent_grades: grades,
+            attendance_summary: attendanceSummary
+        };
     }
 
     async getStudentsByName(query: string, authUser: AuthUser, limit: number): Promise<StudentByName[]> {

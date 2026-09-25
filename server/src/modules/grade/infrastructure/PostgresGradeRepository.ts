@@ -3,7 +3,7 @@ import type {
     GradeByAssignment,
     GradeRecord,
     StudentDailyGrade,
-    StudentGrade, SubjectAccumulated,
+    StudentGrade, StudentGradeRow, SubjectAccumulated,
     ValidScales
 } from "../domain/Grade.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
@@ -13,6 +13,31 @@ import { createAuditLog } from "../../../services/audit.service.js";
 import {getRawAsset} from "node:sea";
 
 export class PostgresGradeRepository implements IGradeRepository {
+    async getStudentProfileGrades(studentId: string, periodId: string): Promise<StudentGradeRow[]> {
+        const client = await pool.connect();
+        try {
+            const grades = await client.query(`
+                    SELECT 
+                        g.assignment_id,
+                        a.name as assignment_title,
+                        sub.name as class_name,
+                        g.value,
+                        g.created_at as graded_at
+                    FROM grade g
+                    JOIN assignment a ON g.assignment_id = a.id
+                    JOIN class cl ON a.class_id = cl.id
+                    JOIN subject sub ON cl.subject_id = sub.id
+                    WHERE g.student_id = $1 AND a.period_id = $2
+                    ORDER BY g.created_at DESC
+                    LIMIT 5
+                `, [studentId, periodId]);
+
+            return grades.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async getGradesByClass(classId: string): Promise<GradeByAssignment[]> {
         const client = await pool.connect();
         try {

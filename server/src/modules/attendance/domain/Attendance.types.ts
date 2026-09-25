@@ -10,6 +10,11 @@ export interface ClassAttendance {
     date: string | null;
 }
 
+export interface StudentAttendanceRow {
+    status: Status;
+    count: string;
+}
+
 export interface CourseDailyAttendance {
     student_id: string;
     daily_status: Status;

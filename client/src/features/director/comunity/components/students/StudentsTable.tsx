@@ -1,14 +1,11 @@
-import { StudentsRows } from "../ui/StudentRows.tsx";
 import type { StudentProps } from "../../types";
+import { StudentsRows } from "../ui/StudentRows.tsx";
 
 interface StudentsTableProps {
     students: StudentProps[];
-    onEdit: (student: StudentProps) => void;
-    onDelete: (student: StudentProps) => void;
-    onNavigate: (id: string) => void;
 }
 
-export function StudentsTable({ students, onEdit, onDelete, onNavigate }: StudentsTableProps) {
+export function StudentsTable({ students }: StudentsTableProps) {
     return (
         <div className="bg-white md:rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
@@ -26,9 +23,6 @@ export function StudentsTable({ students, onEdit, onDelete, onNavigate }: Studen
                     <StudentsRows
                         key={student.student_id}
                         student={student}
-                        onDelete={onDelete}
-                        onNavigate={onNavigate}
-                        onEdit={onEdit}
                     />
                 ))}
                 </tbody>

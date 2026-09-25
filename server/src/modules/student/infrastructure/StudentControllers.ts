@@ -19,14 +19,25 @@ export class StudentControllers {
 
     getStudentDetails = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const id = request.params.id as string;
+            const studentId = request.params.id as string;
+
+            const periodId = request.query.periodId as string;
+            const startDate = request.query.startDate as string;
+            const endDate = request.query.endDate as string;
 
             const userSchoolId = request.user!.schoolId as string;
 
-            const record = await this.studentService.getStudentDetails(id, userSchoolId);
-            response.status(200).json({ record });
-        } catch (error : any) {
-            next(error)
+            const studentProfile = await this.studentService.getStudentDetails(
+                studentId,
+                periodId,
+                startDate,
+                endDate,
+                userSchoolId
+            );
+
+            response.status(200).json({ studentProfile });
+        } catch (error: any) {
+            next(error);
         }
     }
 

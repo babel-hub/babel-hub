@@ -20,6 +20,7 @@ export const useBulkAssignments = (onSuccess: () => void) => {
                 error.response?.data?.message ||
                 error.message ||
                 "Error al subir la nota";
+
             toast.error(errorMessage);
         } finally {
             setLoadingSave(false);

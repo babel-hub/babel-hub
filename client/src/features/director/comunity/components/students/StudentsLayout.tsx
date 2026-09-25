@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { StudentsTable } from "./StudentsTable.tsx";
@@ -9,8 +9,8 @@ import { StudentFormModal } from "../ui/StudentFormModal.tsx";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { useStudentsData } from "../../hooks/students/useStudentsData.ts";
 import { useStudentDelete } from "../../hooks/students/useStudentDelete.ts";
-import {type ModalModeTypes, reverseName} from "../../../../../types";
-import type {StudentProps} from "../../types";
+import { type ModalModeTypes, reverseName } from "../../../../../types";
+import type { StudentProps } from "../../types";
 
 export function StudentsLayout() {
     const navigate = useNavigate();
@@ -29,19 +29,6 @@ export function StudentsLayout() {
         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (student.enrollment_code && student.enrollment_code.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-
-    const handleOpenEdit = useCallback((student: StudentProps) => {
-        setStudentToEdit(student);
-        setModalMode('edit');
-    }, []);
-
-    const handleOpenDelete = useCallback((student: StudentProps) => {
-        setStudentToDelete(student || null);
-    }, [students]);
-
-    const handleNavigate = useCallback((id: string) => {
-        navigate(`${id}`);
-    }, [navigate]);
 
 
     if (loading) return <LoadingContent title="Cargando estudiantes..." />;
@@ -75,9 +62,6 @@ export function StudentsLayout() {
 
             <StudentsTable
                 students={filteredStudents}
-                onEdit={handleOpenEdit}
-                onDelete={handleOpenDelete}
-                onNavigate={handleNavigate}
             />
 
             <ConfirmModal

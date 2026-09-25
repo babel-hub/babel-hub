@@ -1,5 +1,9 @@
 import type { IStudentRepository } from "../domain/IStudentRepository.js";
-import type {CreateStudent, StudentByName, StudentDetails, Students} from "../domain/Student.types.js";
+import type {
+    CreateStudent, StudentBaseRow,
+    StudentByName,
+    Students
+} from "../domain/Student.types.js";
 import { pool } from "../../../db/index.js";
 import { supabase } from "../../../services/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
@@ -36,42 +40,32 @@ export class PostgresStudentRepository implements IStudentRepository {
         }
     }
 
-    async getStudentDetails(studentId: string, userSchoolId: string): Promise<StudentDetails | null> {
+    async getStudentProfile(studentId: string, schoolId: string): Promise<StudentBaseRow | null> {
         const client = await pool.connect();
+
         try {
-            const student = await client.query(`
+            const baseQuery = await client.query(`
                 SELECT
                     s.id as student_id,
-                    p.first_name as student_first_name,
-                    p.middle_name as student_middle_name,
-                    p.first_last_name as student_first_last_name,
-                    p.second_last_name as student_second_last_name,
+                    p.first_name,
+                    p.middle_name,
+                    p.first_last_name,
+                    p.second_last_name,
                     p.email,
-                    s.enrollment_code,
-                    c.name as course_name
+                    p.is_active,
+                    p.created_at,
+                    c.id as course_id,
+                    c.name as course_name,
+                    s.enrollment_code
                 FROM student s
                 JOIN profile p ON s.profile_id = p.id
                 JOIN course c ON s.course_id = c.id
                 WHERE s.id = $1 AND p.school_id = $2
-            `, [studentId, userSchoolId]);
+            `, [studentId, schoolId]);
 
-            // Here goes the student's grades as well
+            if (baseQuery.rowCount === 0) return null;
 
-            if (student.rowCount === 0) return null;
-
-            const studentDetails = student.rows[0];
-
-            return {
-                id: studentDetails.student_id,
-                student_first_name: studentDetails.student_first_name,
-                student_middle_name: studentDetails.student_middle_name,
-                student_first_last_name: studentDetails.student_first_last_name,
-                student_second_last_name: studentDetails.student_second_last_name,
-                email: studentDetails.email,
-                course_name: studentDetails.course_name,
-                enrollment_code: studentDetails.enrollment_code,
-                recent_grades: []
-            };
+            return  baseQuery.rows[0];
         } finally {
             client.release();
         }

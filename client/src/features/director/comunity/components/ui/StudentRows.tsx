@@ -1,35 +1,22 @@
 import { memo } from "react";
 import { reverseName } from "../../../../../types";
-import type { StudentRowProps } from "../../types";
-import { HiPencil, HiTrash } from "react-icons/hi";
-import { ActionMenu, type MenuOption } from "../../../../../components/ui/menu/ActionMenu.tsx";
+import type { StudentProps } from "../../types";
 import { formatFullDateString } from "../../../../utils/utils.ts";
+import {useNavigate} from "react-router-dom";
 
-export const StudentsRows = memo(function ({ student, onEdit, onDelete, onNavigate }: StudentRowProps){
+interface StudentRowProps {
+    student: StudentProps;
+}
+
+export const StudentsRows = memo(function ({ student }: StudentRowProps){
+    const navigate = useNavigate()
+
     const formattedName = reverseName({
         firstName: student.student_first_name,
         middleName: student.student_middle_name,
         firstLastName: student.student_first_last_name,
         secondLastName: student.student_second_last_name
     });
-
-    const menuOptions: MenuOption[] = [
-        {
-            label: "Editar",
-            icon: <HiPencil className="size-4" />,
-            onClick: () => onEdit(student),
-        },
-        {
-            isSeparator: true,
-            label: "separator"
-        },
-        {
-            label: "Eliminar",
-            icon: <HiTrash className="size-4" />,
-            onClick: () => onDelete(student),
-            isDanger: true,
-        }
-    ];
 
     return (
         <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
@@ -39,10 +26,10 @@ export const StudentsRows = memo(function ({ student, onEdit, onDelete, onNaviga
                         {`${student.student_first_name.charAt(0)}${student.student_first_last_name.charAt(0)}`}
                     </div>
                     <button
-                        onClick={() => onNavigate(`${student.student_id}`)}
-                        className="overflow-hidden text-sm xl:text-base text-left cursor-pointer"
+                        onClick={() => navigate(`${student.student_id}`)}
+                        className="overflow-hidden text-sm xl:text-base text-left cursor-pointer group"
                     >
-                        <p className="font-bold capitalize text-custom-black truncate" title={formattedName}>
+                        <p className="font-bold capitalize text-custom-black truncate group-hover:text-primary transition-colors" title={formattedName}>
                             {formattedName}
                         </p>
                         <p className="text-gray-500 text-xs truncate" title={student.email}>
@@ -70,10 +57,6 @@ export const StudentsRows = memo(function ({ student, onEdit, onDelete, onNaviga
 
             <td className="p-4 text-gray-500 text-sm">
                 {formatFullDateString(student.created_at)}
-            </td>
-
-            <td className="p-4">
-                <ActionMenu options={menuOptions} />
             </td>
         </tr>
     );

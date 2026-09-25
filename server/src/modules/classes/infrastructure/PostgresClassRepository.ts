@@ -2,9 +2,32 @@ import type { IClassRepository } from "../domain/IClassRepository.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
-import type { ClassDetails, TeacherClassDetails, TeacherClasses } from "../domain/Classes.types.js";
+import type {ClassDetails, StudentClassRow, TeacherClassDetails, TeacherClasses} from "../domain/Classes.types.js";
 
 export class PostgresClassRepository implements IClassRepository {
+    async getStudentProfileClasses(courseId: string): Promise<StudentClassRow[]> {
+        const client = await pool.connect()
+        try {
+            const classes = await client.query(`
+                    SELECT 
+                        cl.id as class_id,
+                        sub.name as subject_name,
+                        t_prof.first_name,
+                        t_prof.first_last_name
+                    FROM class cl
+                    JOIN subject sub ON cl.subject_id = sub.id
+                    JOIN teacher t ON cl.teacher_id = t.id
+                    JOIN profile t_prof ON t.profile_id = t_prof.id
+                    WHERE cl.course_id = $1 AND cl.is_active = true
+                `, [courseId]);
+
+
+            return classes.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async getClassDetails(classId: string, userSchoolId: string, isActive: boolean): Promise<ClassDetails | null> {
         const client = await pool.connect();
         try {

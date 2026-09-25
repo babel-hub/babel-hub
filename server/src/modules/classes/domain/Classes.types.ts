@@ -7,6 +7,13 @@ interface Student {
     email: string;
 }
 
+export interface StudentClassRow {
+    class_id: string;
+    subject_name: string;
+    first_name: string;
+    first_last_name: string;
+}
+
 interface ClassInfo {
     id: string;
     course_id: string;

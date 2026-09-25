@@ -11,7 +11,7 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, loadi
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center bg-black/50 justify-center">
+        <div className="fixed inset-0 z-50 flex items-center bg-black/30 backdrop-blur-xs justify-center">
             <div className="bg-white shadow-xl flex flex-col justify-center items-center rounded-lg p-3 w-80 md:w-86 xl:w-96 max-w-full mx-4">
                 <div className="flex w-full justify-between items-center">
                     <h3 className="text-xl pl-2 font-bold text-custom-black">{title}</h3>

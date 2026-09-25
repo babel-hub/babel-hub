@@ -1,3 +1,5 @@
+export type Tabs = 'example 1' | 'example 2' | 'example 3';
+
 export interface StudentProps {
     course_id: string;
     course_name: string;
@@ -12,13 +14,6 @@ export interface StudentProps {
     is_active: boolean;
     enrollment_code: string | null;
     created_at: string;
-}
-
-export interface StudentRowProps {
-    student: StudentProps;
-    onEdit: (student: StudentProps) => void;
-    onDelete: (student: StudentProps) => void;
-    onNavigate: (id: string) => void;
 }
 
 export interface CreateStudent {
@@ -107,14 +102,6 @@ export interface ClassItem {
     course_name: string;
 }
 
-export interface GradeRecord {
-    assignment_id: string;
-    assignment_title: string;
-    class_name: string;
-    grade_value: number;
-    graded_at: string;
-}
-
 export interface StudentSearchResult {
     student_id: string;
     student_first_name: string;
@@ -147,4 +134,56 @@ export interface Parent {
     created_at: string;
     students_count: number;
     students?: LinkedStudent[];
+}
+
+// Student profile interface
+
+export interface LinkedParent {
+    parent_id: string;
+    first_name: string;
+    middle_name: string | null;
+    first_last_name: string;
+    second_last_name: string | null;
+    phone: string | null;
+    relationship_type: 'father' | 'mother' | 'other';
+}
+
+export interface GradeRecord {
+    assignment_id: string;
+    assignment_title: string;
+    class_name: string;
+    grade_value: string | number;
+    graded_at: Date;
+}
+
+export interface StudentClassRecord {
+    class_id: string;
+    subject_name: string;
+    first_name: string;
+    first_last_name: string;
+}
+
+export interface AttendanceSummary {
+    total_classes: number;
+    present: number;
+    absent: number;
+    late: number;
+}
+
+export interface StudentProfileData {
+    student_id: string;
+    first_name: string;
+    middle_name: string | null;
+    first_last_name: string;
+    second_last_name: string | null;
+    email: string;
+    course_id: string;
+    course_name: string;
+    enrollment_code: string | null;
+    parents: LinkedParent[];
+    recent_grades: GradeRecord[];
+    current_classes: StudentClassRecord[];
+    attendance_summary: AttendanceSummary;
+    is_active: boolean;
+    created_at: Date;
 }

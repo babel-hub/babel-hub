@@ -4,9 +4,33 @@ import { pool } from "../../../db/index.js";
 import { supabase } from "../../../services/index.js";
 import { ConflictError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
 import { createAuditLog} from "../../../services/audit.service.js";
-import type {Parent, ParentStudent, RelationTypes} from "../domain/Parent.types.js";
+import type {Parent, ParentStudent, RelationTypes, StudentParentRow} from "../domain/Parent.types.js";
 
 export class PostgresParentRepository implements IParentRepository {
+    async getParentByStudentId(studentId:string): Promise<StudentParentRow[]> {
+        const client = await pool.connect();
+        try {
+            const parent = await client.query(`
+                    SELECT 
+                        pr.id as parent_id,
+                        pr_prof.first_name,
+                        pr_prof.middle_name,
+                        pr_prof.first_last_name,
+                        pr_prof.second_last_name,
+                        pr_prof.phone,
+                        sp.relationship_type
+                    FROM parent_student sp
+                    JOIN parent pr ON sp.parent_id = pr.id
+                    JOIN profile pr_prof ON pr.profile_id = pr_prof.id
+                    WHERE sp.student_id = $1 AND pr_prof.is_active = true
+                `, [studentId]);
+
+            return parent.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async getParents(userSchoolId: string): Promise<Parent[]> {
         const client = await pool.connect();
         try {
