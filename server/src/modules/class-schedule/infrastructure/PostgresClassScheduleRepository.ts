@@ -1,7 +1,7 @@
 import type { IClassScheduleRepository } from "../domain/IClassScheduleRepository.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
-import { ForbiddenError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { ForbiddenError , ValidationError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import type { TeacherSchedule, UpdateSchedule, UpsertSchedule} from "../domain/ClassSchedule.types.js";
 import type { PoolClient } from "pg";
