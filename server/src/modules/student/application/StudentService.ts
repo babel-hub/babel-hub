@@ -38,26 +38,16 @@ export class StudentService {
         const [classes, grades, attendance, parents] = await Promise.all([
             this.classRepository.getStudentProfileClasses(student.course_id),
             this.gradesRepository.getStudentProfileGrades(studentId, periodId),
-            this.attendanceRepository.getStudentProfileAttendance(studentId, startDate, endDate),
+            this.attendanceRepository.getCalendarAttendance(studentId, startDate, endDate),
             this.parentRepository.getParentByStudentId(studentId)
         ]);
-
-        const attendanceSummary = { total_classes: 0, present: 0, absent: 0, late: 0, excused: 0 };
-        attendance.forEach(row => {
-            const count = parseInt(row.count);
-            attendanceSummary.total_classes += count;
-            if (row.status === 'present') attendanceSummary.present = count;
-            if (row.status === 'absent') attendanceSummary.absent = count;
-            if (row.status === 'late') attendanceSummary.late = count;
-            if (row.status === 'excused') attendanceSummary.excused = count;
-        });
 
         return {
             ...student,
             parents: parents,
             current_classes: classes,
             recent_grades: grades,
-            attendance_summary: attendanceSummary
+            attendance_summary: attendance
         };
     }
 

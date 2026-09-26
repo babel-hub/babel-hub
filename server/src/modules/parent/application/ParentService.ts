@@ -95,4 +95,12 @@ export class ParentService {
 
         return await this.parentRepository.deleteParent(parentId, authUser);
     }
+
+    async deleteParentStudent(id: string, authUser: AuthUser): Promise<void> {
+        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        if (!id) throw new ValidationError("El id del registro no esta siendo enviado");
+
+        return await this.parentRepository.deleteParentStudent(id, authUser);
+
+    }
 }

@@ -1,7 +1,9 @@
 import React from "react";
-import { LuSearch, LuSettings, LuGraduationCap, LuShield } from "react-icons/lu";
+import { LuSearch, LuSettings, LuShield, LuClipboardCheck } from "react-icons/lu";
 import type { StudentProfileTabTypes } from "../../../../../../types";
-import {LoadingContent} from "../../../../../../components/ui/Loadings.tsx";
+import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
+import { PiBookOpenText } from "react-icons/pi";
+import {TbCalendarFilled} from "react-icons/tb";
 
 interface StudentProfileDetailsLayoutProps {
     studentId: string;
@@ -37,13 +39,13 @@ export function StudentProfileDetailsLayout({ onClose, children, onTabChange, ac
                         </div>
                     </div>
 
-                    <div className="p-3 flex md:flex-col gap-1 overflow-y-auto no-scrollbar">
+                    <div className="p-3 flex md:flex-col gap-1 overflow-auto no-scrollbar">
                         <span className="text-[11px] hidden md:block font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1 mt-2">
                             Configuración
                         </span>
 
-                        <button onClick={() => onTabChange('general')} className={getTabClass('general')}>
-                            <LuSettings className="size-4" /> General
+                        <button onClick={() => onTabChange('account')} className={getTabClass('account')}>
+                            <LuSettings className="size-4" /> Cuenta
                         </button>
 
                         <button onClick={() => onTabChange('security')} className={getTabClass('security')}>
@@ -54,17 +56,25 @@ export function StudentProfileDetailsLayout({ onClose, children, onTabChange, ac
                             Estudiante
                         </span>
 
-                        <button onClick={() => onTabChange('academic')} className={getTabClass('academic')}>
-                            <LuGraduationCap className="size-4" /> Área Académica
+                        <button onClick={() => onTabChange('attendance')} className={getTabClass('attendance')}>
+                            <TbCalendarFilled className="size-[18px]" /> Asistencia
+                        </button>
+
+                        <button onClick={() => onTabChange('grades')} className={getTabClass('grades')}>
+                            <LuClipboardCheck className="size-4" /> Calificaciones
+                        </button>
+
+                        <button onClick={() => onTabChange('classes')} className={getTabClass('classes')}>
+                            <PiBookOpenText className="size-4" /> Clases
                         </button>
                     </div>
                 </div>
 
-                <div className="flex flex-col flex-1 relative bg-white">
+                <div className="flex flex-col overflow-auto styled-scrollbar flex-1 relative bg-white">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-lg p-1.5 transition-colors z-10"
+                        className="absolute md:top-4 top-2 right-2 md:right-4 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-lg p-1.5 transition-colors z-10"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -75,7 +85,7 @@ export function StudentProfileDetailsLayout({ onClose, children, onTabChange, ac
                         loading ? (
                             <LoadingContent title="" />
                         ) : (
-                            <div className="flex-1 overflow-y-auto p-8 lg:px-12 styled-scrollbar">
+                            <div className="flex-1 p-2 md:p-5 lg:px-12">
                                 {children}
                             </div>
                         )

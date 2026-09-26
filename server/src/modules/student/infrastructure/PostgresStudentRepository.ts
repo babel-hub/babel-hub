@@ -56,7 +56,9 @@ export class PostgresStudentRepository implements IStudentRepository {
                     p.created_at,
                     c.id as course_id,
                     c.name as course_name,
-                    s.enrollment_code
+                    s.enrollment_code,
+                    p.user_name,
+                    p.phone
                 FROM student s
                 JOIN profile p ON s.profile_id = p.id
                 JOIN course c ON s.course_id = c.id

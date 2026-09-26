@@ -140,4 +140,21 @@ export class ParentControllers {
             next(error);
         }
     }
+
+    deleteParentStudent = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const linkId = request.params.id as string;
+
+            const auth = {
+                userId: request.user!.userId as string,
+                userSchoolId: request.user!.schoolId as string,
+                userRole: request.user!.role as string
+            }
+
+            await this.parentService.deleteParentStudent(linkId, auth);
+            response.status(200).send();
+        } catch (error : any) {
+            next(error);
+        }
+    }
 }

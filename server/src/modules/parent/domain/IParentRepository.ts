@@ -7,6 +7,7 @@ export interface IParentRepository {
     getParentByStudentId(studentId: string): Promise<StudentParentRow[]>;
     createParent(parentCredentials: ParentCredentials, authUser: AuthUser): Promise<void>;
     linkedParentToStudent(parentId: string, studentId: string, type: RelationTypes, authUser: AuthUser): Promise<void>;
-
     deleteParent(parentId: string, authUser: AuthUser): Promise<void>;
+    // id is the id of parent_student table, that's why isn't used parent or student id
+    deleteParentStudent(id: string, authUser: AuthUser): Promise<void>;
 }

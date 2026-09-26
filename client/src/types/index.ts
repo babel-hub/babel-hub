@@ -1,6 +1,6 @@
 export type UserRole = "principal" | "admin" | "teacher" | "student" | "parent" | null;
 export type ModalModeTypes = 'create' | 'edit' | 'none';
-export type StudentProfileTabTypes = 'general' | 'academic' | 'security';
+export type StudentProfileTabTypes = 'account' | 'attendance' | 'security' | 'grades' | 'classes';
 
 
 interface NameInput {

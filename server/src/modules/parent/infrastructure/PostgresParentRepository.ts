@@ -49,6 +49,7 @@ export class PostgresParentRepository implements IParentRepository {
                     COALESCE(
                             json_agg(
                                     json_build_object(
+                                            'link_id', ps.id,
                                             'student_id', s.id,
                                             'student_first_name', spr.first_name,
                                             'student_middle_name', spr.middle_name,
@@ -281,7 +282,7 @@ export class PostgresParentRepository implements IParentRepository {
                 WHERE p.id = $1 AND pr.school_id = $2
             `, [parentId, authUser.userSchoolId]);
 
-            if (parentCheck.rowCount === 0) throw new NotFoundError("El estudiente no se encontro para su eliminación");
+            if (parentCheck.rowCount === 0) throw new NotFoundError("El acudiente no se encontro para su eliminación");
 
             const {
                 profile_id,
@@ -327,6 +328,54 @@ export class PostgresParentRepository implements IParentRepository {
 
             if (error.code === '23503') throw new ConflictError("No se puede eliminar el acudiente porque tiene información guardada.");
 
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteParentStudent(linkId: string, authUser: AuthUser): Promise<void> {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const check = await client.query(`
+                SELECT
+                    p_student.first_name as student_first,
+                    p_student.first_last_name as student_last,
+                    p_parent.first_name as parent_first,
+                    p_parent.first_last_name as parent_last
+                FROM student_parent sp
+                JOIN student s ON sp.student_id = s.id
+                JOIN profile p_student ON s.profile_id = p_student.id
+                JOIN parent pr ON sp.parent_id = pr.id
+                JOIN profile p_parent ON pr.profile_id = p_parent.id
+                WHERE sp.id = $1 AND p_student.school_id = $2
+            `, [linkId, authUser.userSchoolId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("El vínculo no se encontró o no tienes permisos");
+
+            await client.query(`
+                DELETE FROM student_parent WHERE id = $1
+            `, [linkId]);
+
+            const row = check.rows[0];
+
+            await createAuditLog(client, {
+                actorUserId: authUser.userId,
+                actorRole: authUser.userRole,
+                action: 'UNLINK_PARENT_STUDENT',
+                schoolId: authUser.userSchoolId,
+                metadata: {
+                    linkId,
+                    student: `${row.student_first} ${row.student_last}`,
+                    parent: `${row.parent_first} ${row.parent_last}`,
+                }
+            });
+
+            await client.query('COMMIT');
+        } catch (error : any) {
+            await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();

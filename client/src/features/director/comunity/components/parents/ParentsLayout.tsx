@@ -12,17 +12,20 @@ import { type ModalModeTypes, reverseName } from "../../../../../types";
 import type { Parent } from "../../types";
 import { ParentsTable } from "./ParentTable.tsx";
 import {ParentToStudentFormModal} from "../ui/ParentToStudentFormModal.tsx";
+import {useParentStudentDelete} from "../../hooks/parents/useParentStudentDelete.ts";
 
 export function ParentsLayout() {
     const navigate = useNavigate();
 
     const { parents, loading, refetch } = useParentsData();
     const { deleteParentById, loadingDelete } = useParentDelete(refetch);
+    const { loading: parentStudentLoading, deleteParentStudentById } = useParentStudentDelete(refetch);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [parentToEdit, setParentToEdit] = useState<Parent | null>(null);
     const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
+    const [parentToDeleteStudent, setParentToDeleteStudent] = useState<Parent | null>(null);
 
     const [modalModeParentToStudent, setModalModeParentToStudent] = useState<ModalModeTypes>('none');
     const [parentToStudent, setParentToStudent] = useState<Parent | null>(null);
@@ -47,7 +50,13 @@ export function ParentsLayout() {
         setParentToDelete(parent || null);
     }, [parents]);
 
+    const handleOpenDeleteStudent = useCallback((parent: Parent) => {
+        setParentToDeleteStudent(parent || null);
+    }, [parents]);
+
     if (loading) return <LoadingContent title="Cargando padres/acudientes..." />;
+
+    console.log(parents);
 
     return (
         <div className="flex flex-col md:gap-5">
@@ -81,6 +90,7 @@ export function ParentsLayout() {
                 onAddStudent={handleOnAddStudent}
                 onEdit={handleOpenEdit}
                 onDelete={handleOpenDelete}
+                onDeleteStudent={handleOpenDeleteStudent}
             />
 
             <ConfirmModal
@@ -103,6 +113,28 @@ export function ParentsLayout() {
                     }
                 }}
                 loadingDelete={loadingDelete}
+            />
+
+            <ConfirmModal
+                isOpen={parentToDeleteStudent !== null}
+                onClose={() => setParentToDeleteStudent(null)}
+                title="¿Estás seguro?"
+                message={`¿Quieres eliminar al padre/acudiente ${
+                    parentToDeleteStudent ?
+                        reverseName({
+                            middleName: parentToDeleteStudent.parent_middle_name,
+                            secondLastName: parentToDeleteStudent.parent_second_last_name,
+                            firstName: parentToDeleteStudent.parent_first_name,
+                            firstLastName: parentToDeleteStudent.parent_first_last_name
+                        }) : "Desconocido"
+                }? Esta acción no se puede deshacer.`}
+                onConfirm={async () => {
+                    if (parentToDeleteStudent) {
+                        await deleteParentStudentById(parentToDeleteStudent.parent_id);
+                        setParentToDeleteStudent(null);
+                    }
+                }}
+                loadingDelete={parentStudentLoading}
             />
 
             {modalMode !== 'none' && (

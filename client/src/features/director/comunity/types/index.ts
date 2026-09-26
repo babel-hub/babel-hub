@@ -112,6 +112,7 @@ export interface StudentSearchResult {
 }
 
 interface LinkedStudent {
+    link_id: string;
     student_id: string;
     student_first_name: string;
     student_middle_name: string | null;
@@ -164,10 +165,8 @@ export interface StudentClassRecord {
 }
 
 export interface AttendanceSummary {
-    total_classes: number;
-    present: number;
-    absent: number;
-    late: number;
+    date: string;
+    daily_status: string
 }
 
 export interface StudentProfileData {
@@ -180,10 +179,12 @@ export interface StudentProfileData {
     course_id: string;
     course_name: string;
     enrollment_code: string | null;
+    user_name: string | null;
+    phone: string | null;
     parents: LinkedParent[];
     recent_grades: GradeRecord[];
     current_classes: StudentClassRecord[];
-    attendance_summary: AttendanceSummary;
+    attendance_summary: AttendanceSummary[];
     is_active: boolean;
-    created_at: Date;
+    created_at: string;
 }

@@ -1,6 +1,7 @@
 export type RelationTypes = 'father' | 'mother' | 'other';
 
 interface LinkedStudent {
+    link_id: string;
     student_id: string;
     student_first_name: string;
     student_middle_name: string | null;

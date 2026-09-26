@@ -1,8 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { StudentProfileDetailsLayout } from "../../../../features/director/comunity";
+import {
+    StudentProfileAttendance,
+    StudentProfileClasses,
+    StudentProfileDetailsLayout,
+    StudentProfileGeneral,
+    StudentProfileGrades,
+    StudentProfileSecurity
+} from "../../../../features/director/comunity";
 import type { StudentProfileTabTypes } from "../../../../types";
-
 import { useStudentProfile } from "../../../../features/director/comunity/hooks/students/useStudentProfile.ts";
 import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
@@ -15,7 +21,7 @@ export default function StudentProfile() {
 
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [period, setPeriod] = useState<Period | null>(null);
-    const [tab, setTab] = useState<StudentProfileTabTypes>("general");
+    const [tab, setTab] = useState<StudentProfileTabTypes>("account");
 
     const { loading, data } = useStudentProfile(
         id || "",
@@ -39,8 +45,6 @@ export default function StudentProfile() {
         return <div className="p-6 text-gray-500 text-center flex-1">Estudiante no encontrado.</div>;
     }
 
-    console.log(data)
-
     return (
         <StudentProfileDetailsLayout
             studentId={id}
@@ -49,26 +53,11 @@ export default function StudentProfile() {
             onClose={() => navigate(-1)}
             loading={loading}
         >
-            {tab === "general" && data && (
-                <div className="animate-in fade-in duration-200">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">Información General</h2>
-                    <p className="text-gray-500">Datos de {data.first_name}</p>
-                </div>
-            )}
-
-            {tab === "academic" && data && (
-                <div className="animate-in fade-in duration-200">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">Área Académica</h2>
-                    <p className="text-gray-500">Grados y clases de {data.first_name}</p>
-                </div>
-            )}
-
-            {tab === "security" && data && (
-                <div className="animate-in fade-in duration-200">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">Privacidad</h2>
-                    <p className="text-gray-500">Gestión de accesos.</p>
-                </div>
-            )}
+            {tab === "account" && data && <StudentProfileGeneral data={data} />}
+            {tab === "grades" && data && <StudentProfileGrades grades={data.recent_grades} />}
+            {tab === "classes" && data && <StudentProfileClasses classes={data.current_classes} />}
+            {tab === "attendance" && data && <StudentProfileAttendance attendance={data.attendance_summary} />}
+            {tab === "security" && data && <StudentProfileSecurity isActive={data.is_active} createdAt={data.created_at} />}
         </StudentProfileDetailsLayout>
     );
 }

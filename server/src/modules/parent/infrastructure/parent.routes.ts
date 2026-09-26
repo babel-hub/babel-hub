@@ -84,4 +84,12 @@ router.delete(
     controllers.deleteParent
 )
 
+router.delete(
+    "/student/:id",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(['principal', 'admin']),
+    controllers.deleteParentStudent
+)
+
 export default router;

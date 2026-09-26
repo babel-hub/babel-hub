@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import DynamicModalForm, { type FormField } from "../../../../../components/ui/modals/ModalForm.tsx";
 import { useStudentSubmit } from "../../hooks/students/useStudentSubmit.ts";
-import { getCourses } from "../../api";
 import type { modeTypes } from "../../../../types/types.ts";
-import type { Courses, StudentProps } from "../../types";
+import type { StudentProps } from "../../types";
+import {useStudentCourses} from "../../hooks/students/useStudentCourses.ts";
 
 interface StudentFormModalProps {
     mode: modeTypes;
@@ -37,21 +37,8 @@ export function StudentFormModal({ mode, initialData, onClose, onSuccess }: Stud
         confirmPassword: "",
     });
 
-    const [availableCourses, setAvailableCourses] = useState<Courses[]>([]);
-
     const { submitStudent, loading, error, setError } = useStudentSubmit(onSuccess);
-
-    useEffect(() => {
-        const fetchCoursesForDropdown = async () => {
-            try {
-                const response = await getCourses();
-                setAvailableCourses(response);
-            } catch (error) {
-                console.error("Error GETTING courses for dropdown:", error);
-            }
-        };
-        fetchCoursesForDropdown();
-    }, []);
+    const { courses, error: coursesError } = useStudentCourses();
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -134,7 +121,7 @@ export function StudentFormModal({ mode, initialData, onClose, onSuccess }: Stud
             label: "Curso",
             type: "select",
             required: true,
-            options: availableCourses.map(c => ({ value: c.id, label: c.course_name }))
+            options: courses.map(c => ({ value: c.id, label: c.course_name }))
         },
         ... (isCreateMode ? [
             { name: "email", label: "Correo electrónico", type: "email", placeholder: "example@gmail.com", required: true },
@@ -149,7 +136,7 @@ export function StudentFormModal({ mode, initialData, onClose, onSuccess }: Stud
             title={mode === 'create' ? "Crear Nuevo Estudiante" : "Editar Estudiante"}
             fields={studentFields}
             formData={formData}
-            formError={error}
+            formError={error || coursesError}
             formLoading={loading}
             onChange={handleFormChange}
             onSubmit={handleModalSubmit}

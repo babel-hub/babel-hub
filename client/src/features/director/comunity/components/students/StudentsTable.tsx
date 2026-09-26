@@ -15,7 +15,6 @@ export function StudentsTable({ students }: StudentsTableProps) {
                     <th className="p-4 text-sm font-semibold">Código</th>
                     <th className="p-4 text-sm font-semibold">Curso</th>
                     <th className="p-4 text-sm font-semibold">Fecha de Registro</th>
-                    <th className="p-4 text-sm font-semibold text-right">Acciones</th>
                 </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

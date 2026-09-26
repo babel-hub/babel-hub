@@ -11,9 +11,10 @@ interface ParentsTableProps {
     onAddStudent: (parent: Parent) => void;
     onEdit: (parent: Parent) => void;
     onDelete: (parent: Parent) => void;
+    onDeleteStudent: (parent: Parent) => void;
 }
 
-export function ParentsTable({ parents, onEdit, onDelete, onAddStudent }: ParentsTableProps) {
+export function ParentsTable({ parents, onEdit, onDelete, onAddStudent, onDeleteStudent }: ParentsTableProps) {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
     const closeMenu = () => setActiveMenuId(null);
@@ -39,6 +40,7 @@ export function ParentsTable({ parents, onEdit, onDelete, onAddStudent }: Parent
                         parent={parent}
                         onDelete={onDelete}
                         onEdit={onEdit}
+                        onDeleteStudent={onDeleteStudent}
                     />
                 ))}
                 </tbody>
@@ -53,6 +55,7 @@ interface ParentsRowProps {
     onEdit: (parent: Parent) => void;
     onAddStudent: (parent: Parent) => void;
     onDelete: (parent: Parent) => void;
+    onDeleteStudent: (parent: Parent) => void;
     closeMenu: () => void;
 }
 
@@ -62,7 +65,7 @@ const RELATIONSHIP_TRANSLATIONS: Record<string, string> = {
     other: "Otro"
 };
 
-function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent }: ParentsRowProps) {
+function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent, onDeleteStudent }: ParentsRowProps) {
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -100,7 +103,13 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent 
             label: "separator"
         },
         {
-            label: "Eliminar",
+            label: "Eliminar estudiante",
+            icon: <HiTrash className="size-4" />,
+            onClick: () => onDeleteStudent(parent),
+            isDanger: true,
+        },
+        {
+            label: "Eliminar padre",
             icon: <HiTrash className="size-4" />,
             onClick: () => onDelete(parent),
             isDanger: true,

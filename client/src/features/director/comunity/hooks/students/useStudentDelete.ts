@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 
 export const useStudentDelete = (onSuccess: () => void) => {
     const [loadingDelete, setLoadingDelete] = useState(false);
+    const [error, setError] = useState<string>("");
 
     const deleteStudentById = async (studentId: string) => {
         setLoadingDelete(true);
@@ -14,12 +15,11 @@ export const useStudentDelete = (onSuccess: () => void) => {
             onSuccess();
         } catch (error : any) {
             const msg = error.response?.data?.message || "Error al eliminar el estudiante."
-            console.error(msg)
-            toast.error(msg);
+            setError(msg)
         } finally {
             setLoadingDelete(false);
         }
     }
 
-    return { deleteStudentById, loadingDelete };
+    return { deleteStudentById, loadingDelete, error };
 }

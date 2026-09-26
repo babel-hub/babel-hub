@@ -83,3 +83,7 @@ export const linkStudentToParent = async (payload: any) => {
 export const deleteParent = async (id: string): Promise<void> => {
     await api.delete(`/parents/${id}`);
 }
+
+export const deleteParentStudent = async (linkId: string): Promise<void> => {
+    await api.delete(`/parents/student/${linkId}`);
+}

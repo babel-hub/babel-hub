@@ -14,15 +14,20 @@ import { NotFoundError } from "../../errors/domain/CustomErrors.js";
 import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class PostgresAttendanceRepository implements IAttendanceRepository {
-    async getStudentProfileAttendance(studentId: string, startDate: string, endDate: string): Promise<StudentAttendanceRow[]> {
+    async getStudentProfileAttendance(studentId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {
         const client = await pool.connect();
         try {
             const attendance = await client.query(`
-                SELECT status, COUNT(*) as count
+                WITH FirstDailyAttendance AS (
+                    SELECT DISTINCT ON (date::DATE) status
                 FROM attendance
                 WHERE student_id = $1
                   AND date >= $2::DATE
                   AND date <= $3::DATE
+                ORDER BY date::DATE, date ASC
+                    )
+                SELECT status, COUNT(*) as count
+                FROM FirstDailyAttendance
                 GROUP BY status
             `, [studentId, startDate, endDate]);
 
@@ -234,7 +239,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         try {
             const result = await client.query(`
                 SELECT 
-                    d.calendar_date::date AS date,
+                    d.calendar_date::date AS DATE,
                     CASE 
                         WHEN COUNT(a.id) = 0 THEN 'no_data'
                         WHEN bool_or(a.status = 'absent') THEN 'absent'
@@ -259,6 +264,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
             client.release()
         }
     }
+
     async getClassAttendance(courseId: string, classId: string, startDate: string, endDate: string): Promise<CourseAttendance[]> {
         const client = await pool.connect();
         try {
