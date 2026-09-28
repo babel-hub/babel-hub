@@ -223,10 +223,10 @@ export function StudentGradeTable({
                     <tbody className="relative z-0">
                         {students.map((student, index) => {
                             const displayName = reverseName({
-                                firstName: student.first_name,
-                                firstLastName: student.first_last_name,
-                                middleName: student.middle_name,
-                                secondLastName: student.second_last_name,
+                                firstName: student.student_first_name,
+                                firstLastName: student.student_first_last_name,
+                                middleName: student.student_middle_name,
+                                secondLastName: student.student_second_last_name,
                             });
                             const final = finalGradeForStudent(assessments, student.student_id);
 

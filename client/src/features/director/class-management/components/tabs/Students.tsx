@@ -16,16 +16,16 @@ export function Students({ students }: StudentsProps) {
                             students.map((student) => (
                                 <li key={student.student_id} className="py-3 px-5 flex items-center gap-4 hover:bg-gray-50">
                                     <div className="w-10 h-10 rounded-full uppercase bg-primary-shadow text-primary-darker flex items-center justify-center text-sm font-bold shrink-0">
-                                        {`${student.first_name.charAt(0)}${student.first_last_name.charAt(0)}`}
+                                        {`${student.student_first_name.charAt(0)}${student.student_first_last_name.charAt(0)}`}
                                     </div>
                                     <div>
                                         <span className="block text-sm md:text-base capitalize font-medium text-custom-black">
                                             {
                                                 reverseName({
-                                                    firstName: student.first_name,
-                                                    middleName: student.middle_name,
-                                                    firstLastName: student.first_last_name,
-                                                    secondLastName: student.second_last_name
+                                                    firstName: student.student_first_name,
+                                                    middleName: student.student_middle_name,
+                                                    firstLastName: student.student_first_last_name,
+                                                    secondLastName: student.student_second_last_name
                                                 })
                                             }
                                         </span>

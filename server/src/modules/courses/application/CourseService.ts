@@ -6,9 +6,15 @@ import type {
     TeacherCourse, UpdateCourse
 } from "../domain/Course.types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {IStudentRepository} from "../../student/domain/IStudentRepository.js";
+import type {IClassRepository} from "../../classes/domain/IClassRepository.js";
 
 export class CourseService {
-    constructor( private readonly courseRepository: ICourseRepository ) {}
+    constructor(
+        private readonly courseRepository: ICourseRepository,
+        private readonly studentRepository: IStudentRepository,
+        private readonly classRepository: IClassRepository,
+    ) {}
 
     async getCourses(userSchoolId: string, isActive: boolean): Promise<Courses[]> {
         if (!userSchoolId) throw new UnauthorizedError("Falta el ID del colegio");
@@ -17,14 +23,25 @@ export class CourseService {
     }
 
     async getCourseDetails(courseId: string, userSchoolId: string, isActive: boolean): Promise<CourseDetails> {
-        if (!userSchoolId) throw new UnauthorizedError("Falta el ID del colegio");
-        if (!courseId) throw new ValidationError("El ID del curso es obligatorio");
+        if (!courseId) throw new ValidationError("El ID del curso es obligatorio.");
+        if (!userSchoolId) throw new UnauthorizedError("Falta el ID del colegio.");
 
         const course = await this.courseRepository.getCourseDetails(courseId, userSchoolId, isActive);
 
-        if (!course) throw new NotFoundError("No se encontró el curso");
+        if (!course) {
+            throw new NotFoundError("El curso no existe o no tienes acceso a él.");
+        }
 
-        return course;
+        const [students, classes] = await Promise.all([
+            this.studentRepository.getClassStudents(courseId, isActive),
+            this.classRepository.getCourseClasses(courseId, isActive)
+        ]);
+
+        return {
+            course,
+            students,
+            classes
+        };
     }
 
     async createCourse(courseName: string, courseYear: string, courseTeacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<CreateCourse> {

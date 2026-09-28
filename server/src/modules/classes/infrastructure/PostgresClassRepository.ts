@@ -2,25 +2,32 @@ import type { IClassRepository } from "../domain/IClassRepository.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
-import type {ClassDetails, StudentClassRow, TeacherClassDetails, TeacherClasses} from "../domain/Classes.types.js";
+import type {
+    ClassDetails,
+    ClassInfo,
+    CourseClass,
+    StudentClassRow,
+    TeacherClassDetails,
+    TeacherClasses
+} from "../domain/Classes.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export class PostgresClassRepository implements IClassRepository {
     async getStudentProfileClasses(courseId: string): Promise<StudentClassRow[]> {
-        const client = await pool.connect()
+        const client = await pool.connect();
         try {
             const classes = await client.query(`
-                    SELECT 
-                        cl.id as class_id,
-                        sub.name as subject_name,
-                        t_prof.first_name,
-                        t_prof.first_last_name
-                    FROM class cl
-                    JOIN subject sub ON cl.subject_id = sub.id
-                    JOIN teacher t ON cl.teacher_id = t.id
-                    JOIN profile t_prof ON t.profile_id = t_prof.id
-                    WHERE cl.course_id = $1 AND cl.is_active = true
-                `, [courseId]);
-
+                SELECT
+                    cl.id as class_id,
+                    sub.name as subject_name,
+                    t_prof.first_name,
+                    t_prof.first_last_name
+                FROM class cl
+                JOIN subject sub ON cl.subject_id = sub.id
+                JOIN teacher t ON cl.teacher_id = t.id
+                JOIN profile t_prof ON t.profile_id = t_prof.id
+                WHERE cl.course_id = $1 AND cl.is_active = true
+            `, [courseId]);
 
             return classes.rows;
         } finally {
@@ -28,7 +35,33 @@ export class PostgresClassRepository implements IClassRepository {
         }
     }
 
-    async getClassDetails(classId: string, userSchoolId: string, isActive: boolean): Promise<ClassDetails | null> {
+    async getCourseClasses(courseId: string, isActive: boolean): Promise<CourseClass[]> {
+        const client = await pool.connect();
+        try {
+            const classes = await client.query(`
+                SELECT 
+                    cl.is_active,
+                    cl.id as class_id, 
+                    s.name as subject_name,
+                    p.first_name,
+                    p.middle_name,
+                    p.first_last_name,
+                    p.second_last_name
+                FROM class cl
+                JOIN subject s ON cl.subject_id = s.id
+                JOIN teacher t ON cl.teacher_id = t.id
+                JOIN profile p ON t.profile_id = p.id
+                WHERE cl.course_id = $1 AND cl.is_active = $2
+                ORDER BY subject_name ASC;
+            `, [courseId, isActive]);
+
+            return classes.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getClassDetails(classId: string, userSchoolId: string, isActive: boolean): Promise<ClassInfo | null> {
         const client = await pool.connect();
         try {
             const classDetails = await client.query(`
@@ -48,38 +81,21 @@ export class PostgresClassRepository implements IClassRepository {
                 JOIN subject s ON cl.subject_id = s.id
                 JOIN teacher t ON cl.teacher_id = t.id
                 JOIN profile p ON t.profile_id = p.id
-                WHERE cl.id = $1 AND c.school_id = $2
-            `, [classId, userSchoolId]);
+                WHERE cl.id = $1 AND c.school_id = $2 AND cl.is_active = $3
+            `, [classId, userSchoolId, isActive]);
 
             if (classDetails.rowCount === 0) return null;
 
-            const courseId = classDetails.rows[0].course_id;
-
-            const studentsDetails = await client.query(`
-                SELECT
-                    st.id as student_id,
-                    p.first_name,
-                    p.middle_name,
-                    p.first_last_name,
-                    p.second_last_name,
-                    p.email
-                FROM student st
-                JOIN profile p ON st.profile_id = p.id
-                WHERE st.course_id = $1 AND p.is_active = $2
-                ORDER BY p.first_last_name ASC, p.second_last_name ASC;
-            `, [courseId, isActive])
-
-            return {
-                details: classDetails.rows[0],
-                students: studentsDetails.rows,
-            };
+            return classDetails.rows[0];
         } finally {
             client.release();
         }
     }
 
-    async createClass(courseId: string, subjectId: string, teacherId: string, userId: string, userRole: string, userSchoolId: string) {
+    async createClass(courseId: string, subjectId: string, teacherId: string, authUser: AuthUser) {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+
         try {
             await client.query('BEGIN');
 
@@ -131,19 +147,21 @@ export class PostgresClassRepository implements IClassRepository {
         }
     }
 
-    async updateClass(classId: string, teacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+
         try {
             await client.query('BEGIN');
 
             const classData = await client.query(`
                 SELECT cl.teacher_id
                 FROM class cl
-                JOIN course c ON cl.course_id = c.id
+                         JOIN course c ON cl.course_id = c.id
                 WHERE cl.id = $1 AND c.school_id = $2
             `, [classId, userSchoolId]);
 
-            if (classData.rowCount === 0) throw new NotFoundError("No se encontro la clases para actualizar");
+            if (classData.rowCount === 0) throw new NotFoundError("No se encontró la clase para actualizar");
 
             const oldTeacherId = classData.rows[0].teacher_id;
 
@@ -166,8 +184,6 @@ export class PostgresClassRepository implements IClassRepository {
             });
 
             await client.query('COMMIT');
-
-            return;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
@@ -176,8 +192,10 @@ export class PostgresClassRepository implements IClassRepository {
         }
     }
 
-    async deleteClass(classId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async deleteClass(classId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+
         try {
             await client.query('BEGIN');
 
@@ -188,7 +206,7 @@ export class PostgresClassRepository implements IClassRepository {
                 WHERE cl.id = $1 AND c.school_id = $2
             `, [classId, userSchoolId]);
 
-            if (verifyOwnership.rowCount === 0) throw new NotFoundError("No se encontro la clase para eliminar");
+            if (verifyOwnership.rowCount === 0) throw new NotFoundError("No se encontró la clase para eliminar");
 
             await client.query(`
                 DELETE FROM class
@@ -204,12 +222,10 @@ export class PostgresClassRepository implements IClassRepository {
             });
 
             await client.query('COMMIT');
-
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
 
-            if (error.code === '23503') throw new ConflictError(" El clase tiene asignaturas y estudiantes activos");
+            if (error.code === '23503') throw new ConflictError("La clase no se puede eliminar porque tiene asignaturas o estudiantes activos vinculados.");
 
             throw error;
         } finally {
@@ -221,17 +237,17 @@ export class PostgresClassRepository implements IClassRepository {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                SELECT 
+                SELECT
                     cl.id as class_id,
                     s.name as subject_name,
                     co.id as course_id,
                     co.name as course_name,
                     COUNT(st.id)::int as total_students
                 FROM class cl
-                JOIN subject s ON cl.subject_id = s.id
-                JOIN course co ON cl.course_id = co.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                LEFT JOIN student st ON co.id = st.course_id
+                         JOIN subject s ON cl.subject_id = s.id
+                         JOIN course co ON cl.course_id = co.id
+                         JOIN teacher t ON cl.teacher_id = t.id
+                         LEFT JOIN student st ON co.id = st.course_id
                 WHERE t.profile_id = $1 AND cl.is_active = $2 AND co.school_id = $3
                 GROUP BY cl.id,
                          s.name,
@@ -259,21 +275,22 @@ export class PostgresClassRepository implements IClassRepository {
                             json_agg(
                                     json_build_object(
                                             'student_id', s.id,
-                                            'first_name', p.first_name,
-                                            'middle_name', p.middle_name,
-                                            'first_last_name', p.first_last_name,
-                                            'second_last_name', p.second_last_name,
-                                            'email', p.email
+                                            'student_first_name', p.first_name,
+                                            'student_middle_name', p.middle_name,
+                                            'student_first_last_name', p.first_last_name,
+                                            'student_second_last_name', p.second_last_name,
+                                            'email', p.email,
+                                            'is_active', p.is_active
                                     ) ORDER BY p.first_last_name ASC
                             ) FILTER (WHERE s.id IS NOT NULL),
                             '[]'::json
                     ) AS students
                 FROM class cl
-                JOIN course cs ON cl.course_id = cs.id
-                JOIN subject sb ON cl.subject_id = sb.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                LEFT JOIN student s ON s.course_id = cs.id
-                LEFT JOIN profile p ON s.profile_id = p.id
+                         JOIN course cs ON cl.course_id = cs.id
+                         JOIN subject sb ON cl.subject_id = sb.id
+                         JOIN teacher t ON cl.teacher_id = t.id
+                         LEFT JOIN student s ON s.course_id = cs.id
+                         LEFT JOIN profile p ON s.profile_id = p.id
                 WHERE cl.id = $1
                   AND cs.school_id = $2
                   AND t.profile_id = $3

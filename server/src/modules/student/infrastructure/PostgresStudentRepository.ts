@@ -1,5 +1,6 @@
 import type { IStudentRepository } from "../domain/IStudentRepository.js";
 import type {
+    ClassStudents,
     CreateStudent, StudentBaseRow,
     StudentByName,
     Students
@@ -39,6 +40,33 @@ export class PostgresStudentRepository implements IStudentRepository {
             client.release();
         }
     }
+
+    async getClassStudents(courseId: string, isActive: boolean): Promise<ClassStudents[]> {
+        const client = await pool.connect();
+        try {
+            const studentsDetails = await client.query(`
+                SELECT
+                    st.id as student_id,
+                    p.first_name as student_first_name,
+                    p.middle_name as student_middle_name,
+                    p.first_last_name as student_first_last_name,
+                    p.second_last_name as student_second_last_name,
+                    p.email,
+                    p.is_active
+                FROM student st
+                JOIN profile p ON st.profile_id = p.id
+                WHERE st.course_id = $1 AND p.is_active = $2
+                ORDER BY
+                    LOWER(TRIM(p.first_last_name)) ASC,
+                    LOWER(TRIM(p.second_last_name)) ASC NULLS FIRST;
+            `, [courseId, isActive]);
+
+            return studentsDetails.rows;
+        } finally {
+            client.release();
+        }
+    }
+
 
     async getStudentProfile(studentId: string, schoolId: string): Promise<StudentBaseRow | null> {
         const client = await pool.connect();

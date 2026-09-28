@@ -1,9 +1,12 @@
-export interface Courses {
+interface BaseCourse {
+    is_active: boolean;
     id: string;
     course_name: string;
-    created_at: string;
     year: string;
-    is_active: boolean;
+    created_at: string;
+}
+
+export interface Courses extends BaseCourse {
     director_id: string;
     director_first_name: string;
     director_middle_name: string | null;
@@ -12,22 +15,18 @@ export interface Courses {
     student_count: number;
 }
 
+export interface Course extends BaseCourse {}
+
 export interface CourseDetails {
-    course: {
-        is_active: boolean;
-        id: string;
-        name: string;
-        year: string;
-        created_at: string;
-    };
+    course: BaseCourse;
     students: {
-        is_active: boolean;
         student_id: string;
-        first_name: string;
-        middle_name: string | null;
-        first_last_name: string;
-        second_last_name: string | null;
+        student_first_name: string;
+        student_middle_name: string | null;
+        student_first_last_name: string;
+        student_second_last_name: string | null;
         email: string;
+        is_active: boolean;
     }[];
     classes: {
         is_active: boolean;

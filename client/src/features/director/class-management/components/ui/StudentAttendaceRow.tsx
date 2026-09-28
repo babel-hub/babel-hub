@@ -19,15 +19,15 @@ export const StudentAttendanceRow = memo(function StudentAttendanceRow({
         <li className="sm:p-3 bg-white p-2 md:p-4 flex flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
             <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-10 h-10 rounded-full uppercase bg-primary-shadow text-primary hidden sm:flex items-center justify-center text-xs md:text-sm font-bold shrink-0">
-                    {`${student.first_name.charAt(0)}${student.first_last_name.charAt(0)}`}
+                    {`${student.student_first_name.charAt(0)}${student.student_first_last_name.charAt(0)}`}
                 </div>
                 <span className="font-medium text-sm md:text-base capitalize text-custom-black leading-tight">
                     {
                         reverseName({
-                            firstLastName: student.first_last_name,
-                            firstName:student.first_name,
-                            middleName: student.middle_name,
-                            secondLastName: student.second_last_name
+                            firstLastName: student.student_first_last_name,
+                            firstName:student.student_first_name,
+                            middleName: student.student_middle_name,
+                            secondLastName: student.student_second_last_name
 
                         })
                     }

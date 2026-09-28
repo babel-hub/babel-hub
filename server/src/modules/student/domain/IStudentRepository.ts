@@ -1,8 +1,9 @@
-import type {CreateStudent, StudentBaseRow, StudentByName, Students} from "./Student.types.js";
+import type {ClassStudents, CreateStudent, StudentBaseRow, StudentByName, Students} from "./Student.types.js";
 import type {StudentCreateCredentials, AuthUser, StudentUpdateCredentials} from "../../shared/domain/Shared.types.js";
 
 export interface IStudentRepository {
     getStudents(userSchoolId: string, isActive: boolean): Promise<Students[]>;
+    getClassStudents(courseId: string, isActive: boolean): Promise<ClassStudents[]>;
     getStudentProfile(studentId: string,schoolId: string): Promise<StudentBaseRow | null>;
     getStudentsByName(query: string, authUser: AuthUser, limit: number): Promise<StudentByName[]>;
     createStudent(studentCredentials: StudentCreateCredentials, authUser: AuthUser): Promise<CreateStudent>;

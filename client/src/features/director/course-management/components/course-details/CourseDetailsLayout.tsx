@@ -71,7 +71,7 @@ export function CourseDetailsLayout() {
             <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">
-                        Curso: {course.course.name}
+                        Curso: {course.course.course_name}
                     </h1>
                     <p className="text-gray-500 text-sm">Año Lectivo: {course.course.year}</p>
                 </div>
@@ -116,7 +116,7 @@ export function CourseDetailsLayout() {
             {modalMode !== 'none' && (
                 <CourseDetailsFormModal
                     id={id}
-                    courseName={course.course.name}
+                    courseName={course.course.course_name}
                     mode={modalMode}
                     classToEdit={classToEdit}
                     onSuccess={() => {

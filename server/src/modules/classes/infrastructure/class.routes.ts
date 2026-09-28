@@ -6,9 +6,11 @@ import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 import { PostgresClassRepository } from "./PostgresClassRepository.js";
 import { ClassService } from "../application/ClassService.js";
 import { ClassControllers } from "./ClassControllers.js";
+import {PostgresStudentRepository} from "../../student/infrastructure/PostgresStudentRepository.js";
 
-const repository = new PostgresClassRepository();
-const service = new ClassService(repository);
+const classRepository = new PostgresClassRepository();
+const studentRepository = new PostgresStudentRepository();
+const service = new ClassService(classRepository, studentRepository);
 const controller = new ClassControllers(service);
 
 const router: Router = Router();

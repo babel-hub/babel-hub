@@ -2,7 +2,7 @@ import type { ICourseRepository } from "../domain/ICourseRepository.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError, UnauthorizedError } from "../../errors/domain/CustomErrors.js";
-import type { CourseDetails, Courses, TeacherCourse } from "../domain/Course.types.js";
+import type {Course, CourseDetails, Courses, TeacherCourse} from "../domain/Course.types.js";
 
 export class PostgresCourseRepository implements ICourseRepository {
     async getCourses(userSchoolId: string, isActive: boolean): Promise<Courses[]> {
@@ -46,14 +46,14 @@ export class PostgresCourseRepository implements ICourseRepository {
         }
     }
 
-    async getCourseDetails(courseId: string, userSchoolId: string, isActive: boolean): Promise<CourseDetails | null> {
+    async getCourseDetails(courseId: string, userSchoolId: string): Promise<Course | null> {
         const client = await pool.connect();
         try {
             const course = await client.query(`
                 SELECT 
                     is_active,
                     id,
-                    name, 
+                    name AS course_name, 
                     year,
                     created_at 
                 FROM course
@@ -62,43 +62,7 @@ export class PostgresCourseRepository implements ICourseRepository {
 
             if (course.rowCount === 0) return null;
 
-            const students = await client.query(`
-                SELECT
-                    p.is_active,
-                    st.id as student_id,
-                    p.first_name,
-                    p.middle_name,
-                    p.first_last_name,
-                    p.second_last_name,
-                    p.email
-                FROM student st
-                JOIN profile p ON st.profile_id = p.id
-                WHERE st.course_id = $1 AND p.is_active = $2
-                ORDER BY p.first_last_name ASC;
-            `, [courseId, isActive]);
-
-            const classes = await client.query(`
-                SELECT 
-                    cl.is_active,
-                    cl.id as class_id, 
-                    s.name as subject_name,
-                    p.first_name,
-                    p.middle_name,
-                    p.first_last_name,
-                    p.second_last_name
-                FROM class cl
-                JOIN subject s ON cl.subject_id = s.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                JOIN profile p ON t.profile_id = p.id
-                WHERE cl.course_id = $1 AND cl.is_active = $2
-                ORDER BY subject_name ASC;
-            `, [courseId, isActive]);
-
-            return {
-                course: course.rows[0],
-                students: students.rows,
-                classes: classes.rows
-            }
+            return course.rows[0];
         } finally {
             client.release();
         }

@@ -7,7 +7,7 @@ export interface CourseDataProps {
     course: {
         is_active: boolean;
         id: string;
-        name: string;
+        course_name: string;
         year: string;
         created_at: string;
     };
