@@ -1,5 +1,5 @@
 import type { AssessmentCriteria, Assignment } from "../../../../types";
-import {HiDotsVertical, HiPencil, HiTrash} from "react-icons/hi";
+import {HiOutlineDotsHorizontal, HiPencil, HiTrash} from "react-icons/hi";
 import {ActionMenu, type MenuOption} from "../../menu/ActionMenu.tsx";
 
 interface AssignmentMenuProps {
@@ -34,6 +34,6 @@ export function AssignmentMenu({
     ];
 
     return (
-        <ActionMenu options={menuOptions} customIcon={<HiDotsVertical className="size-3 opacity-0 hover:opacity-100" />} />
+        <ActionMenu options={menuOptions} customIcon={<HiOutlineDotsHorizontal />} />
     )
 }

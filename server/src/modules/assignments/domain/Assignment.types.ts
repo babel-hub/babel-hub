@@ -1,16 +1,19 @@
 import type { GradeByAssignment } from "../../grade/domain/Grade.types.js";
 
+export interface Assignments {
+    id: string;
+    name: string;
+    due_date: string;
+    created_at: string;
+    assessment_criteria_id: string;
+}
+
 export interface AssignmentsOverview {
     assessment_criteria: {
         id: string;
         name: string;
         weight: number;
-        assignments: {
-            id: string;
-            name: string;
-            due_date: string;
-            created_at: string;
-        }[];
+        assignments: Assignments[];
     }[];
 }
 

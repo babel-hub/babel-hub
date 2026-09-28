@@ -345,7 +345,7 @@ export class PostgresParentRepository implements IParentRepository {
                     p_student.first_last_name as student_last,
                     p_parent.first_name as parent_first,
                     p_parent.first_last_name as parent_last
-                FROM student_parent sp
+                FROM parent_student sp
                 JOIN student s ON sp.student_id = s.id
                 JOIN profile p_student ON s.profile_id = p_student.id
                 JOIN parent pr ON sp.parent_id = pr.id
@@ -356,7 +356,7 @@ export class PostgresParentRepository implements IParentRepository {
             if (check.rowCount === 0) throw new NotFoundError("El vínculo no se encontró o no tienes permisos");
 
             await client.query(`
-                DELETE FROM student_parent WHERE id = $1
+                DELETE FROM parent_student WHERE id = $1
             `, [linkId]);
 
             const row = check.rows[0];

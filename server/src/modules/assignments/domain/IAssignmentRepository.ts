@@ -1,8 +1,13 @@
-import type {AssignmentsByTeacherAndDate, AssignmentsOverview, UpdateAssignmentDTO} from "./Assignment.types.js";
+import type {
+    Assignments,
+    AssignmentsByTeacherAndDate,
+    AssignmentsOverview,
+    UpdateAssignmentDTO
+} from "./Assignment.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export interface IAssignmentRepository {
-    getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<AssignmentsOverview>;
+    getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<Assignments[]>;
     getAssignmentsByTeacherAndDate(teacherProfileId: string, startDate: string, endDate: string): Promise<AssignmentsByTeacherAndDate[]>;
     getAssignmentOwner(assignmentId: string): Promise<string | null>;
     createAssignment(

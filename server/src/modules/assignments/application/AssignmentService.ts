@@ -1,26 +1,51 @@
-import type {AssignmentsOverview, AssignmentsStructure, UpdateAssignmentDTO} from "../domain/Assignment.types.js";
+import type { AssignmentsStructure, UpdateAssignmentDTO } from "../domain/Assignment.types.js";
 import type { IAssignmentRepository } from "../domain/IAssignmentRepository.js";
 import {ForbiddenError, UnauthorizedError, ValidationError} from "../../errors/domain/CustomErrors.js";
 import { assertValidDueDate } from "../domain/Assignment.rules.js";
 
-// From Grade Module
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
-import type {AuthUser} from "../../shared/domain/Shared.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type { IAssessmentRepository } from "../../assessmentCriteria/domain/IAssessmentRepository.js";
 
 export class AssignmentService {
     constructor(
         private readonly assignmentRepository: IAssignmentRepository,
-        private readonly gradeRepository: IGradeRepository
+        private readonly gradeRepository: IGradeRepository,
+        private readonly assessmentRepository: IAssessmentRepository
     ) {}
+
     async getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<AssignmentsStructure> {
+        if (!userSchoolId) throw new UnauthorizedError('Datos del usuario master son invalidos');
         if (!classId || !courseId || !periodId) throw new ValidationError('Los datos son inválidos');
 
-        const [overview, grades] = await Promise.all([
+        const [assignments, assessments, grades] = await Promise.all([
             this.assignmentRepository.getAssignmentsOverview(courseId, classId, periodId, userSchoolId),
+            this.assessmentRepository.getAssessmentByAssignment(classId),
             this.gradeRepository.getGradesByClass(classId)
         ]);
 
-        return { ...overview, grades };
+        const assignmentsByCriteria = new Map<string, any[]>();
+
+        for (const asg of assignments) {
+            const list = assignmentsByCriteria.get(asg.assessment_criteria_id) ?? [];
+            list.push({
+                id: asg.id,
+                name: asg.name,
+                due_date: asg.due_date,
+                created_at: asg.created_at
+            });
+            assignmentsByCriteria.set(asg.assessment_criteria_id, list);
+        }
+
+        return {
+            assessment_criteria: assessments.map(ac => ({
+                id: ac.id,
+                name: ac.name,
+                weight: ac.weight,
+                assignments: assignmentsByCriteria.get(ac.id) ?? []
+            })),
+            grades: grades
+        };
     }
 
     async createAssignment(

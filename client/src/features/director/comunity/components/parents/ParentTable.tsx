@@ -1,9 +1,9 @@
-import type { Parent } from "../../types";
+import type { LinkedStudent, Parent } from "../../types";
 import { reverseName } from "../../../../../types";
 import { useEffect, useRef, useState } from "react";
-import { HiPencil, HiTrash } from "react-icons/hi";
-import {FiPlus} from "react-icons/fi";
-import {ActionMenu, type MenuOption} from "../../../../../components/ui/menu/ActionMenu.tsx";
+import { HiPencil, HiTrash, HiX } from "react-icons/hi";
+import { FiPlus } from "react-icons/fi";
+import { ActionMenu, type MenuOption } from "../../../../../components/ui/menu/ActionMenu.tsx";
 import { formatFullDateString } from "../../../../utils/utils.ts";
 
 interface ParentsTableProps {
@@ -11,12 +11,11 @@ interface ParentsTableProps {
     onAddStudent: (parent: Parent) => void;
     onEdit: (parent: Parent) => void;
     onDelete: (parent: Parent) => void;
-    onDeleteStudent: (parent: Parent) => void;
+    onDeleteStudent: (parent: Parent, student: LinkedStudent) => void;
 }
 
 export function ParentsTable({ parents, onEdit, onDelete, onAddStudent, onDeleteStudent }: ParentsTableProps) {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-
     const closeMenu = () => setActiveMenuId(null);
 
     return (
@@ -25,7 +24,7 @@ export function ParentsTable({ parents, onEdit, onDelete, onAddStudent, onDelete
                 <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
                     <th className="p-4 text-sm font-semibold">Acudiente ({parents.length})</th>
-                    <th className="p-4 text-sm font-semibold">Hijos Vinculados</th>
+                    <th className="p-4 text-sm font-semibold">Estudiantes Vinculados</th>
                     <th className="p-4 text-sm font-semibold">Fecha de Registro</th>
                     <th className="p-4 text-sm font-semibold text-right">Acciones</th>
                 </tr>
@@ -55,7 +54,7 @@ interface ParentsRowProps {
     onEdit: (parent: Parent) => void;
     onAddStudent: (parent: Parent) => void;
     onDelete: (parent: Parent) => void;
-    onDeleteStudent: (parent: Parent) => void;
+    onDeleteStudent: (parent: Parent, student: any) => void;
     closeMenu: () => void;
 }
 
@@ -71,25 +70,19 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent,
 
     useEffect(() => {
         if (!isOpen) return;
-
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as Node;
-
-            if (
-                menuRef.current && !menuRef.current.contains(target) &&
-                buttonRef.current && !buttonRef.current.contains(target)
-            ) {
+            if (menuRef.current && !menuRef.current.contains(target) && buttonRef.current && !buttonRef.current.contains(target)) {
                 closeMenu();
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen, closeMenu]);
 
     const menuOptions: MenuOption[] = [
         {
-            label: "Asignar",
+            label: "Vincular",
             icon: <FiPlus className="size-4" />,
             onClick: () => onAddStudent(parent),
         },
@@ -103,13 +96,7 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent,
             label: "separator"
         },
         {
-            label: "Eliminar estudiante",
-            icon: <HiTrash className="size-4" />,
-            onClick: () => onDeleteStudent(parent),
-            isDanger: true,
-        },
-        {
-            label: "Eliminar padre",
+            label: "Eliminar",
             icon: <HiTrash className="size-4" />,
             onClick: () => onDelete(parent),
             isDanger: true,
@@ -130,9 +117,7 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent,
                     <div className="w-10 h-10 shrink-0 uppercase rounded-full bg-primary-shadow flex items-center justify-center text-primary font-bold text-sm">
                         {`${parent.parent_first_name.charAt(0)}${parent.parent_first_last_name.charAt(0)}`}
                     </div>
-                    <button
-                        className="overflow-hidden text-sm xl:text-base text-left cursor-pointer transition-colors hover:text-primary"
-                    >
+                    <button className="overflow-hidden text-sm xl:text-base text-left cursor-pointer transition-colors hover:text-primary">
                         <p className="font-bold capitalize text-custom-black truncate" title={formattedName}>
                             {formattedName}
                         </p>
@@ -153,11 +138,21 @@ function ParentsRow({ parent, onEdit, onDelete, closeMenu, isOpen, onAddStudent,
                             return (
                                 <span
                                     key={child.student_id}
-                                    className="inline-flex items-center gap-1 bg-primary-shadow/50 text-primary font-medium px-2 py-1 rounded-xl text-[11px] capitalize border border-primary"
+                                    className="inline-flex items-center gap-1 bg-primary-shadow/50 text-primary font-medium pl-2 pr-1 py-1 rounded-xl text-[11px] capitalize border border-primary/20 group"
                                     title={`Relación: ${role}`}
                                 >
                                     {childName}
-                                    <span className="text-primary font-normal">({role})</span>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteStudent(parent, child);
+                                        }}
+                                        className="ml-1 p-0.5 hover:bg-primary-darker hover:text-white rounded-full transition-colors opacity-60 group-hover:opacity-100 cursor-pointer"
+                                        title={`Desvincular a ${childName}`}
+                                    >
+                                        <HiX className="size-3" />
+                                    </button>
                                 </span>
                             );
                         })}

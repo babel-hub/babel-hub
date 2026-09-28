@@ -1,5 +1,6 @@
 import type { IAssignmentRepository } from "../domain/IAssignmentRepository.js";
 import type {
+    Assignments,
     AssignmentsByTeacherAndDate,
     AssignmentsOverview,
     UpdateAssignmentDTO
@@ -11,7 +12,7 @@ import type {ValidScales} from "../../grade/domain/Grade.types.js";
 import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class PostgresAssignmentRepository implements IAssignmentRepository {
-    async getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<AssignmentsOverview> {
+    async getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<Assignments[]> {
         const client = await pool.connect();
         try {
             const ownershipCheck = await client.query(`
@@ -19,17 +20,6 @@ export class PostgresAssignmentRepository implements IAssignmentRepository {
             `, [courseId, userSchoolId]);
 
             if (ownershipCheck.rowCount === 0) throw new NotFoundError("Curso no encontrado o no tienes acceso a este");
-
-            const assessments = await client.query(`
-                SELECT
-                    ac.id,
-                    ac.name,
-                    ac.weight::float AS weight
-                FROM assessment_criteria ac
-                JOIN subject s ON ac.grading_template_id = s.grading_template_id
-                WHERE s.id = (SELECT subject_id FROM class WHERE id = $1)
-                ORDER BY ac.name ASC
-            `, [classId]);
 
             const assignments = await client.query(`
                 SELECT
@@ -40,30 +30,10 @@ export class PostgresAssignmentRepository implements IAssignmentRepository {
                     a.assessment_criteria_id
                 FROM assignment a
                 WHERE a.class_id = $1 and a.period_id = $2
-                ORDER BY a.name ASC
+                ORDER BY a.created_at ASC
             `, [classId, periodId]);
 
-            const assignmentsByCriteria = new Map<string, any[]>();
-
-            for (const asg of assignments.rows) {
-                const list = assignmentsByCriteria.get(asg.assessment_criteria_id) ?? [];
-                list.push({
-                    id: asg.id,
-                    name: asg.name,
-                    due_date: asg.due_date,
-                    created_at: asg.created_at
-                });
-                assignmentsByCriteria.set(asg.assessment_criteria_id, list);
-            }
-
-            return {
-                assessment_criteria: assessments.rows.map(ac => ({
-                    id: ac.id,
-                    name: ac.name,
-                    weight: ac.weight,
-                    assignments: assignmentsByCriteria.get(ac.id) ?? []
-                })),
-            }
+            return assignments.rows;
         } finally {
             client.release();
         }

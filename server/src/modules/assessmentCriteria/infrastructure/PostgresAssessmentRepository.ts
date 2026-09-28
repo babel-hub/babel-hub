@@ -1,10 +1,30 @@
 import type { IAssessmentRepository } from "../domain/IAssessmentRepository.js";
-import type { Assessment } from "../domain/Assessment.types.js";
+import type {Assessment, BaseAssessment} from "../domain/Assessment.types.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresAssessmentRepository implements IAssessmentRepository {
+    async getAssessmentByAssignment(classId: string): Promise<BaseAssessment[]> {
+        const client = await pool.connect();
+        try {
+            const assessments = await client.query(`
+                SELECT
+                        ac.id,
+                        ac.name,
+                        ac.weight::float AS weight
+                    FROM assessment_criteria ac
+                    JOIN subject s ON ac.grading_template_id = s.grading_template_id
+                    WHERE s.id = (SELECT subject_id FROM class WHERE id = $1)
+                    ORDER BY ac.name ASC
+                `, [classId]);
+
+            return assessments.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async getAssessments(userSchoolId: string): Promise<Assessment[]> {
         const client = await pool.connect();
         try {

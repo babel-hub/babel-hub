@@ -9,10 +9,10 @@ import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { useParentsData } from "../../hooks/parents/useParentsData.ts";
 import { useParentDelete } from "../../hooks/parents/useParentDelete.ts";
 import { type ModalModeTypes, reverseName } from "../../../../../types";
-import type { Parent } from "../../types";
+import type { LinkedStudent, Parent } from "../../types";
 import { ParentsTable } from "./ParentTable.tsx";
-import {ParentToStudentFormModal} from "../ui/ParentToStudentFormModal.tsx";
-import {useParentStudentDelete} from "../../hooks/parents/useParentStudentDelete.ts";
+import { ParentToStudentFormModal } from "../ui/ParentToStudentFormModal.tsx";
+import { useParentStudentDelete } from "../../hooks/parents/useParentStudentDelete.ts";
 
 export function ParentsLayout() {
     const navigate = useNavigate();
@@ -25,7 +25,7 @@ export function ParentsLayout() {
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [parentToEdit, setParentToEdit] = useState<Parent | null>(null);
     const [parentToDelete, setParentToDelete] = useState<Parent | null>(null);
-    const [parentToDeleteStudent, setParentToDeleteStudent] = useState<Parent | null>(null);
+    const [linkToDelete, setLinkToDelete] = useState<{parent: Parent, student: any} | null>(null);
 
     const [modalModeParentToStudent, setModalModeParentToStudent] = useState<ModalModeTypes>('none');
     const [parentToStudent, setParentToStudent] = useState<Parent | null>(null);
@@ -48,15 +48,13 @@ export function ParentsLayout() {
 
     const handleOpenDelete = useCallback((parent: Parent) => {
         setParentToDelete(parent || null);
-    }, [parents]);
+    }, []);
 
-    const handleOpenDeleteStudent = useCallback((parent: Parent) => {
-        setParentToDeleteStudent(parent || null);
-    }, [parents]);
+    const handleOpenDeleteStudent = useCallback((parent: Parent, student: LinkedStudent) => {
+        setLinkToDelete({ parent, student });
+    }, []);
 
-    if (loading) return <LoadingContent title="Cargando padres/acudientes..." />;
-
-    console.log(parents);
+    if (loading) return <LoadingContent title="" />;
 
     return (
         <div className="flex flex-col md:gap-5">
@@ -96,7 +94,7 @@ export function ParentsLayout() {
             <ConfirmModal
                 isOpen={parentToDelete !== null}
                 onClose={() => setParentToDelete(null)}
-                title="¿Estás seguro?"
+                title="Eliminar Acudiente"
                 message={`¿Quieres eliminar al padre/acudiente ${
                     parentToDelete ?
                         reverseName({
@@ -116,22 +114,14 @@ export function ParentsLayout() {
             />
 
             <ConfirmModal
-                isOpen={parentToDeleteStudent !== null}
-                onClose={() => setParentToDeleteStudent(null)}
-                title="¿Estás seguro?"
-                message={`¿Quieres eliminar al padre/acudiente ${
-                    parentToDeleteStudent ?
-                        reverseName({
-                            middleName: parentToDeleteStudent.parent_middle_name,
-                            secondLastName: parentToDeleteStudent.parent_second_last_name,
-                            firstName: parentToDeleteStudent.parent_first_name,
-                            firstLastName: parentToDeleteStudent.parent_first_last_name
-                        }) : "Desconocido"
-                }? Esta acción no se puede deshacer.`}
+                isOpen={linkToDelete !== null}
+                onClose={() => setLinkToDelete(null)}
+                title="Desvincular Estudiante"
+                message={linkToDelete ? `¿Quieres desvincular al estudiante ${linkToDelete.student.student_first_name} del acudiente ${linkToDelete.parent.parent_first_name}?` : ""}
                 onConfirm={async () => {
-                    if (parentToDeleteStudent) {
-                        await deleteParentStudentById(parentToDeleteStudent.parent_id);
-                        setParentToDeleteStudent(null);
+                    if (linkToDelete) {
+                        await deleteParentStudentById(linkToDelete.student.link_id);
+                        setLinkToDelete(null);
                     }
                 }}
                 loadingDelete={parentStudentLoading}
@@ -153,9 +143,9 @@ export function ParentsLayout() {
                 <ParentToStudentFormModal
                     parent={parentToStudent}
                     onClose={() => setModalModeParentToStudent('none')}
-                    onSuccess={async () => {
+                    onSuccess={() => {
                         setModalModeParentToStudent('none');
-                        await refetch();
+                        refetch();
                     }}
                 />
             )}

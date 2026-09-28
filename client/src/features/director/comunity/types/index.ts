@@ -111,7 +111,7 @@ export interface StudentSearchResult {
     email: string;
 }
 
-interface LinkedStudent {
+export interface LinkedStudent {
     link_id: string;
     student_id: string;
     student_first_name: string;

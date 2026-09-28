@@ -24,6 +24,26 @@ const MESSAGES = {
     ]
 };
 
+const prepositionsAndArticles = new Set<string>([
+    "a", "ante", "bajo", "con", "contra", "de", "del", "al", "desde", "durante",
+    "en", "entre", "hacia", "hasta", "mediante", "para", "por",
+    "según", "segun", "sin", "so", "sobre", "tras", "versus", "via", "vía",
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "y", "o", "u"
+]);
+
+export const handleAssignmentName = (name: string): string => {
+    const words = name.split(/\s+/);
+    let result = '';
+
+    for (const word of words) {
+        const cleanWord = word.toLowerCase();
+        if (!cleanWord || prepositionsAndArticles.has(cleanWord)) continue;
+        result += word.charAt(0).toUpperCase();
+    }
+
+    return result;
+};
+
 export function suggestedComment(value: number, min: number, max: number, passing: number): string {
     if (max <= min || passing <= min) return "";
 

@@ -8,10 +8,13 @@ import { AssignmentController } from "./AssignmentController.js";
 import { AssignmentService } from "../application/AssignmentService.js";
 
 import { PostgresGradeRepository } from "../../grade/infrastructure/PostgresGradeRepository.js";
+import { PostgresAssessmentRepository } from "../../assessmentCriteria/infrastructure/PostgresAssessmentRepository.js";
 
 const assignmentRepository = new PostgresAssignmentRepository();
 const gradeRepository = new PostgresGradeRepository();
-const service = new AssignmentService(assignmentRepository, gradeRepository);
+const assessmentRepository = new PostgresAssessmentRepository();
+
+const service = new AssignmentService(assignmentRepository, gradeRepository, assessmentRepository);
 const controller = new AssignmentController(service);
 
 const router: Router = Router();
