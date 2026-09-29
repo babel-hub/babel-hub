@@ -153,7 +153,7 @@ export function StudentGradeTable({
                 </button>
             )}
 
-            <div className="w-full overflow-auto relative no-scrollbar" style={{ maxHeight: "76.6vh" }}>
+            <div className="w-full overflow-auto relative no-scrollbar max-h-[calc(100dvh-15.7rem)] md:max-h-[calc(100dvh-10.9rem)]">
                 <table className="w-full text-left relative min-w-max">
                     <thead className="top-0 sticky z-20 bg-white">
                         <tr className="mb-0 bg-white shadow-[inset_0_-1px_0_0_#e5e7eb]">
@@ -164,24 +164,29 @@ export function StudentGradeTable({
                                 if (!has) {
                                     return (
                                         <th key={ac.id} onClick={() => onAddAssignment(ac)} className="cursor-pointer border-l border-gray-200 bg-gray-50 py-2 px-4 text-center align-middle transition-colors hover:bg-gray-100">
-                                            <span className="block text-sm font-medium capitalize text-gray-500">{ac.name}</span>
-                                            <span className="mt-0.5 block text-[10px] text-gray-400">{ac.weight}% · añadir asignación</span>
+                                            <span className="block text-sm font-medium capitalize text-gray-500">{handleAssignmentName(ac.name)}</span>
+                                            <span className="block text-[9px] text-gray-400">{ac.name}</span>
+                                            <span className="block text-[10px] text-gray-400">{ac.weight}% · añadir asignación</span>
                                         </th>
                                     );
                                 }
                                 return (
-                                    <th key={ac.id} colSpan={ac.assignments.length} className="border-l border-gray-200 bg-primary-shadow p-4 text-center">
+                                    <th key={ac.id} colSpan={ac.assignments.length} className="border-l relative border-gray-200 bg-primary-shadow px-4 pb-2 pt-5 text-center">
                                         <div className="flex items-center justify-center gap-1.5">
-                                            <span className="text-sm font-semibold capitalize text-primary">{ac.name}</span>
-                                            <span className="rounded-full bg-transparent border border-primary px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">{ac.weight}%</span>
-                                            <button onClick={() => onAddAssignment(ac)} className="rounded-full p-1 text-primary cursor-pointer transition-colors hover:bg-primary/20">
+                                            <span className="text-sm font-semibold capitalize text-primary">
+                                                {handleAssignmentName(ac.name)}
+                                            </span>
+                                            <button onClick={() => onAddAssignment(ac)} className="rounded-full p-0.5 text-primary cursor-pointer transition-colors hover:bg-primary-darker hover:text-white">
                                                 <HiPlus className="size-3.5" />
                                             </button>
                                         </div>
+                                        <span className="absolute top-0 left-1/2 -translate-x-1/2 w-max rounded-b-md bg-primary-darker px-1.5 py-0.5 text-[8px] font-medium tabular-nums text-white">
+                                            {ac.weight}%
+                                        </span>
                                     </th>
                                 );
                             })}
-                            <th className="border-l border-gray-200 bg-white p-3 text-center align-middle text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <th className="border-l border-gray-200 bg-primary-darker text-white p-3 text-center align-middle text-xs font-semibold uppercase tracking-wide">
                                 Final
                             </th>
                         </tr>

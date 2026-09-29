@@ -5,15 +5,16 @@ import type { AttendanceSummary } from "../types";
 interface AttendanceSummaryProps {
     startDate: string;
     endDate: string;
+    todayDate: string;
 }
 
-export const useAttendanceSummary = ({ startDate, endDate }: AttendanceSummaryProps) => {
+export const useAttendanceSummary = ({ startDate, endDate, todayDate }: AttendanceSummaryProps) => {
     const [loading, setLoading] = useState(false);
     const [attendance, setAttendance] = useState<AttendanceSummary[]>([]);
 
     useEffect(() => {
         const getAttendance = async () => {
-            if (!startDate || !endDate) return;
+            if (!startDate || !endDate || !todayDate) return;
 
             setLoading(true);
             try {
@@ -29,7 +30,7 @@ export const useAttendanceSummary = ({ startDate, endDate }: AttendanceSummaryPr
                 const periodEndStr = endDate.split('T')[0] || '';
                 const effectiveEndDate = todayStr < periodEndStr ? todayStr : periodEndStr;
 
-                const response = await getAttendanceSummary(startDate, effectiveEndDate);
+                const response = await getAttendanceSummary(startDate, effectiveEndDate, todayDate);
                 setAttendance(response);
             } catch (error) {
                 console.log("Error GETTING attendance", error);

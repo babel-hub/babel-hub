@@ -10,8 +10,9 @@ export class AssessmentController {
             const userSchoolId = request.user!.schoolId as string;
 
             const records = await this.assessmentService.getAssessments(userSchoolId);
+
             response.status(200).json({ assessments: records });
-        } catch (error : any) {
+        } catch (error: any) {
             next(error);
         }
     }
@@ -20,28 +21,16 @@ export class AssessmentController {
         try {
             const { name, weight, gradingTemplateId } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
-            await this.assessmentService.createAssessment(name, weight, gradingTemplateId, userId, userRole, userSchoolId);
+            await this.assessmentService.createAssessment(name, weight, gradingTemplateId, authUser);
+
             response.status(201).send();
-        } catch (error : any) {
-            next(error);
-        }
-    }
-
-    deleteAssessment = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
-        try {
-            const assessmentId = request.params.assessmentId as string;
-
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
-
-            await this.assessmentService.deleteAssessment(assessmentId, userId, userRole, userSchoolId);
-            response.status(204).send();
-        } catch (error : any) {
+        } catch (error: any) {
             next(error);
         }
     }
@@ -51,15 +40,35 @@ export class AssessmentController {
             const assessmentId = request.params.assessmentId as string;
             const { name, weight, gradingTemplateId } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
-            await this.assessmentService.updateAssessment(assessmentId, name, weight, gradingTemplateId, userId, userRole, userSchoolId);
+            await this.assessmentService.updateAssessment(assessmentId, name, weight, gradingTemplateId, authUser);
+
             response.status(204).send();
-        } catch (error : any) {
+        } catch (error: any) {
             next(error);
         }
     }
 
+    deleteAssessment = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const assessmentId = request.params.assessmentId as string;
+
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
+
+            await this.assessmentService.deleteAssessment(assessmentId, authUser);
+
+            response.status(204).send();
+        } catch (error: any) {
+            next(error);
+        }
+    }
 }

@@ -138,29 +138,45 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
     }
 
 
-    async getAttendanceSummary(schoolId: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
+    async getAttendanceSummary(schoolId: string, today: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-            WITH LastRecord AS (
-                    SELECT
-                        a.student_id,
-                        MAX(a.date) as last_record
+                WITH FirstRecordPerDay AS (
+                    SELECT DISTINCT ON (a.student_id, DATE(a.date))
+                    a.student_id,
+                    DATE(a.date) as record_date,
+                    a.status
                     FROM attendance a
                     JOIN student s ON a.student_id = s.id
                     JOIN profile p ON s.profile_id = p.id
                     WHERE a.date >= $1 AND a.date <= $2
-                        AND p.is_active = $4
-                        AND p.school_id = $3
-                    GROUP BY a.student_id
-                ), CheckLastStatus AS (
-                        SELECT 
-                            a.student_id
-                        FROM attendance a
-                        JOIN LastRecord lr ON a.student_id = lr.student_id AND a.date = lr.last_record
-                        GROUP BY a.student_id
-                        HAVING BOOL_OR(a.status IN ('absent', 'late'))
-                            AND NOT BOOL_OR(a.status = 'present')
+                      AND p.school_id = $3
+                      AND p.is_active = $4
+                    ORDER BY a.student_id, DATE(a.date), a.date ASC
+                    ),
+                    TodayProblematic AS (
+                        SELECT student_id
+                        FROM FirstRecordPerDay
+                        WHERE record_date = DATE($5)
+                          AND status IN ('absent', 'late')
+                            ),
+                    RankedDays AS (
+                        SELECT
+                            fr.student_id,
+                            fr.status,
+                            ROW_NUMBER() OVER(PARTITION BY fr.student_id ORDER BY fr.record_date DESC) as rn
+                        FROM FirstRecordPerDay fr
+                            JOIN TodayProblematic tp ON fr.student_id = tp.student_id
+                        WHERE fr.record_date <= DATE($5)
+                    ),
+                    AlertStatus AS (
+                        SELECT
+                            student_id,
+                            COALESCE(BOOL_OR(rn = 1 AND status = 'absent') AND BOOL_OR(rn = 2 AND status = 'absent'), false) as is_red_alert
+                        FROM RankedDays
+                        WHERE rn <= 2
+                        GROUP BY student_id
                 )
                 SELECT
                     c.id as course_id,
@@ -170,31 +186,23 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     p.middle_name as student_middle_name,
                     p.first_last_name as student_first_last_name,
                     p.second_last_name as student_second_last_name,
-                    COUNT(DISTINCT a.date) FILTER (WHERE a.status = 'absent') AS total_absences,
-                    COUNT(s.id) FILTER (WHERE a.status = 'late') AS total_lates
-                FROM CheckLastStatus cls
-                JOIN student s ON cls.student_id = s.id
-                JOIN profile p ON s.profile_id = p.id
-                JOIN course c ON s.course_id = c.id
-                JOIN attendance a ON s.id = a.student_id 
-                WHERE p.school_id = $3
-                AND a.date >= $1 AND a.date <= $2
+                    COUNT(fr.record_date) FILTER (WHERE fr.status = 'absent') AS total_absences,
+                    COUNT(fr.record_date) FILTER (WHERE fr.status = 'late') AS total_lates,
+                    al.is_red_alert
+                FROM TodayProblematic tp
+                         JOIN AlertStatus al ON tp.student_id = al.student_id
+                         JOIN student s ON tp.student_id = s.id
+                         JOIN profile p ON s.profile_id = p.id
+                         JOIN course c ON s.course_id = c.id
+                         JOIN FirstRecordPerDay fr ON s.id = fr.student_id
                 GROUP BY
-                    c.id,
-                    c.name,
-                    s.id,
-                    p.first_name,
-                    p.middle_name,
-                    p.first_last_name,
-                    p.second_last_name
-                HAVING COUNT(DISTINCT a.date) FILTER (WHERE a.status = 'absent') > 0
-                    OR COUNT(s.id) FILTER (WHERE a.status = 'late') > 0
+                    c.id, c.name, s.id, p.first_name, p.middle_name, p.first_last_name, p.second_last_name, al.is_red_alert
                 ORDER BY c.name::integer DESC, total_absences DESC, p.first_last_name ASC;
-            `, [startDate, endDate, schoolId, isActive]);
+            `, [startDate, endDate, schoolId, isActive, today]);
 
             return result.rows;
         } finally {
-            client.release()
+            client.release();
         }
     }
 

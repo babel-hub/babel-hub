@@ -22,7 +22,7 @@ interface ClassLayoutProps {
 export function ClassLayout ({ children, onTabChange, classDetails, activeTab, onPeriodChange, periods, periodId, setDate, date, showPeriodSelector, showCalendar }: ClassLayoutProps) {
     return (
         <div className="flex flex-col h-full w-full ">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 flex flex-col gap-4">
+            <div className="sticky top-0 z-40 bg-white flex flex-col gap-4">
                 <div className="flex flex-col pt-5 px-5 md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex gap-4 items-center">
                         <div>
@@ -63,25 +63,25 @@ export function ClassLayout ({ children, onTabChange, classDetails, activeTab, o
                 <div className="flex overflow-x-auto bg-white w-full no-scrollbar">
                     <button
                         onClick={() => onTabChange('students')}
-                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'students' ? 'text-primary-darker border-b-primary-darker border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineUsers className="text-lg" /> Estudiantes
                     </button>
                     <button
                         onClick={() => onTabChange('register attendance')}
-                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'register attendance' ? 'text-primary-darker border-b-primary-darker border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineClipboardList className="text-lg" /> Tomar Asistencia
                     </button>
                     <button
                         onClick={() => onTabChange('see attendance')}
-                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[180px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'see attendance' ? 'text-primary-darker border-b-primary-darker border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineCalendar className="text-lg" /> Ver Asistencia
                     </button>
                     <button
                         onClick={() => onTabChange('assignments')}
-                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary border-b-primary border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex-1 text-sm md:text-base cursor-pointer min-w-[150px] flex items-center justify-center gap-2 py-3 px-4 font-medium border-b-2 border-transparent transition-all ${activeTab === 'assignments' ? 'text-primary-darker border-b-primary-darker border-b-2' : 'text-gray-500 hover:bg-gray-50'}`}
                     >
                         <HiOutlineDocumentText className="text-lg" /> Calificaciones
                     </button>

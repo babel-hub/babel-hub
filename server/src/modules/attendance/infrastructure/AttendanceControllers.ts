@@ -54,11 +54,13 @@ export class AttendanceController {
     getAttendanceSummary = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const schoolId = request.user!.schoolId as string;
+
             const startDate = request.query.startDate as string;
             const endDate = request.query.endDate as string;
+            const today = request.query.today as string;
             const isActive = true;
 
-            const record = await this.attendanceService.getAttendanceSummary(schoolId, startDate, endDate, isActive);
+            const record = await this.attendanceService.getAttendanceSummary(schoolId, today, startDate, endDate, isActive);
             response.status(200).json({ attendanceSummary: record });
         } catch (error : any) {
             next(error)

@@ -12,9 +12,7 @@ interface AssessmentFormModalProps {
     onClose: () => void;
 }
 
-const FORM_REGEXP = {
-    name: /^(?=.*[a-zA-Z])[a-zA-ZÀ-ÿ\s´\.,]+$/
-}
+const FORM_REGEXP = { name: /^(?=.*[a-zA-Z0-9])[a-zA-Z0-9À-ÿ\s´\.,]+$/ }
 
 export function AssessmentFormModal({ mode, assessmentInfo, assessment, onClose, onSuccess }: AssessmentFormModalProps) {
     const isCreateMode = mode === "create";

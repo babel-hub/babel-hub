@@ -24,11 +24,11 @@ export class AttendanceService {
         return this.attendanceRepository.getDailyCourseAttendance(courseId, schoolId, date, isActive);
     }
 
-    async getAttendanceSummary(schoolId: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
+    async getAttendanceSummary(schoolId: string, today: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
         if (!schoolId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas');
-        if (!startDate || !endDate) throw new ValidationError("La fecha es obligatoria");
+        if (!startDate || !endDate || !today) throw new ValidationError("La fecha es obligatoria");
 
-        return this.attendanceRepository.getAttendanceSummary(schoolId, startDate, endDate, isActive);
+        return this.attendanceRepository.getAttendanceSummary(schoolId, today,startDate, endDate, isActive);
     }
 
     async getCalendarAttendance(studentId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {

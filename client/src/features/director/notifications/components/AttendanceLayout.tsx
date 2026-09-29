@@ -6,10 +6,13 @@ import { useAttendanceSummary } from "../hooks/useAttendanceSummary.ts";
 import {AttendanceList} from "./ui/AttendanceList.tsx";
 import {LoadingContent} from "../../../../components/ui/Loadings.tsx";
 import {NoResults} from "../../../../components/ui/blocks/NoResults.tsx";
+import {formatterDate} from "../../../../types";
 
 export function AttendanceLayout() {
     const { periods } = usePeriods();
     const navigate = useNavigate();
+
+    const today = formatterDate.format(new Date);
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
 
     useEffect(() => {
@@ -26,7 +29,8 @@ export function AttendanceLayout() {
 
     const { loading, attendance } = useAttendanceSummary({
         startDate,
-        endDate
+        endDate,
+        todayDate: today
     });
 
     const uniqueCourses = useMemo(() => {

@@ -30,6 +30,7 @@ export interface AttendanceSummary {
     student_second_last_name: string | null;
     total_absences: number;
     total_lates: number;
+    is_red_alert: boolean;
 }
 
 export interface CalendarAttendance {
