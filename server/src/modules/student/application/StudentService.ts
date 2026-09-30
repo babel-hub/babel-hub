@@ -38,7 +38,7 @@ export class StudentService {
         const [classes, grades, attendance, parents] = await Promise.all([
             this.classRepository.getStudentProfileClasses(student.course_id),
             this.gradesRepository.getStudentProfileGrades(studentId, periodId),
-            this.attendanceRepository.getCalendarAttendance(studentId, startDate, endDate),
+            this.attendanceRepository.getCalendarAttendance(studentId, userSchoolId, startDate, endDate),
             this.parentRepository.getParentByStudentId(studentId)
         ]);
 

@@ -1,18 +1,19 @@
 import type { IParentRepository } from "../domain/IParentRepository.js";
 import type { AuthUser, ParentCredentials } from "../../shared/domain/Shared.types.js";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type { Parent, ParentStudent, RelationTypes } from "../domain/Parent.types.js";
+import type {DailyScheduleWithBreaks, Parent, ParentStudent, RelationTypes} from "../domain/Parent.types.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
-import type {StudentDailyGrade, StudentGrade, SubjectAccumulated} from "../../grade/domain/Grade.types.js";
-import type { DailyAttendance } from "../../attendance/domain/Attendance.types.js";
+import type { StudentDailyGrade, StudentGrade, SubjectAccumulated } from "../../grade/domain/Grade.types.js";
 import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
+import type { ICourseBreakRepository } from "../../course-break/domain/ICourseBreakRepository.js";
 
 export class ParentService {
     constructor(
         private readonly parentRepository: IParentRepository,
         private readonly gradeRepository: IGradeRepository,
         private readonly attendanceRepository: IAttendanceRepository,
+        private readonly courseBreakRepository: ICourseBreakRepository
     ) {}
 
     async getParents(userSchoolId: string): Promise<Parent[]> {
@@ -50,12 +51,20 @@ export class ParentService {
         return await this.gradeRepository.getStudentDailyGrades(studentId, date, authUser);
     }
 
-    async getStudentDailyAttendance(studentId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]> {
+    async getStudentDailyAttendance(courseId: string, studentId: string, date: string, authUser: AuthUser): Promise<DailyScheduleWithBreaks> {
         if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario");
-        if (!studentId) throw new ValidationError("El id del estudiante no esta siendo enviado");
+        if (!studentId || !courseId) throw new ValidationError("El id del estudiante o del curso no estan siendo enviados");
         if (!date) throw new ValidationError("El campo de las fecha no esta siendo enviado");
 
-        return await this.attendanceRepository.getStudentDailyAttendance(studentId, date, authUser);
+        const [classes, breaks] = await Promise.all([
+            await this.attendanceRepository.getStudentDailyAttendance(studentId, authUser.userSchoolId, date, authUser),
+            await this.courseBreakRepository.getCourseBreaksByDate(courseId, date, authUser.userSchoolId)
+        ])
+
+        return {
+            classes: classes,
+            breaks: breaks
+        };
     }
 
     async createParent(parentCredentials: ParentCredentials, authUser: AuthUser): Promise<void> {

@@ -3,6 +3,7 @@ import type { CreatePeriod, Period, UpdatePeriod } from "../domain/Period.types.
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export class PostgresPeriodRepository implements IPeriodsRepository {
     async getPeriods(userSchoolId: string): Promise<Period[]> {
@@ -26,7 +27,26 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
         }
     }
 
-    async createPeriod(periodName: string, startDate: string, endDate: string, userId: string, userRole: string, userSchoolId: string): Promise<CreatePeriod> {
+    async checkPeriodOverlap(schoolId: string, startDate: string, endDate: string, excludePeriodId?: string): Promise<boolean> {
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT 1 FROM academic_period
+                WHERE school_id = $1
+                  AND start_date <= $3::DATE
+                  AND end_date >= $2::DATE
+                  AND id != COALESCE($4, '00000000-0000-0000-0000-000000000000'::uuid)
+                LIMIT 1;
+            `, [schoolId, startDate, endDate, excludePeriodId ?? null]);
+
+            return (result.rowCount !== null && result.rowCount > 0);
+        } finally {
+            client.release();
+        }
+    }
+
+    async createPeriod(periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -34,7 +54,7 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
             const result = await client.query(`
                 INSERT INTO academic_period (name, start_date, end_date, school_id)
                 VALUES ($1, $2, $3, $4)
-                RETURNING id
+                    RETURNING id
             `, [periodName, startDate, endDate, userSchoolId]);
 
             const periodId = result.rows[0].id;
@@ -51,11 +71,9 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
                         end: endDate,
                     }
                 }
-            })
+            });
 
             await client.query('COMMIT');
-
-            return periodId;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
@@ -64,7 +82,8 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
         }
     }
 
-    async updatePeriod(periodId: string, periodName: string, startDate: string, endDate: string, userId: string, userRole: string, userSchoolId: string): Promise<UpdatePeriod> {
+    async updatePeriod(periodId: string, periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -73,12 +92,10 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
                 UPDATE academic_period
                 SET name = $1, start_date = $2, end_date = $3
                 WHERE id = $4 AND school_id = $5
-                RETURNING id
+                    RETURNING id
             `, [periodName, startDate, endDate, periodId, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError("El periodo no existe o no pudo ser actualizado");
-
-            const period = result.rows[0].id;
+            if (result.rowCount === 0) throw new NotFoundError("El periodo no existe o no pertenece a este colegio.");
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -92,8 +109,6 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
             });
 
             await client.query('COMMIT');
-
-            return period;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
@@ -102,7 +117,8 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
         }
     }
 
-    async deletePeriod(periodId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async deletePeriod(periodId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -110,10 +126,10 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
             const result = await client.query(`
                 DELETE FROM academic_period
                 WHERE id = $1 AND school_id = $2
-                RETURNING id, name
+                    RETURNING id, name
             `, [periodId, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError("El periodo que intentas borrar no existe");
+            if (result.rowCount === 0) throw new NotFoundError("El periodo que intentas borrar no existe o no pertenece a este colegio.");
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -127,11 +143,10 @@ export class PostgresPeriodRepository implements IPeriodsRepository {
             });
 
             await client.query('COMMIT');
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
 
-            if (error.code === '23503') throw new ConflictError(" El clase tiene asignaturas y estudiantes activos");
+            if (error.code === '23503') throw new ConflictError("No se puede eliminar el periodo porque tiene asistencia, clases o calificaciones vinculadas.");
 
             throw error;
         } finally {

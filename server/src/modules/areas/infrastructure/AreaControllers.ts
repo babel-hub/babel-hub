@@ -30,13 +30,15 @@ export class AreaControllers {
 
     createArea = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userId = request.user!.userId as string;
-            const role = request.user!.role as string;
-            const schoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
             const { name } = request.body;
 
-            const newArea = await this.areaService.createArea(name, userId, role, schoolId);
+            const newArea = await this.areaService.createArea(name, authUser);
 
             response.status(201).json({
                 message: "Área creada exitosamente",
@@ -49,14 +51,16 @@ export class AreaControllers {
 
     updateArea = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userId = request.user!.userId as string;
-            const role = request.user!.role as string;
-            const schoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
             const id = request.params.id as string;
             const { name } = request.body;
 
-            const updatedArea = await this.areaService.updateArea(id, name, userId, role, schoolId);
+            const updatedArea = await this.areaService.updateArea(id, name, authUser);
 
             response.status(200).json({ area: updatedArea });
         } catch (error: any) {
@@ -66,15 +70,17 @@ export class AreaControllers {
 
     deleteArea = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userId = request.user!.userId as string;
-            const role = request.user!.role as string;
-            const schoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
             const id = request.params.id as string;
 
-            await this.areaService.deleteArea(id, userId, role, schoolId);
+            await this.areaService.deleteArea(id, authUser);
 
-            response.status(200).json({ message: "Área eliminada exitosamente" });
+            response.status(204).send();
         } catch (error: any) {
             next(error);
         }

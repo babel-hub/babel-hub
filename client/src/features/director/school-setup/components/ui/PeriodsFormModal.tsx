@@ -34,7 +34,7 @@ export function PeriodsFormModal({ mode, onSuccess, period, onClose }: periodFor
         const end = new Date(formData.endDate);
 
         if (!formData.startDate || !formData.endDate) {
-            setError(`Ingresa las fechas de inicio y final del ${formData.name || 'periodo'}`);
+            setError(`Ingresa las fechas de inicio y fin del ${formData.name || 'periodo'}`);
             return;
         }
 

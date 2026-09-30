@@ -1,40 +1,55 @@
 import type { IPeriodsRepository } from "../domain/IPeriodRepository.js";
 import type { CreatePeriod, Period, UpdatePeriod } from "../domain/Period.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { UnauthorizedError, ValidationError, ConflictError } from "../../errors/domain/CustomErrors.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export class PeriodService {
-    constructor( private periodsRepository: IPeriodsRepository ) {}
+    constructor(private periodsRepository: IPeriodsRepository) {}
 
     async getPeriods(userSchoolId: string): Promise<Period[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        if (!userSchoolId) throw new UnauthorizedError("Falta el ID del colegio.");
 
         return await this.periodsRepository.getPeriods(userSchoolId);
     }
 
-    async createPeriod(periodName: string, startDate: string, endDate: string, userId: string, userRole: string, userSchoolId: string): Promise<CreatePeriod> {
-        if (!periodName || !startDate || !endDate) throw new ValidationError("Todos los campos deben estar llenos");
+    async createPeriod(periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void> {
+        if (!periodName || !startDate || !endDate) throw new ValidationError("Todos los campos son obligatorios.");
         if (endDate <= startDate) {
-            throw new ValidationError("La fecha de inicio debe ser menor a la de fin");
+            throw new ValidationError("La fecha de finalización debe ser posterior a la fecha de inicio.");
         }
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
+            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
+        }
+        const hasOverlap = await this.periodsRepository.checkPeriodOverlap(authUser.userSchoolId, startDate, endDate);
+        if (hasOverlap) {
+            throw new ConflictError("Las fechas elegidas se cruzan con un periodo académico ya existente.");
+        }
 
-        return await this.periodsRepository.createPeriod(periodName, startDate, endDate, userId, userRole, userSchoolId);
+        return await this.periodsRepository.createPeriod(periodName, startDate, endDate, authUser);
     }
 
+    async updatePeriod(periodId: string, periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void> {
+        if (!periodId) throw new ValidationError("El ID del periodo es obligatorio.");
+        if (!periodName || !startDate || !endDate) throw new ValidationError("Todos los campos son obligatorios.");
+        if (endDate <= startDate) throw new ValidationError("La fecha de finalización debe ser posterior a la fecha de inicio.");
+        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
+            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
+        }
 
-    async updatePeriod(periodId: string, periodName: string, startDate: string, endDate: string, userId: string, userRole: string, userSchoolId: string): Promise<UpdatePeriod> {
-        if (!periodId) throw new ValidationError("El ID del periodo es obligatorio");
-        if (!periodName || !startDate || !endDate) throw new ValidationError("Todos los campos deben estar llenos");
-        if (endDate <= startDate) throw new ValidationError("La fecha de inicio debe ser menor a la de fin");
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        const hasOverlap = await this.periodsRepository.checkPeriodOverlap(authUser.userSchoolId, startDate, endDate, periodId);
+        if (hasOverlap) {
+            throw new ConflictError("Las nuevas fechas se cruzan con otro periodo académico existente.");
+        }
 
-        return await this.periodsRepository.updatePeriod(periodId, periodName, startDate, endDate, userId, userRole, userSchoolId);
+        return await this.periodsRepository.updatePeriod(periodId, periodName, startDate, endDate, authUser);
     }
 
-    async deletePeriod(periodId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!periodId) throw new ValidationError("El ID del periodo es obligatorio");
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async deletePeriod(periodId: string, authUser: AuthUser): Promise<void> {
+        if (!periodId) throw new ValidationError("El ID del periodo es obligatorio.");
+        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
+            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
+        }
 
-        await this.periodsRepository.deletePeriod(periodId, userId, userRole, userSchoolId);
+        await this.periodsRepository.deletePeriod(periodId, authUser);
     }
 }

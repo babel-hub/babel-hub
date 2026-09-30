@@ -8,12 +8,14 @@ import { ParentService } from "../application/ParentService.js";
 import { ParentControllers } from "./ParentControllers.js";
 import { PostgresGradeRepository } from "../../grade/infrastructure/PostgresGradeRepository.js";
 import { PostgresAttendanceRepository } from "../../attendance/infrastructure/PostgresAttendanceRepository.js";
+import { PostgresCourseBreakRepository } from "../../course-break/infrastructure/PostgresCourseBreak.js";
 
 const parentRepository = new PostgresParentRepository();
 const gradeRepository = new PostgresGradeRepository();
 const attendanceRepository = new PostgresAttendanceRepository();
+const courseBreakRepository = new PostgresCourseBreakRepository();
 
-const service = new ParentService(parentRepository, gradeRepository, attendanceRepository);
+const service = new ParentService(parentRepository, gradeRepository, attendanceRepository, courseBreakRepository);
 const controllers = new ParentControllers(service);
 
 const router: Router = Router();

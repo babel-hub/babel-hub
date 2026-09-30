@@ -1,16 +1,17 @@
 import type { IAreaRepository } from "../domain/IAreaRepository.js";
-import type {Area, AreaDetails} from "../domain/Areas.types.js"
+import type { Area, AreaDetails } from "../domain/Areas.types.js"
 import { createAuditLog } from "../../../services/audit.service.js";
 import { pool } from "../../../db/index.js";
 import { NotFoundError, ConflictError } from "../../errors/domain/CustomErrors.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export class PostgresAreaRepository implements IAreaRepository  {
     async getAreas(schoolId: string): Promise<Area[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                SELECT * FROM area 
-                WHERE school_id = $1 
+                SELECT * FROM area
+                WHERE school_id = $1
                 ORDER BY name ASC
             `, [schoolId]);
 
@@ -41,9 +42,9 @@ export class PostgresAreaRepository implements IAreaRepository  {
                     g.id AS grading_template_id,
                     g.name AS grading_template_name
                 FROM subject s
-                JOIN grading_template g ON s.grading_template_id = g.id
+                         JOIN grading_template g ON s.grading_template_id = g.id
                 WHERE s.area_id = $1;
-            `, [id])
+            `, [id]);
 
             return {
                 area: area.rows[0],
@@ -54,7 +55,8 @@ export class PostgresAreaRepository implements IAreaRepository  {
         }
     }
 
-    async insertArea(name: string, userId: string, userRole: string, userSchoolId: string): Promise<Area> {
+    async insertArea(name: string, authUser: AuthUser): Promise<Area> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query(`BEGIN`);
@@ -62,7 +64,7 @@ export class PostgresAreaRepository implements IAreaRepository  {
             const result = await client.query(`
                 INSERT INTO area (school_id, name)
                 VALUES ($1, $2)
-                RETURNING id, name
+                    RETURNING id, name
             `, [userSchoolId, name]);
 
             const area = result.rows[0];
@@ -73,11 +75,11 @@ export class PostgresAreaRepository implements IAreaRepository  {
                 action: "CREATE_AREA",
                 schoolId: userSchoolId,
                 metadata: { areaId: area.id, name: area.name }
-            })
+            });
 
             await client.query(`COMMIT`);
 
-            return result.rows[0];
+            return area;
         } catch (error) {
             await client.query(`ROLLBACK`);
             throw error;
@@ -86,19 +88,20 @@ export class PostgresAreaRepository implements IAreaRepository  {
         }
     }
 
-    async updateArea(id: string, newName: string, userId: string, userRole: string, userSchoolId: string): Promise<Area> {
+    async updateArea(id: string, newName: string, authUser: AuthUser): Promise<Area> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const result = await client.query(`
                 UPDATE area
-                SET name = $1 
+                SET name = $1
                 WHERE id = $2 AND school_id = $3
-                RETURNING id, name
+                    RETURNING id, name
             `, [newName, id, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError(`No fue posible actualizar el area ${id}`);
+            if (result.rowCount === 0) throw new NotFoundError(`No fue posible actualizar el área, o no pertenece a este colegio.`);
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -119,7 +122,8 @@ export class PostgresAreaRepository implements IAreaRepository  {
         }
     }
 
-    async deleteArea(id: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async deleteArea(id: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -127,10 +131,10 @@ export class PostgresAreaRepository implements IAreaRepository  {
             const result = await client.query(`
                 DELETE FROM area
                 WHERE id = $1 AND school_id = $2
-                RETURNING id, name
+                    RETURNING id, name
             `, [id, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError(`No fue posible eliminar el area ${id}`);
+            if (result.rowCount === 0) throw new NotFoundError(`No fue posible eliminar el área, o no pertenece a este colegio.`);
 
             const area = result.rows[0];
 
@@ -143,12 +147,10 @@ export class PostgresAreaRepository implements IAreaRepository  {
             });
 
             await client.query('COMMIT');
-
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
 
-            if (error.code === '23503') throw new ConflictError(" El area tiene asignaturas activas");
+            if (error.code === '23503') throw new ConflictError("No se puede eliminar el área porque tiene asignaturas vinculadas.");
 
             throw error;
         } finally {

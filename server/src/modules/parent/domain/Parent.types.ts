@@ -1,3 +1,5 @@
+import type { DailyAttendance } from "../../attendance/domain/Attendance.types.js";
+
 export type RelationTypes = 'father' | 'mother' | 'other';
 
 interface LinkedStudent {
@@ -43,4 +45,14 @@ export interface StudentParentRow {
     second_last_name: string | null;
     phone: string | null;
     relationship_type: 'father' | 'mother' | 'other';
+}
+
+export interface DailyScheduleWithBreaks {
+    classes: DailyAttendance[];
+    breaks: {
+        id: string;
+        name: string;
+        start_time: string;
+        end_time: string;
+    }[];
 }

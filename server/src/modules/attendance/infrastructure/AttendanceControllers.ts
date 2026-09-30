@@ -37,14 +37,16 @@ export class AttendanceController {
 
     bulkUpsertAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
             const classId = request.params.classId as string;
             const { date, records } = request.body;
 
-            await this.attendanceService.bulkUpsertAttendance(classId, records, date, userId, userRole, userSchoolId);
+            await this.attendanceService.bulkUpsertAttendance(classId, records, date, authUser);
             response.status(201).json({ message: "Successfully upserted attendance" });
         } catch (error : any) {
             next(error)
@@ -69,11 +71,13 @@ export class AttendanceController {
 
     getCalendarAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const schoolId = request.user!.schoolId as string;
+
             const studentId = request.query.studentId as string;
             const startDate = request.query.startDate as string;
             const endDate = request.query.endDate as string;
 
-            const record = await this.attendanceService.getCalendarAttendance(studentId, startDate, endDate);
+            const record = await this.attendanceService.getCalendarAttendance(studentId, schoolId, startDate, endDate);
             response.status(200).json({ attendanceByCalendar: record });
         } catch (error : any) {
             next(error)
@@ -82,13 +86,15 @@ export class AttendanceController {
 
     getClassAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const schoolId = request.user!.schoolId as string;
+
             const courseId = request.params.courseId as string;
             const classId = request.params.classId as string;
 
             const startDate = request.query.startDate as string;
             const endDate = request.query.endDate as string;
 
-            const record = await this.attendanceService.getClassAttendance(courseId, classId, startDate, endDate);
+            const record = await this.attendanceService.getClassAttendance(courseId, classId, schoolId, startDate, endDate);
             response.status(200).json({ attendanceClass: record });
         } catch (error : any) {
             next(error)

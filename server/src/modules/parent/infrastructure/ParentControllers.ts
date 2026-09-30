@@ -82,6 +82,7 @@ export class ParentControllers {
 
     getStudentDailyAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const courseId = request.query.courseId as string;
             const studentId = request.params.studentId as string;
             const date = request.query.date as string;
 
@@ -89,7 +90,7 @@ export class ParentControllers {
             const userSchoolId = request.user!.schoolId as string;
             const userRole = request.user!.role as string;
 
-            const attendance = await this.parentService.getStudentDailyAttendance(studentId, date, { userId, userRole, userSchoolId });
+            const attendance = await this.parentService.getStudentDailyAttendance(courseId, studentId, date, { userId, userRole, userSchoolId });
             response.status(200).json({ attendance });
         } catch (error : any) {
             next(error);

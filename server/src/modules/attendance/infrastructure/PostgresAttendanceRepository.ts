@@ -5,44 +5,20 @@ import type {
     AttendanceSummary,
     CalendarAttendance,
     CourseAttendance,
-    DailyAttendance, StudentAttendanceRow
+    DailyAttendance
 } from "../domain/Attendance.types.js";
 import type { IAttendanceRepository } from "../domain/IAttendanceRepository.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { NotFoundError } from "../../errors/domain/CustomErrors.js";
-import type {AuthUser} from "../../shared/domain/Shared.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export class PostgresAttendanceRepository implements IAttendanceRepository {
-    async getStudentProfileAttendance(studentId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {
-        const client = await pool.connect();
-        try {
-            const attendance = await client.query(`
-                WITH FirstDailyAttendance AS (
-                    SELECT DISTINCT ON (date::DATE) status
-                FROM attendance
-                WHERE student_id = $1
-                  AND date >= $2::DATE
-                  AND date <= $3::DATE
-                ORDER BY date::DATE, date ASC
-                    )
-                SELECT status, COUNT(*) as count
-                FROM FirstDailyAttendance
-                GROUP BY status
-            `, [studentId, startDate, endDate]);
-
-            return attendance.rows;
-        } finally {
-            client.release();
-        }
-    }
-
-
     async getDailyClassAttendance(classId: string, schoolId: string, date: string, isActive: boolean): Promise<ClassAttendance[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                SELECT 
+                SELECT
                     s.id as student_id,
                     p.first_name,
                     p.middle_name,
@@ -63,11 +39,12 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
             client.release();
         }
     }
+
     async getDailyCourseAttendance(courseId: string, schoolId: string, date: string, isActive: boolean): Promise<CourseDailyAttendance[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                SELECT 
+                SELECT
                     s.id as student_id,
                     CASE
                         WHEN bool_or(a.status = 'present') THEN 'present'
@@ -86,26 +63,25 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
 
             return result.rows;
         } finally {
-            client.release()
+            client.release();
         }
-
     }
-    async bulkUpsertAttendance(classId: string, records: BulkRecords[], date: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+
+    async bulkUpsertAttendance(classId: string, records: BulkRecords[], date: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+
         try {
             await client.query('BEGIN');
 
             const classCheck = await client.query(`
-                SELECT 
-                    c.id 
+                SELECT c.id
                 FROM class c
                 JOIN course co ON c.course_id = co.id
                 WHERE c.id = $1 AND co.school_id = $2
             `, [classId, userSchoolId]);
 
-            if (classCheck.rowCount === 0) {
-                throw new NotFoundError("No fue posible guardar la asistencia");
-            }
+            if (classCheck.rowCount === 0) throw new NotFoundError("La clase no existe o no pertenece a este colegio.");
 
             const studentIds: string[] = records.map(r => r.studentId);
             const statuses: string[] = records.map(r => r.status);
@@ -128,7 +104,6 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
             });
 
             await client.query('COMMIT');
-            return;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
@@ -137,16 +112,15 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-
     async getAttendanceSummary(schoolId: string, today: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
                 WITH FirstRecordPerDay AS (
                     SELECT DISTINCT ON (a.student_id, DATE(a.date))
-                    a.student_id,
-                    DATE(a.date) as record_date,
-                    a.status
+                        a.student_id,
+                        DATE(a.date) as record_date,
+                        a.status
                     FROM attendance a
                     JOIN student s ON a.student_id = s.id
                     JOIN profile p ON s.profile_id = p.id
@@ -159,15 +133,15 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                         SELECT student_id
                         FROM FirstRecordPerDay
                         WHERE record_date = DATE($5)
-                          AND status IN ('absent', 'late')
-                            ),
+                        AND status IN ('absent', 'late')
+                    ),
                     RankedDays AS (
                         SELECT
                             fr.student_id,
                             fr.status,
                             ROW_NUMBER() OVER(PARTITION BY fr.student_id ORDER BY fr.record_date DESC) as rn
                         FROM FirstRecordPerDay fr
-                            JOIN TodayProblematic tp ON fr.student_id = tp.student_id
+                        JOIN TodayProblematic tp ON fr.student_id = tp.student_id
                         WHERE fr.record_date <= DATE($5)
                     ),
                     AlertStatus AS (
@@ -177,7 +151,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                         FROM RankedDays
                         WHERE rn <= 2
                         GROUP BY student_id
-                )
+                    )
                 SELECT
                     c.id as course_id,
                     c.name as course_name,
@@ -190,11 +164,11 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     COUNT(fr.record_date) FILTER (WHERE fr.status = 'late') AS total_lates,
                     al.is_red_alert
                 FROM TodayProblematic tp
-                         JOIN AlertStatus al ON tp.student_id = al.student_id
-                         JOIN student s ON tp.student_id = s.id
-                         JOIN profile p ON s.profile_id = p.id
-                         JOIN course c ON s.course_id = c.id
-                         JOIN FirstRecordPerDay fr ON s.id = fr.student_id
+                JOIN AlertStatus al ON tp.student_id = al.student_id
+                JOIN student s ON tp.student_id = s.id
+                JOIN profile p ON s.profile_id = p.id
+                JOIN course c ON s.course_id = c.id
+                JOIN FirstRecordPerDay fr ON s.id = fr.student_id
                 GROUP BY
                     c.id, c.name, s.id, p.first_name, p.middle_name, p.first_last_name, p.second_last_name, al.is_red_alert
                 ORDER BY c.name::integer DESC, total_absences DESC, p.first_last_name ASC;
@@ -206,33 +180,40 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async getStudentDailyAttendance(studentId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]> {
+    async getStudentDailyAttendance(studentId: string, schoolId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]> {
         const client = await pool.connect();
         try {
             const check = await client.query(`
                 SELECT 1
                 FROM parent_student ps
                 JOIN parent p ON ps.parent_id = p.id
-                WHERE p.profile_id = $1 AND ps.student_id = $2
-                LIMIT 1;
-            `, [authUser.userId, studentId]);
+                JOIN profile prof ON p.profile_id = prof.id
+                WHERE p.profile_id = $1 AND ps.student_id = $2 AND prof.school_id = $3
+                    LIMIT 1;
+            `, [authUser.userId, studentId, schoolId]);
 
-            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a la información de este estudiante.");
 
             const query = `
                 SELECT
                     c.id AS class_id,
                     sub.name AS class_name,
+                    cs.start_time,
+                    cs.end_time,
+                    cs.room,
                     COALESCE(a.status, 'no_data') AS status,
                     a.created_at AS recorded_at
                 FROM student s
                 JOIN class c ON s.course_id = c.course_id
+                JOIN class_schedule cs ON c.id = cs.class_id
                 JOIN subject sub ON c.subject_id = sub.id
-                JOIN attendance a ON a.class_id = c.id
-                AND a.student_id = s.id
-                AND a.date = $1
+                LEFT JOIN attendance a
+                    ON a.class_id = c.id
+                    AND a.student_id = s.id
+                    AND a.date = $1
                 WHERE s.id = $2
-                ORDER BY sub.name ASC;
+                AND cs.day_of_week = EXTRACT(ISODOW FROM $1::DATE)
+                ORDER BY cs.start_time ASC;
             `;
 
             const result = await client.query(query, [date, studentId]);
@@ -242,9 +223,17 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async getCalendarAttendance(studentId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {
+    async getCalendarAttendance(studentId: string, schoolId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {
         const client = await pool.connect();
         try {
+            const check = await client.query(`
+                SELECT 1 FROM student s
+                JOIN profile p ON s.profile_id = p.id
+                WHERE s.id = $1 AND p.school_id = $2
+            `, [studentId, schoolId]);
+
+            if (check.rowCount === 0) throw new NotFoundError("El estudiante no existe o no pertenece a este colegio.");
+
             const result = await client.query(`
                 SELECT 
                     d.calendar_date::date AS DATE,
@@ -269,28 +258,28 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
 
             return result.rows;
         } finally {
-            client.release()
+            client.release();
         }
     }
 
-    async getClassAttendance(courseId: string, classId: string, startDate: string, endDate: string): Promise<CourseAttendance[]> {
+    async getClassAttendance(courseId: string, classId: string, schoolId: string, startDate: string, endDate: string): Promise<CourseAttendance[]> {
         const client = await pool.connect();
         try {
             const result = await client.query(`
                 WITH CalendarDates AS (
-                    SELECT generate_series($1::date, $2::date, '1 day'::interval )::date AS calendar_date  
+                    SELECT generate_series($1::date, $2::date, '1 day'::interval )::date AS calendar_date
                 ),
-                CourseStudents AS (
-                    SELECT 
-                        s.id as student_id,
-                        p.first_name as student_first_name,
-                        p.middle_name as student_middle_name,
-                        p.first_last_name as student_first_last_name,
-                        p.second_last_name as student_second_last_name
-                    FROM student s
-                    JOIN profile p ON s.profile_id = p.id
-                    WHERE s.course_id = $3
-                )
+                     CourseStudents AS (
+                         SELECT
+                             s.id as student_id,
+                             p.first_name as student_first_name,
+                             p.middle_name as student_middle_name,
+                             p.first_last_name as student_first_last_name,
+                             p.second_last_name as student_second_last_name
+                         FROM student s
+                                  JOIN profile p ON s.profile_id = p.id
+                         WHERE s.course_id = $3 AND p.school_id = $5
+                     )
                 SELECT
                     cs.student_id,
                     cs.student_first_name,
@@ -300,18 +289,17 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     cd.calendar_date AS date,
                     COALESCE(a.status, 'no_data') AS status
                 FROM CourseStudents cs
-                CROSS JOIN CalendarDates cd
-                LEFT JOIN attendance a
-                    ON a.student_id = cs.student_id
+                    CROSS JOIN CalendarDates cd
+                    LEFT JOIN attendance a
+                ON a.student_id = cs.student_id
                     AND a.date = cd.calendar_date
                     AND a.class_id = $4
                 ORDER BY cs.student_first_last_name ASC, cd.calendar_date ASC;
-            `, [startDate, endDate, courseId, classId]);
+            `, [startDate, endDate, courseId, classId, schoolId]);
 
             return result.rows;
         } finally {
-            client.release()
+            client.release();
         }
     }
-
 }

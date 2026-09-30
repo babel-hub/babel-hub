@@ -3,7 +3,7 @@ import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.j
 import type { Response, NextFunction } from 'express';
 
 export class PeriodControllers {
-    constructor( private readonly periodService: PeriodService ) {}
+    constructor(private readonly periodService: PeriodService) {}
 
     getPeriods = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
@@ -11,7 +11,7 @@ export class PeriodControllers {
 
             const records = await this.periodService.getPeriods(userSchoolId);
             response.status(200).json({ periods: records });
-        } catch (error : any) {
+        } catch (error: any) {
             next(error);
         }
     }
@@ -20,13 +20,15 @@ export class PeriodControllers {
         try {
             const { name, startDate, endDate } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
-            const record = await this.periodService.createPeriod(name, startDate, endDate, userId, userRole, userSchoolId);
-            response.status(201).json({ period: record });
-        } catch (error : any) {
+            const record = await this.periodService.createPeriod(name, startDate, endDate, authUser);
+            response.status(201).send();
+        } catch (error: any) {
             next(error);
         }
     }
@@ -36,13 +38,15 @@ export class PeriodControllers {
             const id = request.params.id as string;
             const { name, startDate, endDate } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
-            const record = await this.periodService.updatePeriod(id, name, startDate, endDate, userId, userRole, userSchoolId);
-            response.status(200).json({ period: record });
-        } catch (error : any) {
+            const record = await this.periodService.updatePeriod(id, name, startDate, endDate, authUser);
+            response.status(204).send();
+        } catch (error: any) {
             next(error);
         }
     }
@@ -51,13 +55,15 @@ export class PeriodControllers {
         try {
             const id = request.params.id as string;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const authUser = {
+                userId: request.user!.userId as string,
+                userRole: request.user!.role as string,
+                userSchoolId: request.user!.schoolId as string,
+            };
 
-            await this.periodService.deletePeriod(id, userId, userRole, userSchoolId);
+            await this.periodService.deletePeriod(id, authUser);
             response.status(204).send();
-        } catch (error : any) {
+        } catch (error: any) {
             next(error);
         }
     }

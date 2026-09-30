@@ -1,8 +1,21 @@
-export interface DailyAttendance {
+interface DailyAttendance {
     class_id: string;
     class_name: string;
+    start_time: string;
+    end_time: string;
+    room: string;
     status: 'no_data' | 'absent' | 'late' | 'excused' | 'present';
-    recorded_at: string;
+    recorded_at: string | null;
+}
+
+export interface DailyScheduleWithBreaks {
+    classes: DailyAttendance[];
+    breaks: {
+        id: string;
+        name: string;
+        start_time: string;
+        end_time: string;
+    }[];
 }
 
 export interface StudentDailyGrade {

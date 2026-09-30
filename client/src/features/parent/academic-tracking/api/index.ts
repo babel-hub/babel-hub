@@ -1,10 +1,13 @@
 import api from "../../../../api/client.ts";
-import type {DailyAttendance, StudentDailyGrade, SubjectAccumulated} from "../types/types.ts";
+import type {DailyScheduleWithBreaks, StudentDailyGrade, SubjectAccumulated} from "../types/types.ts";
 
-export const getStudentDailyAttendance = async (studentId: string, date: string, signal?: AbortSignal): Promise<DailyAttendance[]> => {
+export const getStudentDailyAttendance = async (courseId: string, studentId: string, date: string, signal?: AbortSignal): Promise<DailyScheduleWithBreaks> => {
     const response = await api.get(`parents/student/${studentId}/daily/attendance`, {
-        params: { date },
-        signal
+        signal,
+        params: {
+            date,
+            courseId,
+        }
     });
     return response.data.attendance;
 }

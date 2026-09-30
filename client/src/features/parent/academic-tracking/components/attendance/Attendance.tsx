@@ -2,25 +2,60 @@ import { useAttendance } from "../../hooks/attendance/useAttendance.ts";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { GoClock, GoCheckCircle, GoXCircle, GoDash } from "react-icons/go";
 import { formatDayLabel } from "../../../../utils/utils.ts";
-import {NoResults} from "../../../../../components/ui/blocks/NoResults.tsx";
+import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
+import type { ParentStudent } from "../../../shared/types/types.ts";
 
 interface AttendanceProps {
-    studentId: string;
+    student: ParentStudent;
     date: string;
 }
 
-export function Attendance({ studentId, date }: AttendanceProps) {
-    const { loading, attendance } = useAttendance(studentId, date);
+interface DailyAttendanceRecord {
+    class_id: string;
+    class_name: string;
+    start_time: string;
+    end_time: string;
+    room: string;
+    status: string;
+    recorded_at: string | null;
+}
+
+interface ClassBlock extends DailyAttendanceRecord {
+    type: 'class';
+}
+
+interface BreakBlock {
+    type: 'break';
+    id: string;
+    name: string;
+    start_time: string;
+    end_time: string;
+}
+
+type TimelineItem = ClassBlock | BreakBlock;
+
+export function Attendance({ student, date }: AttendanceProps) {
+    const { loading, attendance } = useAttendance(student.course_id, student.student_id, date);
 
     if (loading) return <LoadingContent title="" />;
 
-    const presentCount = attendance?.filter((a: any) => a.status === 'present').length || 0;
-    const lateCount = attendance?.filter((a: any) => a.status === 'late').length || 0;
-    const absentCount = attendance?.filter((a: any) => a.status === 'absent').length || 0;
+    const classes = attendance?.classes || [];
+    const breaks = attendance?.breaks || [];
 
-    const firstAttendance = attendance
-        ?.filter((a: any) => a.recorded_at && a.status !== 'no_data')
-        .sort((a: any, b: any) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime())[0];
+    const timelineItems: TimelineItem[] = [
+        ...classes.map((c): ClassBlock => ({ ...c, type: 'class' })),
+        ...breaks.map((b): BreakBlock => ({ ...b, type: 'break' })),
+    ].sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+    const attendanceRecords: DailyAttendanceRecord[] = classes || [];
+
+    const presentCount = attendanceRecords.filter((a) => a.status === 'present').length || 0;
+    const lateCount = attendanceRecords.filter((a) => a.status === 'late').length || 0;
+    const absentCount = attendanceRecords.filter((a) => a.status === 'absent').length || 0;
+
+    const firstAttendance = attendanceRecords
+        .filter((a) => a.recorded_at && a.status !== 'no_data')
+        .sort((a, b) => new Date(a.recorded_at!).getTime() - new Date(b.recorded_at!).getTime())[0];
 
     const generalStatus = firstAttendance?.status || 'no_data';
 
@@ -36,6 +71,14 @@ export function Attendance({ studentId, date }: AttendanceProps) {
             case 'absent': return { text: 'No asistió', color: 'text-red-500', bg: 'bg-red-50', icon: <GoXCircle className="size-8 lg:size-12 text-red-500" />, badge: 'bg-red-100 text-red-700' };
             default: return { text: 'Sin registro', color: 'text-gray-400', bg: 'bg-gray-50', icon: <GoDash className="size-8 text-gray-400" />, badge: 'bg-gray-100 text-gray-600' };
         }
+    };
+
+    const formatScheduleTime = (timeStr: string) => {
+        if (!timeStr) return '';
+        const [hours, minutes] = timeStr.split(':');
+        const dateObj = new Date();
+        dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        return dateObj.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
     };
 
     const generalUI = getStatusUI(generalStatus);
@@ -106,37 +149,55 @@ export function Attendance({ studentId, date }: AttendanceProps) {
                 </div>
 
                 <div className="w-full mt-5">
-                    <h3 className="font-bold text-lg text-custom-black mb-4">Asistencia por bloque</h3>
+                    <h3 className="font-bold text-lg text-custom-black mb-4">Horario del estudiante</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-primary-shadow">
-                                <tr className="text-sm text-primary-darker">
-                                    <th className="py-3 rounded-tl-xl px-4 font-medium">Bloque</th>
-                                    <th className="py-3 px-4 font-medium">Materia</th>
-                                    <th className="py-3 px-4 font-medium">Estado</th>
-                                    <th className="py-3 rounded-tr-xl px-4 font-medium">Detalle</th>
-                                </tr>
+                            <tr className="text-sm text-primary-darker">
+                                <th className="py-3 rounded-tl-xl px-4 font-medium min-w-[120px]">Horario</th>
+                                <th className="py-3 px-4 font-medium">Actividad / Salón</th>
+                                <th className="py-3 px-4 font-medium">Estado</th>
+                                <th className="py-3 rounded-tr-xl px-4 font-medium">Detalle</th>
+                            </tr>
                             </thead>
                             <tbody>
                             {
-                                (attendance?.length ?? 0) > 0 ? (
-                                    attendance?.map((block: any, index: number) => {
-                                        const ui = getStatusUI(block.status);
-                                        const time = block.recorded_at
-                                            ? new Date(block.recorded_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
+                                timelineItems.length > 0 ? (
+                                    timelineItems.map((item) => {
+                                        if (item.type === 'break') {
+                                            return (
+                                                <tr key={`break-${item.id}`} className="bg-primary-shadow">
+                                                    <td colSpan={4} className="py-3 px-4 text-center">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-primary-darker px-3 py-1">
+                                                            {item.name}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+
+                                        const ui = getStatusUI(item.status);
+                                        const time = item.recorded_at
+                                            ? new Date(item.recorded_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
                                             : '—';
+
                                         return (
-                                            <tr key={block.class_id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                                <td className="py-4 px-4 font-bold text-custom-black">{index + 1}</td>
-                                                <td className="py-4 px-4 text-gray-700 capitalize font-medium">{block.class_name}</td>
+                                            <tr key={`class-${item.class_id}`} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                                <td className="py-4 px-4 font-medium text-custom-black text-sm whitespace-nowrap">
+                                                    {formatScheduleTime(item.start_time)} - {formatScheduleTime(item.end_time)}
+                                                </td>
                                                 <td className="py-4 px-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold ${ui.badge}`}>
-                                                {ui.icon && <span className="[&>svg]:size-3">{ui.icon}</span>}
-                                                {ui.text}
-                                            </span>
+                                                    <p className="text-gray-700 capitalize font-medium">{item.class_name}</p>
+                                                    <p className="text-xs text-gray-400 font-medium">Salón: {item.room}</p>
+                                                </td>
+                                                <td className="py-4 px-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold ${ui.badge}`}>
+                                                        {ui.icon && <span className="[&>svg]:size-3">{ui.icon}</span>}
+                                                        {ui.text}
+                                                    </span>
                                                 </td>
                                                 <td className="py-4 px-4 text-sm text-gray-500">
-                                                    {block.status === 'late' ? `Llegada: ${time}` : '—'}
+                                                    {item.status === 'late' ? `Llegada: ${time}` : '—'}
                                                 </td>
                                             </tr>
                                         );
@@ -145,7 +206,7 @@ export function Attendance({ studentId, date }: AttendanceProps) {
                                     <tr>
                                         <td colSpan={4} className="pt-3">
                                             <div className="flex justify-center w-full">
-                                                <NoResults title="No se encontraron asistencias" />
+                                                <NoResults title="No hay actividades programadas para este día" />
                                             </div>
                                         </td>
                                     </tr>

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authorizedRoles } from "../../../middleware/role.middleware.js";
 import { authMiddleware } from "../../../middleware/auth.middleware.js";
-import {strictLimiter} from "../../../middleware/ratelimit.middleware.js";
+import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 
 import { AttendanceService } from "../application/AttendanceService.js";
 import { PostgresAttendanceRepository } from "./PostgresAttendanceRepository.js";

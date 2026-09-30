@@ -48,7 +48,7 @@ export default function AcademicTracking() {
             onButtonDateChange={setTabDate}
         >
             {tab === 'grades' && (<Grades studentId={selectedStudentId} date={tabDate} periodId={selectedPeriodId} />)}
-            {tab === 'attendance' && (<Attendance studentId={selectedStudentId} date={tabDate} />)}
+            {tab === 'attendance' && (<Attendance student={activeStudent} date={tabDate} />)}
             {tab === 'observations' && (<Observations />)}
         </AcademicTrackingLayout>
     )

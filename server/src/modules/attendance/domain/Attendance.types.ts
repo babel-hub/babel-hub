@@ -56,6 +56,9 @@ export interface BulkRecords {
 export interface DailyAttendance {
     class_id: string;
     class_name: string;
+    start_time: string;
+    end_time: string;
+    room: string;
     status: Status;
-    recorded_at: string;
+    recorded_at: string | null;
 }
