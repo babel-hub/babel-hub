@@ -16,3 +16,11 @@ export function isToday(dateStr: string): boolean {
     const today = formatterDate.format(new Date());
     return dateStr === today;
 }
+
+export const formatScheduleTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const dateObj = new Date();
+    dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+    return dateObj.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
+};

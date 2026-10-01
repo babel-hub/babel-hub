@@ -8,16 +8,26 @@ interface DailyAttendance {
     recorded_at: string | null;
 }
 
-export interface DailyScheduleWithBreaks {
-    classes: DailyAttendance[];
-    breaks: {
-        id: string;
-        name: string;
-        start_time: string;
-        end_time: string;
-    }[];
+interface CourseBreakByDate {
+    id: string;
+    name: string;
+    start_time: string;
+    end_time: string;
 }
 
+export interface TimelineClass extends DailyAttendance {
+    type: "class";
+}
+
+interface TimelineBreak extends CourseBreakByDate {
+    type: "break";
+}
+
+export type TimelineItem = TimelineClass | TimelineBreak;
+
+export interface DailyScheduleWithBreaks {
+    timeline: TimelineItem[];
+}
 export interface StudentDailyGrade {
     class_id: string;
     subject_name: string;

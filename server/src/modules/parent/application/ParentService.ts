@@ -1,7 +1,13 @@
 import type { IParentRepository } from "../domain/IParentRepository.js";
 import type { AuthUser, ParentCredentials } from "../../shared/domain/Shared.types.js";
-import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type {DailyScheduleWithBreaks, Parent, ParentStudent, RelationTypes} from "../domain/Parent.types.js";
+import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {
+    DailyScheduleWithBreaks,
+    Parent,
+    ParentStudent,
+    RelationTypes,
+    TimelineItem
+} from "../domain/Parent.types.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
 import type { StudentDailyGrade, StudentGrade, SubjectAccumulated } from "../../grade/domain/Grade.types.js";
@@ -52,18 +58,24 @@ export class ParentService {
     }
 
     async getStudentDailyAttendance(courseId: string, studentId: string, date: string, authUser: AuthUser): Promise<DailyScheduleWithBreaks> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario");
-        if (!studentId || !courseId) throw new ValidationError("El id del estudiante o del curso no estan siendo enviados");
-        if (!date) throw new ValidationError("El campo de las fecha no esta siendo enviado");
+        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) {
+            throw new UnauthorizedError("Faltan credenciales del usuario");
+        }
+        if (!studentId || !courseId) throw new ValidationError("El id del estudiante o del curso no están siendo enviados");
+        if (!date) throw new ValidationError("El campo de la fecha no está siendo enviado");
 
         const [classes, breaks] = await Promise.all([
-            await this.attendanceRepository.getStudentDailyAttendance(studentId, authUser.userSchoolId, date, authUser),
-            await this.courseBreakRepository.getCourseBreaksByDate(courseId, date, authUser.userSchoolId)
-        ])
+            this.attendanceRepository.getStudentDailyAttendance(studentId, authUser.userSchoolId, date, authUser),
+            this.courseBreakRepository.getCourseBreaksByDate(courseId, date, authUser.userSchoolId)
+        ]);
+
+        const timelineItems: TimelineItem[] = [
+            ...classes.map((c) => ({ ...c, type: "class" as const })),
+            ...breaks.map((b) => ({ ...b, type: "break" as const })),
+        ].sort((a, b) => a.start_time.localeCompare(b.start_time));
 
         return {
-            classes: classes,
-            breaks: breaks
+            timeline: timelineItems
         };
     }
 

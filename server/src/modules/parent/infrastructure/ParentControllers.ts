@@ -90,8 +90,8 @@ export class ParentControllers {
             const userSchoolId = request.user!.schoolId as string;
             const userRole = request.user!.role as string;
 
-            const attendance = await this.parentService.getStudentDailyAttendance(courseId, studentId, date, { userId, userRole, userSchoolId });
-            response.status(200).json({ attendance });
+            const timeline = await this.parentService.getStudentDailyAttendance(courseId, studentId, date, { userId, userRole, userSchoolId });
+            response.status(200).json({ timeline });
         } catch (error : any) {
             next(error);
         }

@@ -4,50 +4,31 @@ import { GoClock, GoCheckCircle, GoXCircle, GoDash } from "react-icons/go";
 import { formatDayLabel } from "../../../../utils/utils.ts";
 import { NoResults } from "../../../../../components/ui/blocks/NoResults.tsx";
 import type { ParentStudent } from "../../../shared/types/types.ts";
+import type { TimelineClass, TimelineItem } from "../../types/types.ts";
+import { formatScheduleTime } from "../../utils/utils.ts";
 
 interface AttendanceProps {
     student: ParentStudent;
     date: string;
 }
 
-interface DailyAttendanceRecord {
-    class_id: string;
-    class_name: string;
-    start_time: string;
-    end_time: string;
-    room: string;
-    status: string;
-    recorded_at: string | null;
-}
-
-interface ClassBlock extends DailyAttendanceRecord {
-    type: 'class';
-}
-
-interface BreakBlock {
-    type: 'break';
-    id: string;
-    name: string;
-    start_time: string;
-    end_time: string;
-}
-
-type TimelineItem = ClassBlock | BreakBlock;
+const getStatusUI = (status: string) => {
+    switch (status) {
+        case 'present': return { text: 'Asistió', color: 'text-green-500', bg: 'bg-green-50', icon: <GoCheckCircle className="size-8 lg:size-12 text-green-500" />, badge: 'bg-green-100 text-green-700' };
+        case 'excused': return { text: 'Excusado', color: 'text-blue-500', bg: 'bg-blue-50', icon: <GoCheckCircle className="size-8 lg:size-12 text-blue-500" />, badge: 'bg-blue-100 text-blue-700' };
+        case 'late': return { text: 'Llegó tarde', color: 'text-yellow-500', bg: 'bg-yellow-50', icon: <GoClock className="size-8 lg:size-12 text-yellow-500" />, badge: 'bg-yellow-100 text-yellow-700' };
+        case 'absent': return { text: 'No asistió', color: 'text-red-500', bg: 'bg-red-50', icon: <GoXCircle className="size-8 lg:size-12 text-red-500" />, badge: 'bg-red-100 text-red-700' };
+        default: return { text: 'Sin registro', color: 'text-gray-400', bg: 'bg-gray-50', icon: <GoDash className="size-8 text-gray-400" />, badge: 'bg-gray-100 text-gray-600' };
+    }
+};
 
 export function Attendance({ student, date }: AttendanceProps) {
-    const { loading, attendance } = useAttendance(student.course_id, student.student_id, date);
+    const { loading, timeLine } = useAttendance(student.course_id, student.student_id, date);
 
     if (loading) return <LoadingContent title="" />;
 
-    const classes = attendance?.classes || [];
-    const breaks = attendance?.breaks || [];
-
-    const timelineItems: TimelineItem[] = [
-        ...classes.map((c): ClassBlock => ({ ...c, type: 'class' })),
-        ...breaks.map((b): BreakBlock => ({ ...b, type: 'break' })),
-    ].sort((a, b) => a.start_time.localeCompare(b.start_time));
-
-    const attendanceRecords: DailyAttendanceRecord[] = classes || [];
+    const timelineItems: TimelineItem[] = timeLine?.timeline || [];
+    const attendanceRecords = timelineItems.filter((item): item is TimelineClass => item.type === 'class');
 
     const presentCount = attendanceRecords.filter((a) => a.status === 'present').length || 0;
     const lateCount = attendanceRecords.filter((a) => a.status === 'late').length || 0;
@@ -62,24 +43,6 @@ export function Attendance({ student, date }: AttendanceProps) {
     const entryTime = firstAttendance?.recorded_at
         ? new Date(firstAttendance.recorded_at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })
         : '--:--';
-
-    const getStatusUI = (status: string) => {
-        switch (status) {
-            case 'present': return { text: 'Asistió', color: 'text-green-500', bg: 'bg-green-50', icon: <GoCheckCircle className="size-8 lg:size-12 text-green-500" />, badge: 'bg-green-100 text-green-700' };
-            case 'excused': return { text: 'Excusado', color: 'text-blue-500', bg: 'bg-blue-50', icon: <GoCheckCircle className="size-8 lg:size-12 text-blue-500" />, badge: 'bg-blue-100 text-blue-700' };
-            case 'late': return { text: 'Llegó tarde', color: 'text-yellow-500', bg: 'bg-yellow-50', icon: <GoClock className="size-8 lg:size-12 text-yellow-500" />, badge: 'bg-yellow-100 text-yellow-700' };
-            case 'absent': return { text: 'No asistió', color: 'text-red-500', bg: 'bg-red-50', icon: <GoXCircle className="size-8 lg:size-12 text-red-500" />, badge: 'bg-red-100 text-red-700' };
-            default: return { text: 'Sin registro', color: 'text-gray-400', bg: 'bg-gray-50', icon: <GoDash className="size-8 text-gray-400" />, badge: 'bg-gray-100 text-gray-600' };
-        }
-    };
-
-    const formatScheduleTime = (timeStr: string) => {
-        if (!timeStr) return '';
-        const [hours, minutes] = timeStr.split(':');
-        const dateObj = new Date();
-        dateObj.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-        return dateObj.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' });
-    };
 
     const generalUI = getStatusUI(generalStatus);
 
@@ -150,8 +113,8 @@ export function Attendance({ student, date }: AttendanceProps) {
 
                 <div className="w-full mt-5">
                     <h3 className="font-bold text-lg text-custom-black mb-4">Horario del estudiante</h3>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto no-scrollbar">
+                        <table className="w-full min-w-xl text-left border-collapse">
                             <thead className="bg-primary-shadow">
                             <tr className="text-sm text-primary-darker">
                                 <th className="py-3 rounded-tl-xl px-4 font-medium min-w-[120px]">Horario</th>
@@ -166,9 +129,12 @@ export function Attendance({ student, date }: AttendanceProps) {
                                     timelineItems.map((item) => {
                                         if (item.type === 'break') {
                                             return (
-                                                <tr key={`break-${item.id}`} className="bg-primary-shadow">
-                                                    <td colSpan={4} className="py-3 px-4 text-center">
-                                                        <span className="text-xs font-bold uppercase tracking-wider text-primary-darker px-3 py-1">
+                                                <tr key={`break-${item.id}`} className="bg-primary-shadow border-b border-gray-50">
+                                                    <td className="py-3 px-4 font-medium text-primary-darker text-sm whitespace-nowrap">
+                                                        {formatScheduleTime(item.start_time)} - {formatScheduleTime(item.end_time)}
+                                                    </td>
+                                                    <td colSpan={3} className="py-3 px-4">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-primary-darker">
                                                             {item.name}
                                                         </span>
                                                     </td>
@@ -188,7 +154,7 @@ export function Attendance({ student, date }: AttendanceProps) {
                                                 </td>
                                                 <td className="py-4 px-4">
                                                     <p className="text-gray-700 capitalize font-medium">{item.class_name}</p>
-                                                    <p className="text-xs text-gray-400 font-medium">Salón: {item.room}</p>
+                                                    <p className="text-xs text-gray-400 font-medium">Salón: {item.room ?? 'Sin salon asignado'}</p>
                                                 </td>
                                                 <td className="py-4 px-4">
                                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold ${ui.badge}`}>

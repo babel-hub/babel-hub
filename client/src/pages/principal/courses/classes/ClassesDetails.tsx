@@ -35,6 +35,8 @@ export default function ClassesDetails() {
 
     if (!periods || periods.length === 0) return <NoResults title="No se encontraron periodos" />;
     if (loading) return <LoadingContent title="Cargando clase..."/>;
+
+    // update this
     if (!data) return <div className="p-6 text-gray-500 text-center flex-1">Clase no encontrada.</div>;
     if (!selectedPeriodId) return null;
 

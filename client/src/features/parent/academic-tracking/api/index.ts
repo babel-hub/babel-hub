@@ -9,7 +9,7 @@ export const getStudentDailyAttendance = async (courseId: string, studentId: str
             courseId,
         }
     });
-    return response.data.attendance;
+    return response.data.timeline;
 }
 
 export const getStudentDailyGrades = async (studentId: string, date: string, signal?: AbortSignal): Promise<StudentDailyGrade[]> => {

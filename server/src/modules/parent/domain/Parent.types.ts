@@ -1,4 +1,5 @@
 import type { DailyAttendance } from "../../attendance/domain/Attendance.types.js";
+import type { CourseBreakByDate } from "../../course-break/domain/CourseBreak.types.js";
 
 export type RelationTypes = 'father' | 'mother' | 'other';
 
@@ -47,12 +48,16 @@ export interface StudentParentRow {
     relationship_type: 'father' | 'mother' | 'other';
 }
 
+interface TimelineClass extends DailyAttendance {
+    type: "class";
+}
+
+interface TimelineBreak extends CourseBreakByDate {
+    type: "break";
+}
+
+export type TimelineItem = TimelineClass | TimelineBreak;
+
 export interface DailyScheduleWithBreaks {
-    classes: DailyAttendance[];
-    breaks: {
-        id: string;
-        name: string;
-        start_time: string;
-        end_time: string;
-    }[];
+    timeline: TimelineItem[];
 }

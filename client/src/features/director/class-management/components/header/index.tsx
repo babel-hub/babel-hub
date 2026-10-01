@@ -39,7 +39,7 @@ export function ClassLayout({
 
     return (
         <div className="flex flex-col h-full w-full bg-gray-50">
-            <div className="sticky top-0 z-10 bg-white flex flex-col gap-4">
+            <div className="sticky top-0 z-40 bg-white flex flex-col gap-4">
                 <div className="flex flex-col pt-5 px-5 md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex gap-4 items-center">
                         <ButtonChevronBack onClick={() => navigate(-1)} />

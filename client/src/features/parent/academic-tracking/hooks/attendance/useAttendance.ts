@@ -1,24 +1,24 @@
 import { useEffect, useState } from "react";
-import type {DailyScheduleWithBreaks} from "../../types/types.ts";
+import type { DailyScheduleWithBreaks } from "../../types/types.ts";
 import { getStudentDailyAttendance } from "../../api";
 
 export const useAttendance = (courseId: string, studentId: string, date: string) => {
     const [loading, setLoading] = useState<boolean>(false);
-    const [attendance, setAttendance] = useState<DailyScheduleWithBreaks>();
+    const [timeLine, setTimeLine] = useState<DailyScheduleWithBreaks>();
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
         let isMounted = true;
 
-        const fetchAttendance = async () => {
+        const fetchTimeLine = async () => {
             if (!studentId || !date || !courseId) return;
 
             setLoading(true);
             setError(null);
             try {
                 const result = await getStudentDailyAttendance(courseId, studentId, date, controller.signal);
-                if (isMounted) setAttendance(result);
+                if (isMounted) setTimeLine(result);
             } catch (error: any) {
                 if (error.name === "CanceledError" || error.name === "AbortError") return;
 
@@ -32,7 +32,7 @@ export const useAttendance = (courseId: string, studentId: string, date: string)
                 if (isMounted) setLoading(false);
             }
         }
-        fetchAttendance();
+        fetchTimeLine();
 
         return () => {
             isMounted = false;
@@ -40,5 +40,5 @@ export const useAttendance = (courseId: string, studentId: string, date: string)
         };
     }, [studentId, date]);
 
-    return { loading, attendance, error };
+    return { loading, timeLine, error };
 }
