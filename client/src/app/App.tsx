@@ -33,6 +33,7 @@ import CumulativeGPA from "../pages/parent/cumulativeGPA/CumulativeGPA.tsx";
 import AcademicTracking from "../pages/parent/academic-tracking/AcademicTracking.tsx";
 import TeacherCalendar from "../pages/teacher/calendar/TeacherCalendar.tsx";
 import StudentProfile from "../pages/principal/community/students/StudentProfile.tsx";
+import AnnouncementsLayout from "../pages/principal/announcements/AnnouncementsLayout.tsx";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,8 @@ function App() {
 
                         <Route path="notificaciones" element={<NotificationCenter />} />
                         <Route path="notificaciones/asistencia" element={<AttendanceCenter />} />
+
+                        <Route path="comunicados" element={<AnnouncementsLayout />} />
 
                     </Route>
 

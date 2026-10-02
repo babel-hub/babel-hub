@@ -6,10 +6,9 @@ import {
     BiBookBookmark,
     BiBell,
     BiGroup,
-    BiUserVoice,
     BiFile,
-    BiMessageDetail
 } from "react-icons/bi";
+import { TbMessages } from "react-icons/tb";
 
 export const PrincipalLayout = () => {
     const user = useAuth((state) => state.user);
@@ -20,9 +19,8 @@ export const PrincipalLayout = () => {
         { id: "3", icon: <BiBookBookmark />, path: "/principal/cursos", label: "Cursos" },
         { id: "4", icon: <BiBell />, path: "/principal/notificaciones", label: "Notificaciones" },
         { id: "5", icon: <BiGroup />, path: "/principal/comunidad", label: "Comunidad" },
-        { id: "6", icon: <BiUserVoice />, path: "/unknow", label: "Acudientes" },
-        { id: "7", icon: <BiFile />, path: "/principal/formatos", label: "Formatos" },
-        { id: "8", icon: <BiMessageDetail />, path: "/unknow", label: "Mensajes" }
+        { id: "6", icon: <BiFile />, path: "/principal/formatos", label: "Formatos" },
+        { id: "7", icon: <TbMessages />, path: "/principal/comunicados", label: "Comunicados" }
     ];
 
     return (
