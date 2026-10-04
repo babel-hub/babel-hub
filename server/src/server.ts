@@ -23,6 +23,7 @@ import assignmentRoutes from "./modules/assignments/infrastructure/assignment.ro
 import gradeRoutes from "./modules/grade/infrastructure/grade.routes.js";
 import parentRoutes from "./modules/parent/infrastructure/parent.routes.js";
 import classScheduleRoutes from "./modules/class-schedule/infrastructure/classSchedule.routes.js";
+import announcementsRoutes from "./modules/announcements/infrastructure/announcements.routes.js";
 
 dotenv.config();
 
@@ -62,7 +63,8 @@ app.use("/assessments", assessmentRouter);
 app.use("/scales", scaleRoutes);
 app.use("/assignments", assignmentRoutes);
 app.use("/grades", gradeRoutes);
-app.use("/class-schedule", classScheduleRoutes)
+app.use("/class-schedule", classScheduleRoutes);
+app.use("/announcements", announcementsRoutes);
 
 app.use(globalErrorHandler);
 
