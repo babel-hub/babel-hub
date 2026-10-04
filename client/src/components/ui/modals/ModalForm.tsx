@@ -1,28 +1,31 @@
 import React, { useState } from "react";
 import { CancelButton } from "../buttons/Buttons.tsx";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
-import {GiCancel} from "react-icons/gi";
+import { GiCancel } from "react-icons/gi";
 
 export interface FormField {
     name: string;
     label: string;
-    type: "text" | "email" | "password" | "number" | "select" | "date" | "time";
+    // 1. Added "textarea" to the type union
+    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea";
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
     options?: { value: string; label: string }[];
+    rows?: number; // 2. Added rows for textarea height control
 }
 
 interface DynamicModalFormProps {
     isOpen: boolean;
-    profileCreated?: Boolean;
+    profileCreated?: boolean; // Fixed Boolean to boolean
     title: string;
     fields: FormField[];
     formData: any;
     formError: string;
     formLoading: boolean;
     onClose: () => void;
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement >) => void;
+    // 3. Added HTMLTextAreaElement to the event types
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
     onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -90,6 +93,18 @@ export default function DynamicModalForm({
                                             </option>
                                         ))}
                                     </select>
+                                ) : field.type === "textarea" ? (
+                                    <textarea
+                                        id={`${field.name}_`}
+                                        name={field.name}
+                                        required={field.required}
+                                        placeholder={field.placeholder}
+                                        disabled={field.disabled}
+                                        value={formData[field.name] || ""}
+                                        onChange={onChange}
+                                        rows={field.rows || 4}
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-y"
+                                    />
                                 ) : (field.type === "date" || field.type === "time") ? (
                                     <input
                                         id={`${field.name}_`}
@@ -134,8 +149,7 @@ export default function DynamicModalForm({
                                         onChange={onChange}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
-                                )
-                                }
+                                )}
                             </div>
                         ))}
 
@@ -163,16 +177,14 @@ export default function DynamicModalForm({
                         )}
                     </form>
 
-                    {
-                        formError.length > 0 && (
-                            <div className="text-sm mt-3 bg-red-100 flex items-start gap-2 p-2 rounded-xl text-red-700">
-                                <div className="min-w-4 mt-1">
-                                    <GiCancel className="size-4"/>
-                                </div>
-                                {formError}
+                    {formError.length > 0 && (
+                        <div className="text-sm mt-3 bg-red-100 flex items-start gap-2 p-2 rounded-xl text-red-700">
+                            <div className="min-w-4 mt-1">
+                                <GiCancel className="size-4" />
                             </div>
-                        )
-                    }
+                            {formError}
+                        </div>
+                    )}
                 </div>
 
                 <div className="px-5 pb-3 flex justify-end gap-3">

@@ -7,10 +7,11 @@ export class AnnouncementsController {
 
     getFeed = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const profileId = request.query.profileId as string;
-            const role = request.query.role as string;
-            const courseId = request.query.courseId as string;
             const schoolId = request.user?.schoolId as string;
+            const role = request.user?.role as string;
+
+            const profileId = request.query.profileId as string;
+            const courseId = request.query.courseId as string;
 
             const feed = await this.announcementService.getFeed(schoolId, profileId, role, courseId);
             response.status(200).json({ feed });
@@ -21,7 +22,7 @@ export class AnnouncementsController {
 
     createAnnouncement = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const { title, description, type } = request.body;
+            const { title, description, type, caption } = request.body;
 
             const auth = {
                 userId: request.user?.userId as string,
@@ -29,7 +30,7 @@ export class AnnouncementsController {
                 userRole: request.user?.role as string,
             };
 
-            await this.announcementService.createAnnouncement({ title, description, type }, auth);
+            await this.announcementService.createAnnouncement({ title, description, type, caption }, auth);
             response.status(201).send();
         } catch (error: any) {
             next(error);
@@ -39,7 +40,7 @@ export class AnnouncementsController {
     updateAnnouncement = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const announcementId = request.params.id as string;
-            const { title, description, target_type, type } = request.body;
+            const { title, description, target_type, type, caption } = request.body;
 
             const auth = {
                 userId: request.user?.userId as string,
@@ -49,7 +50,7 @@ export class AnnouncementsController {
 
             await this.announcementService.updateAnnouncement(
                 {
-                    announcementId, title, description, target_type, type
+                    announcementId, title, description, target_type, type, caption
                 },
                 auth
             );

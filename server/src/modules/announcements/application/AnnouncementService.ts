@@ -6,9 +6,10 @@ import type {
 } from "../domain/Announcements.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import { normalizeText } from "../../shared/domain/normalize.js";
+import {normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
 
 const VALID_ANNOUNCEMENT_TYPES = [ 'GENERAL', 'EVENT', 'EMERGENCY', 'DEADLINE', 'POLL' ];
+const VALID_TARGET_TYPES = [ 'ALL', 'PROFILE', 'ROLE', 'COURSE' ];
 export class AnnouncementService {
     constructor(private readonly announcementRepository: IAnnouncementsRepository) {}
 
@@ -29,7 +30,6 @@ export class AnnouncementService {
         if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Credenciales del usuario inválidas");
         if (!payload.title || !payload.description || !payload.type) throw new ValidationError("Faltan campos obligatorios");
 
-        // Validación estricta del tipo
         if (!VALID_ANNOUNCEMENT_TYPES.includes(payload.type)) {
             throw new ValidationError("Tipo de comunicado inválido");
         }
@@ -37,8 +37,8 @@ export class AnnouncementService {
         const normalized: CreateAnnouncementPayload = {
             title: normalizeText(payload.title),
             description: normalizeText(payload.description),
-            // Pasamos el tipo tal cual, ya que validamos que es seguro y exacto
-            type: payload.type
+            type: payload.type,
+            caption: nullifyEmpty(payload.caption),
         }
 
         return await this.announcementRepository.createAnnouncement(normalized, authUser);
@@ -48,15 +48,16 @@ export class AnnouncementService {
         if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Credenciales del usuario inválidas");
         if (!payload.title || !payload.description || !payload.type || !payload.announcementId) throw new ValidationError("Faltan campos obligatorios");
 
-        if (!VALID_ANNOUNCEMENT_TYPES.includes(payload.type)) {
-            throw new ValidationError("Tipo de comunicado inválido");
-        }
+        if (!VALID_ANNOUNCEMENT_TYPES.includes(payload.type)) throw new ValidationError("Tipo de comunicado inválido");
+        if (!VALID_TARGET_TYPES.includes(payload.target_type)) throw new ValidationError("Tipo de receptor inválido");
 
         const normalized: UpdateAnnouncementPayload = {
             announcementId: payload.announcementId,
             title: normalizeText(payload.title),
             description: normalizeText(payload.description),
-            type: payload.type
+            type: payload.type,
+            target_type: payload.target_type,
+            caption: nullifyEmpty(payload.caption),
         }
 
         return await this.announcementRepository.updateAnnouncement(normalized, authUser);

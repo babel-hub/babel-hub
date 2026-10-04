@@ -9,12 +9,14 @@ export interface Announcement {
     description: string;
     target_type: AnnouncementTargetType;
     created_at: string;
+    caption: string | null;
 }
 
 export interface CreateAnnouncementPayload {
     title: string;
     description: string;
     type: AnnouncementType;
+    caption: string | null;
 }
 
 export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {

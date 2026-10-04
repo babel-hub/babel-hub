@@ -21,12 +21,13 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
             const query = `
                 SELECT
                     a.id,
-                    CONCAT(p.first_name, ' ', p.last_name) AS author,
+                    CONCAT(p.first_name, ' ', p.first_last_name) AS author,
                     a.title,
                     a.type,
                     a.description,
                     a.target_type,
-                    a.created_at
+                    a.created_at,
+                    a.caption
                 FROM announcement a
                 JOIN profile p ON a.author_id = p.id
                 WHERE a.school_id = $1
@@ -59,10 +60,10 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
 
             // Hardcoded to 'ALL' for this V1. Later, if you add targets, you'll insert into announcement_target here.
             const result = await client.query(`
-                INSERT INTO announcement (title, description, type, target_type, school_id, author_id)
-                VALUES ($1, $2, $3, 'ALL', $4, $5)
+                INSERT INTO announcement (title, description, type, target_type, school_id, author_id, caption)
+                VALUES ($1, $2, $3, 'ALL', $4, $5, $6)
                 RETURNING id;
-            `, [payload.title, payload.description, payload.type, authUser.userSchoolId, authUser.userId]);
+            `, [payload.title, payload.description, payload.type, authUser.userSchoolId, authUser.userId, payload.caption]);
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
@@ -102,9 +103,9 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
             // Removed target_type update for now since we are focusing on the 'ALL' broadcast.
             await client.query(`
                 UPDATE announcement
-                SET title = $1, description = $2, type = $3
+                SET title = $1, description = $2, type = $3, caption = $5
                 WHERE id = $4
-            `, [payload.title, payload.description, payload.type, payload.announcementId]);
+            `, [payload.title, payload.description, payload.type, payload.announcementId, payload.caption]);
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,

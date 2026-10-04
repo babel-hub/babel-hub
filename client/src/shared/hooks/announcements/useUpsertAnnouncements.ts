@@ -1,6 +1,7 @@
 import { useState } from "react";
-import type { modeTypes } from "../../../types/types.ts";
+import type { modeTypes } from "../../../features/types/types.ts";
 import toast from "react-hot-toast";
+import { createAnnouncement, updateAnnouncement } from "../../api";
 
 export const useUpsertAnnouncements = (onSuccess: () => void) => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -8,19 +9,26 @@ export const useUpsertAnnouncements = (onSuccess: () => void) => {
 
     const upsertAnnouncement = async (mode: modeTypes, announcementId: string | null, payload: any) => {
         setLoading(true);
+        setError("");
+
         try {
             if (mode === "edit" && announcementId) {
-                console.log(payload);
+                await updateAnnouncement(announcementId, payload);
             } else if (mode === "create") {
+                await createAnnouncement(payload);
+            } else {
+                setError("No hay opciones válidas");
+                setLoading(false);
+                return;
+            }
 
-            } else { setError("No hay opciones validas") }
-
-            onSuccess();
             toast.success(`Comunicado ${mode === "create" ? "creado" : "editado"} correctamente`);
-        } catch (error : any) {
-            const errorMessage = error.message
-            || error.data.message
-            || `Error al ${mode === "create" ? "crear" : "editar"} e comunicado`;
+            onSuccess();
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.message
+                || err.message
+                || `Error al ${mode === "create" ? "crear" : "editar"} el comunicado`;
+
             setError(errorMessage);
         } finally {
             setLoading(false);

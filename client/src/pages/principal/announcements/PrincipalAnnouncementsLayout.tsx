@@ -1,6 +1,6 @@
 import { Announcements } from "../../../features/director/announcements";
 
-export default function AnnouncementsLayout() {
+export default function PrincipalAnnouncementsLayout() {
     return (
         <Announcements />
     )
