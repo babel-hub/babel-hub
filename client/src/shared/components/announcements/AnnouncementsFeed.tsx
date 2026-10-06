@@ -32,9 +32,9 @@ export function AnnouncementsFeed({ profileId, courseId }: AnnouncementsFeedProp
                 </h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 bg-white rounded-xl border border-gray-100 p-2 overflow-y-auto">
                 {!loading && announcements.length > 0 && (
-                    <div className="flex flex-col h-full w-full gap-2">
+                    <div className="flex flex-col h-full w-full">
                         {
                             announcements.map((announcement) => (
                                 <AnnouncementCard

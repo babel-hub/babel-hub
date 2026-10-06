@@ -50,3 +50,11 @@ export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {
     target_type: AnnouncementTargetType;
     caption: string | null;
 }
+
+export interface UserSearch {
+    id: string;
+    first_name: string;
+    middle_name: string;
+    first_last_name: string;
+    second_last_name: string;
+}

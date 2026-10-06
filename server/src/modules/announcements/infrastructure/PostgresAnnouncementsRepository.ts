@@ -6,7 +6,7 @@ import type {
 } from "../domain/Announcements.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
-import { NotFoundError } from "../../errors/domain/CustomErrors.js";
+import { ForbiddenError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 
 export class PostgresAnnouncementsRepository implements IAnnouncementsRepository {
@@ -14,6 +14,7 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
         schoolId: string,
         profileId: string,
         role: string,
+        authUser: AuthUser,
         courseId?: string
     ): Promise<Announcement[]> {
         const client = await pool.connect();
@@ -32,21 +33,22 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 JOIN profile p ON a.author_id = p.id
                 WHERE a.school_id = $1
                   AND (
-                      a.target_type = 'ALL'
-                      OR EXISTS (
-                          SELECT 1 FROM announcement_target at
-                          WHERE at.announcement_id = a.id
+                    a.author_id = $2
+                        OR a.target_type = 'ALL'
+                        OR EXISTS (
+                        SELECT 1 FROM announcement_target at
+                        WHERE at.announcement_id = a.id
                             AND (
-                                at.role = $2
-                                OR at.profile_id = $3
-                                OR at.course_id = $4
+                                at.role = $3
+                                OR at.profile_id = $4
+                                OR at.course_id = $5
                             )
-                      )
-                  )
+                    )
+                )
                 ORDER BY a.created_at DESC;
             `;
 
-            const result = await client.query(query, [schoolId, role, profileId, courseId || null]);
+            const result = await client.query(query, [schoolId, authUser.userId, role, profileId, courseId || null]);
             return result.rows;
         } finally {
             client.release();
@@ -58,12 +60,36 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
         try {
             await client.query('BEGIN');
 
-            // Hardcoded to 'ALL' for this V1. Later, if you add targets, you'll insert into announcement_target here.
+            const check = await client.query(`
+                SELECT 1
+                FROM profile
+                WHERE id = $1 AND school_id = $2
+            `, [authUser.userId, authUser.userSchoolId]);
+
+            if (check.rowCount === 0) throw new ForbiddenError("No puedes hacer esta acción");
+
             const result = await client.query(`
                 INSERT INTO announcement (title, description, type, target_type, school_id, author_id, caption)
-                VALUES ($1, $2, $3, 'ALL', $4, $5, $6)
-                RETURNING id;
-            `, [payload.title, payload.description, payload.type, authUser.userSchoolId, authUser.userId, payload.caption]);
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    RETURNING id;
+            `, [payload.title, payload.description, payload.type, payload.target_type, authUser.userSchoolId, authUser.userId, payload.caption]);
+
+            const newAnnouncementId = result.rows[0].id;
+
+            if (payload.target_type !== "ALL") {
+                let role = null;
+                let courseId = null;
+                let profileId = null;
+
+                if (payload.target_type === "ROLE") role = payload.target_value;
+                else if (payload.target_type === "COURSE") courseId = payload.target_value;
+                else if (payload.target_type === "PROFILE") profileId = payload.target_value;
+
+                await client.query(`
+                    INSERT INTO announcement_target (announcement_id, role, course_id, profile_id)
+                    VALUES ($1, $2, $3, $4)
+                `, [newAnnouncementId, role, courseId, profileId]);
+            }
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
@@ -71,9 +97,10 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 action: "CREATE_ANNOUNCEMENT",
                 schoolId: authUser.userSchoolId,
                 metadata: {
-                    id: result.rows[0].id,
+                    id: newAnnouncementId,
                     title: payload.title,
-                    type: payload.type
+                    targetType: payload.target_type,
+                    targetValue: payload.target_value
                 }
             });
 
@@ -99,13 +126,31 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
 
             if (check.rowCount === 0) throw new NotFoundError("No se encontró el comunicado para actualizar");
 
-            // Fixed typo: tile -> title.
-            // Removed target_type update for now since we are focusing on the 'ALL' broadcast.
             await client.query(`
                 UPDATE announcement
-                SET title = $1, description = $2, type = $3, caption = $5
-                WHERE id = $4
-            `, [payload.title, payload.description, payload.type, payload.announcementId, payload.caption]);
+                SET title = $1, description = $2, type = $3, caption = $4, target_type = $5
+                WHERE id = $6
+            `, [payload.title, payload.description, payload.type, payload.caption, payload.target_type, payload.announcementId]);
+
+            await client.query(`
+                DELETE FROM announcement_target 
+                WHERE announcement_id = $1
+            `, [payload.announcementId]);
+
+            if (payload.target_type !== "ALL") {
+                let role = null;
+                let courseId = null;
+                let profileId = null;
+
+                if (payload.target_type === "ROLE") role = payload.target_value;
+                else if (payload.target_type === "COURSE") courseId = payload.target_value;
+                else if (payload.target_type === "PROFILE") profileId = payload.target_value;
+
+                await client.query(`
+                    INSERT INTO announcement_target (announcement_id, role, course_id, profile_id)
+                    VALUES ($1, $2, $3, $4)
+                `, [payload.announcementId, role, courseId, profileId]);
+            }
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
@@ -114,7 +159,9 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 schoolId: authUser.userSchoolId,
                 metadata: {
                     id: payload.announcementId,
-                    title: payload.title
+                    title: payload.title,
+                    targetType: payload.target_type,
+                    targetValue: payload.target_value
                 }
             });
 
@@ -135,7 +182,7 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
             const result = await client.query(`
                 DELETE FROM announcement
                 WHERE id = $1 AND school_id = $2
-                RETURNING id, title;
+                    RETURNING id, title;
             `, [announcementId, authUser.userSchoolId]);
 
             if (result.rowCount === 0) throw new NotFoundError("No se encontró el comunicado para eliminar");

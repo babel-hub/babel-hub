@@ -17,9 +17,10 @@ export interface CreateAnnouncementPayload {
     description: string;
     type: AnnouncementType;
     caption: string | null;
+    target_type: AnnouncementTargetType;
+    target_value: string | null;
 }
 
 export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {
     announcementId: string;
-    target_type: AnnouncementTargetType;
 }

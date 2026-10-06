@@ -8,5 +8,5 @@ export interface IStudentRepository {
     getStudentsByName(query: string, authUser: AuthUser, limit: number): Promise<StudentByName[]>;
     createStudent(studentCredentials: StudentCreateCredentials, authUser: AuthUser): Promise<CreateStudent>;
     updateStudent(studentCredentials: StudentUpdateCredentials, authUser: AuthUser): Promise<void>;
-    deleteStudent(studentId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
+    deleteStudent(studentId: string, authUser: AuthUser): Promise<void>;
 }

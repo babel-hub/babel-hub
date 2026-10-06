@@ -7,7 +7,8 @@ import { useDeleteAnnouncement } from "../../hooks/announcements/useDeleteAnnoun
 import ButtonChevronBack from "../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { PrimaryButton } from "../../../components/ui/buttons/Buttons.tsx";
 import { AnnouncementModalForm } from "./ui/AnnouncementsModalForm.tsx";
-import { AnnouncementsTable } from "./ui/AnnouncementsTable.tsx";
+import { AnnouncementsList } from "./ui/AnnouncementsTable.tsx";
+import {AnnouncementModal} from "../../../components/ui/modals/AnnouncementModal.tsx";
 
 interface AnnouncementsManagerProps {
     profileId: string;
@@ -19,6 +20,8 @@ export function AnnouncementsManager({ profileId, courseId }: AnnouncementsManag
 
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | undefined>(undefined);
+    const [announcementModalOpen, setAnnouncementModalOpen] = useState<Announcement | null>(null);
+
 
     const { announcements, refetch, loading } = useAnnouncementsData(profileId, courseId);
     const { deleteAnnouncementById } = useDeleteAnnouncement(refetch);
@@ -28,9 +31,9 @@ export function AnnouncementsManager({ profileId, courseId }: AnnouncementsManag
         setModalMode("edit");
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (announcement: Announcement) => {
         if (window.confirm("¿Estás seguro de eliminar este comunicado?")) {
-            await deleteAnnouncementById(id);
+            await deleteAnnouncementById(announcement.id);
         }
     };
 
@@ -38,6 +41,10 @@ export function AnnouncementsManager({ profileId, courseId }: AnnouncementsManag
         setModalMode("none");
         setSelectedAnnouncement(undefined);
     };
+
+    const handleView = (announcement: Announcement) => {
+        setAnnouncementModalOpen(announcement)
+    }
 
     return (
         <div className="flex flex-col h-full w-full md:gap-3">
@@ -64,10 +71,11 @@ export function AnnouncementsManager({ profileId, courseId }: AnnouncementsManag
                 {loading ? (
                     <div className="p-6 text-center text-gray-500">Cargando comunicados...</div>
                 ) : (
-                    <AnnouncementsTable
+                    <AnnouncementsList
                         announcements={announcements}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
+                        onView={handleView}
                     />
                 )}
             </div>
@@ -81,6 +89,13 @@ export function AnnouncementsManager({ profileId, courseId }: AnnouncementsManag
                         handleCloseModal();
                     }}
                     announcement={selectedAnnouncement}
+                />
+            )}
+
+            {announcementModalOpen && (
+                <AnnouncementModal
+                    announcement={announcementModalOpen}
+                    onClose={() => setAnnouncementModalOpen(null)}
                 />
             )}
         </div>

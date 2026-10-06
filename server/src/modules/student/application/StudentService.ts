@@ -52,7 +52,7 @@ export class StudentService {
     }
 
     async getStudentsByName(query: string, authUser: AuthUser, limit: number): Promise<StudentByName[]> {
-        if (!authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario");
+        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario");
 
         return this.studentRepository.getStudentsByName(query, authUser, limit);
     }
@@ -104,10 +104,10 @@ export class StudentService {
         return await this.studentRepository.updateStudent(normalized, authUser);
     }
 
-    async deleteStudent(studentId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async deleteStudent(studentId: string, authUser: AuthUser): Promise<void> {
+        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
         if (!studentId) throw new ValidationError("El ID del estudiante es obligatorio");
 
-        return await this.studentRepository.deleteStudent(studentId, userId, userRole, userSchoolId);
+        return await this.studentRepository.deleteStudent(studentId, authUser);
     }
 }

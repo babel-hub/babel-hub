@@ -17,13 +17,15 @@ export class AnnouncementService {
         schoolId: string,
         profileId: string,
         role: string,
+        authUser: AuthUser,
         courseId?: string
     ): Promise<Announcement[]> {
+        if (!authUser.userId) throw new UnauthorizedError("Credenciales del usuario inválidas");
         if (!schoolId || !profileId || !role) {
             throw new ValidationError("Faltan identificadores del usuario para cargar el feed");
         }
 
-        return await this.announcementRepository.getFeed(schoolId, profileId, role, courseId);
+        return await this.announcementRepository.getFeed(schoolId, profileId, role, authUser, courseId);
     }
 
     async createAnnouncement(payload: CreateAnnouncementPayload, authUser: AuthUser): Promise<void> {
@@ -39,6 +41,8 @@ export class AnnouncementService {
             description: normalizeText(payload.description),
             type: payload.type,
             caption: nullifyEmpty(payload.caption),
+            target_type: payload.target_type,
+            target_value: nullifyEmpty(payload.target_value)
         }
 
         return await this.announcementRepository.createAnnouncement(normalized, authUser);
@@ -58,6 +62,7 @@ export class AnnouncementService {
             type: payload.type,
             target_type: payload.target_type,
             caption: nullifyEmpty(payload.caption),
+            target_value: nullifyEmpty(payload.target_value)
         }
 
         return await this.announcementRepository.updateAnnouncement(normalized, authUser);

@@ -1,6 +1,7 @@
 import type { IUserRepository } from "../domain/IUserRepository.js";
-import type { UserProfileResponse } from "../domain/User.types.js";
+import type {UserProfileResponse, UserSearch} from "../domain/User.types.js";
 import { NotFoundError, UnauthorizedError } from "../../errors/domain/CustomErrors.js";
+import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class UserService {
     constructor(private readonly userRepository: IUserRepository) {}
@@ -12,5 +13,11 @@ export class UserService {
         if (!user) throw new NotFoundError("Usuario no existe");
 
         return user;
+    }
+
+    async getUsersByName(query: string, authUser: AuthUser, limit: number): Promise<UserSearch[]> {
+        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario");
+
+        return await this.userRepository.getUsersByName(query, authUser, limit);
     }
 }

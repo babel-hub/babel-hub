@@ -7,7 +7,7 @@ export const useStudentSearch = (query: string) => {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!query || query.trim().length < 2) {
+        if (!query || query.trim().length < 3) {
             setStudents([]);
             return;
         }
@@ -23,7 +23,7 @@ export const useStudentSearch = (query: string) => {
             } finally {
                 setLoading(false);
             }
-        }, 500);
+        }, 1000);
 
         return () => clearTimeout(timeout);
     }, [query]);

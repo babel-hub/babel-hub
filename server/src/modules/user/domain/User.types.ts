@@ -11,3 +11,11 @@ export type UserProfileResponse = {
     profile_id: string | null;
     is_profile_complete: boolean;
 };
+
+export interface UserSearch {
+    id: string;
+    first_name: string;
+    middle_name: string;
+    first_last_name: string;
+    second_last_name: string;
+}

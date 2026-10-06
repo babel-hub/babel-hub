@@ -5,8 +5,10 @@ import type {
     CreateAnnouncementPayload,
     Period,
     Teacher,
-    UpdateAnnouncementPayload
+    UpdateAnnouncementPayload, UserSearch
 } from "../types/types.ts";
+
+import type { CoursesListData } from "../../features/director/course-management/types";
 
 
 export const getTeachers = async (): Promise<Teacher[]> => {
@@ -25,6 +27,21 @@ export const getAreas = async (): Promise<Area[]> => {
 }
 
 // Announcements
+
+export const getUsers = async (query: string): Promise<UserSearch[]> => {
+    const response = await api.get("/user/search", {
+        params: {
+            q: query,
+            limit: 10
+        }
+    });
+    return response.data.users;
+}
+
+export const getCourses = async (): Promise<CoursesListData[]> => {
+    const response = await api.get("/courses");
+    return response.data.courses;
+}
 
 export const getAnnouncements = async (courseId: string | null, profileId: string): Promise<Announcement[]> => {
     const response = await api.get(`/announcements`, {

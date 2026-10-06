@@ -21,7 +21,7 @@ export function ParentToStudentFormModal({ parent, onClose, onSuccess }: ParentT
     const { students, loading: loadingStudents } = useStudentSearch(formData.searchQuery);
     const { assignStudent, loading, error, setError } = useAssignStudentSubmit(onSuccess);
 
-    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
 
         setFormData((prev) => {

@@ -6,6 +6,7 @@ export interface IAnnouncementsRepository {
         schoolId: string,
         profileId: string,
         role: string,
+        authUser: AuthUser,
         courseId?: string
     ): Promise<Announcement[]>;
     createAnnouncement(payload: CreateAnnouncementPayload, authUser: AuthUser): Promise<void>;

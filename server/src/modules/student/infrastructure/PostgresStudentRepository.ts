@@ -287,7 +287,7 @@ export class PostgresStudentRepository implements IStudentRepository {
         }
     }
 
-    async deleteStudent(studentId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async deleteStudent(studentId: string, authUser:AuthUser): Promise<void> {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -303,7 +303,7 @@ export class PostgresStudentRepository implements IStudentRepository {
                 FROM student s
                 JOIN profile p ON s.profile_id = p.id
                 WHERE s.id = $1 AND p.school_id = $2
-            `, [studentId, userSchoolId]);
+            `, [studentId, authUser.userSchoolId]);
 
             if (studentCheck.rowCount === 0) throw new NotFoundError("El estudiente no se encontro para su eliminación");
 
@@ -323,10 +323,10 @@ export class PostgresStudentRepository implements IStudentRepository {
             if (error) throw new ValidationError(`No se pudo eliminar el usuario (${error.message})`);
 
             await createAuditLog(client, {
-                actorUserId: userId,
-                actorRole: userRole,
+                actorUserId: authUser.userId,
+                actorRole: authUser.userRole,
                 action: 'DELETE_STUDENT',
-                schoolId: userSchoolId,
+                schoolId: authUser.userSchoolId,
                 metadata: {
                     studentId,
                     name: [student_first_name, student_middle_name ?? "", student_first_last_name, student_second_last_name ?? ""].join(" ")

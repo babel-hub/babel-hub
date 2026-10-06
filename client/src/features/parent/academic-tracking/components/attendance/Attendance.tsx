@@ -130,10 +130,7 @@ export function Attendance({ student, date }: AttendanceProps) {
                                         if (item.type === 'break') {
                                             return (
                                                 <tr key={`break-${item.id}`} className="bg-primary-shadow border-b border-gray-50">
-                                                    <td className="py-3 px-4 font-medium text-primary-darker text-sm whitespace-nowrap">
-                                                        {formatScheduleTime(item.start_time)} - {formatScheduleTime(item.end_time)}
-                                                    </td>
-                                                    <td colSpan={3} className="py-3 px-4">
+                                                    <td colSpan={4} className="py-3 px-4 text-center">
                                                         <span className="text-xs font-bold uppercase tracking-wider text-primary-darker">
                                                             {item.name}
                                                         </span>

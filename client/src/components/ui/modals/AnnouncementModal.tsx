@@ -73,7 +73,6 @@ export function AnnouncementModal({ announcement, onClose }: AnnouncementModalPr
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

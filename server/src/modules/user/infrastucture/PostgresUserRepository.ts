@@ -1,6 +1,7 @@
 import type { IUserRepository } from "../domain/IUserRepository.js";
-import type { UserProfileResponse } from "../domain/User.types.js";
+import type {UserProfileResponse, UserSearch} from "../domain/User.types.js";
 import { pool } from "../../../db/index.js";
+import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export class PostgresUserRepository implements IUserRepository {
     async getUser(clientId: string): Promise<UserProfileResponse | null> {
@@ -79,6 +80,32 @@ export class PostgresUserRepository implements IUserRepository {
                 profile_id: internalUserId,
                 is_profile_complete: !!profileId
             };
+        } finally {
+            client.release();
+        }
+    }
+
+    async getUsersByName(query: string, authUser: AuthUser, limit: number): Promise<UserSearch[]> {
+        const client = await pool.connect();
+        try {
+            const user = await client.query(`
+                SELECT
+                    id,
+                    first_name,
+                    middle_name,
+                    first_last_name,
+                    second_last_name
+                FROM profile
+                WHERE school_id = $1
+                  AND is_active = true
+                  AND (
+                    CONCAT_WS(' ', first_name, middle_name, first_last_name, second_last_name) ILIKE $2
+                    )
+                ORDER BY first_last_name ASC
+                    LIMIT $3
+            `, [authUser.userSchoolId, `%${query}%`, limit]);
+
+            return user.rows;
         } finally {
             client.release();
         }
