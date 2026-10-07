@@ -57,4 +57,5 @@ export interface UserSearch {
     middle_name: string;
     first_last_name: string;
     second_last_name: string;
+    role: string;
 }

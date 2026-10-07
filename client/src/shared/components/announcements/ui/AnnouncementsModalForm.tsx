@@ -6,6 +6,7 @@ import DynamicModalForm, { type FormField } from "../../../../components/ui/moda
 import type { Announcement } from "../../../types/types.ts";
 import { useCourses } from "../../../hooks/announcements/useCourses.ts";
 import { useProfiles } from "../../../hooks/announcements/useProfiles.ts";
+import {roleTranslations} from "../../../../types";
 
 interface AnnouncementModalFormProps {
     mode: modeTypes;
@@ -26,14 +27,14 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
         title: announcement?.title || "",
         type: announcement?.type || "GENERAL",
         targetType: announcement?.target_type || "ALL",
-        targetValue: "",
+        targetValue: [],
         profileSearch: "",
         description: announcement?.description || "",
         caption: announcement?.caption || ""
     });
 
-    const { courses } = useCourses(formData.targetType);
-    const { users } = useProfiles(formData.profileSearch);
+    const { courses, loading: loadingCourses } = useCourses(formData.targetType);
+    const { users, loading: loadingUsers } = useProfiles(formData.profileSearch);
 
     const handleOnChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
@@ -42,12 +43,14 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             const newData = { ...prev, [name]: value };
 
             if (name === "targetType") {
-                newData.targetValue = "";
+                newData.targetValue = [];
                 newData.profileSearch = "";
             }
 
             return newData;
         });
+
+        setError("");
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -58,13 +61,12 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             return;
         }
 
-        if (formData.targetType !== "ALL" && !formData.targetValue) {
-            setError("Debes seleccionar un destinatario específico.");
+        if (formData.targetType !== "ALL" && formData.targetValue.length === 0) {
+            setError("Debes seleccionar al menos un destinatario específico.");
             return;
         }
 
         const { profileSearch, ...apiPayload } = formData;
-
 
         console.log(mode, announcement ? announcement.id : null, JSON.stringify(apiPayload, null, 2));
         await upsertAnnouncement(mode, announcement ? announcement.id : null, apiPayload);
@@ -118,7 +120,8 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
         dynamicFields.push({
             name: "targetValue",
             label: "Seleccionar Curso",
-            type: "select",
+            type: "checkbox",
+            loadingField: loadingCourses,
             options: courses?.map(c => ({ value: c.id, label: c.course_name })) || [],
             required: true
         });
@@ -126,7 +129,7 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
         dynamicFields.push({
             name: "targetValue",
             label: "Seleccionar Rol",
-            type: "select",
+            type: "checkbox",
             options: [
                 { value: "student", label: "Estudiantes" },
                 { value: "teacher", label: "Profesores" },
@@ -147,8 +150,9 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             {
                 name: "targetValue",
                 label: "Resultados de búsqueda",
-                type: "select",
-                options: users?.map(u => ({ value: u.id, label: `${u.first_name} ${u.first_last_name}` })) || [],
+                type: "checkbox",
+                loadingField: loadingUsers,
+                options: users?.map(u => ({ value: u.id, label: `${roleTranslations[u.role]}: ${u.first_name} ${u.first_last_name}` })) || [],
                 required: true
             }
         );

@@ -6,6 +6,13 @@ import type {AuthUser} from "../../shared/domain/Shared.types.js";
 export class UserService {
     constructor(private readonly userRepository: IUserRepository) {}
 
+    private requireAuth(authUser: AuthUser): Required<AuthUser> {
+        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
+            throw new UnauthorizedError("Credenciales del usuario inválidas");
+        }
+        return authUser as Required<AuthUser>;
+    }
+
     async getUser(userId: string): Promise<UserProfileResponse> {
         if (!userId) throw new UnauthorizedError("Al cargar el usuario, no cargaron los datos");
 
@@ -16,8 +23,8 @@ export class UserService {
     }
 
     async getUsersByName(query: string, authUser: AuthUser, limit: number): Promise<UserSearch[]> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario");
+        const ctx = this.requireAuth(authUser);
 
-        return await this.userRepository.getUsersByName(query, authUser, limit);
+        return await this.userRepository.getUsersByName(query, ctx, limit);
     }
 }

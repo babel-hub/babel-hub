@@ -31,7 +31,7 @@ export function ViewAttendance({ classData, courseId, periodId, periods }: ViewA
     if (loading || !selectedPeriod) return null;
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             {loading ? (
                 <div className="p-5">
                     <LoadingContent title="Cargando asistencia..." />
@@ -116,11 +116,11 @@ export function ViewAttendance({ classData, courseId, periodId, periods }: ViewA
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={calendar.length > 0 ? calendar.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 py-8">
+                                            <td colSpan={calendar.length > 0 ? calendar.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 p-2">
                                                 {selectedPeriod?.start_date && todayStr < selectedPeriod.start_date.slice(0, 10) ? (
                                                     <NoResults title="Este periodo aún no ha comenzado"/>
                                                 ) : (
-                                                    <NoResults title="No hay estudiantes para mostrar su asistencia"/>
+                                                    <NoResults title="No hay asitencias registradas"/>
                                                 )}
                                             </td>
                                         </tr>

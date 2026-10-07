@@ -27,7 +27,7 @@ export function RegisterAttendance ({ classData, date }: RegisterAttendanceProps
 
 
     return (
-        <div className="max-w-4xl mx-auto space-y-2">
+        <div className="max-w-6xl mx-auto space-y-2">
             {loading ? (
                 <LoadingContent title="Cargando..." />
             ) : (

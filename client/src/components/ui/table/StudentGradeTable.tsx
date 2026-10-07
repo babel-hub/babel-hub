@@ -153,7 +153,7 @@ export function StudentGradeTable({
                 </button>
             )}
 
-            <div className="w-full overflow-auto relative no-scrollbar max-h-[calc(100dvh-15.7rem)] md:max-h-[calc(100dvh-10.9rem)]">
+            <div className="w-full max-w-6xl overflow-auto relative no-scrollbar max-h-[calc(100dvh-15.7rem)] md:max-h-[calc(100dvh-10.9rem)]">
                 <table className="w-full text-left relative min-w-max">
                     <thead className="top-0 sticky z-20 bg-white">
                         <tr className="mb-0 bg-white shadow-[inset_0_-1px_0_0_#e5e7eb]">

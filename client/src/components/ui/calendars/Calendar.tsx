@@ -34,7 +34,6 @@ export function Calendar({
     const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
     const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
-    console.log(showCalendar)
     return (
         <div className="w-full relative bg-white md:rounded-xl lg:py-3 flex flex-col relative">
             {loading && (

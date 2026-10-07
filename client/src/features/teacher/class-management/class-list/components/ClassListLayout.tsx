@@ -20,7 +20,7 @@ export function ClassListLayout() {
 
     return (
         <div className="flex flex-col lg:flex-row gap-3 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-1.5rem)]">
-            <div className={`bg-white md:rounded-xl shadow-xs border border-gray-100 flex h-full flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/4`}>
+            <div className={`bg-white md:rounded-xl shadow-xs border border-gray-100 flex h-full flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/5`}>
                 <div className="flex flex-col h-full px-2 pt-2 space-y-2">
                     {course ? (
                         <InteractiveHomeList

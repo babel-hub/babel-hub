@@ -94,7 +94,8 @@ export class PostgresUserRepository implements IUserRepository {
                     first_name,
                     middle_name,
                     first_last_name,
-                    second_last_name
+                    second_last_name,
+                    role
                 FROM profile
                 WHERE school_id = $1
                   AND is_active = true

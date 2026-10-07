@@ -266,20 +266,23 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-                WITH CalendarDates AS (
-                    SELECT generate_series($1::date, $2::date, '1 day'::interval )::date AS calendar_date
-                ),
-                     CourseStudents AS (
-                         SELECT
-                             s.id as student_id,
-                             p.first_name as student_first_name,
-                             p.middle_name as student_middle_name,
-                             p.first_last_name as student_first_last_name,
-                             p.second_last_name as student_second_last_name
-                         FROM student s
-                                  JOIN profile p ON s.profile_id = p.id
-                         WHERE s.course_id = $3 AND p.school_id = $5
-                     )
+                WITH ClassDates AS (
+                    SELECT DISTINCT date AS calendar_date
+                    FROM attendance
+                    WHERE class_id = $4
+                      AND date >= $1::date AND date <= $2::date
+                    ),
+                    CourseStudents AS (
+                        SELECT
+                            s.id as student_id,
+                            p.first_name as student_first_name,
+                            p.middle_name as student_middle_name,
+                            p.first_last_name as student_first_last_name,
+                            p.second_last_name as student_second_last_name
+                        FROM student s
+                        JOIN profile p ON s.profile_id = p.id
+                        WHERE s.course_id = $3 AND p.school_id = $5
+                    )
                 SELECT
                     cs.student_id,
                     cs.student_first_name,
@@ -289,7 +292,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     cd.calendar_date AS date,
                     COALESCE(a.status, 'no_data') AS status
                 FROM CourseStudents cs
-                    CROSS JOIN CalendarDates cd
+                    CROSS JOIN ClassDates cd
                     LEFT JOIN attendance a
                 ON a.student_id = cs.student_id
                     AND a.date = cd.calendar_date

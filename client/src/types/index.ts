@@ -2,6 +2,14 @@ export type UserRole = "principal" | "admin" | "teacher" | "student" | "parent" 
 export type ModalModeTypes = 'create' | 'edit' | 'none';
 export type StudentProfileTabTypes = 'account' | 'attendance' | 'security' | 'grades' | 'classes';
 
+export const roleTranslations: Record<string, string> = {
+    principal: "Coordinador",
+    teacher: "Profesor",
+    parent: "Acudiente",
+    student: "Estudiante",
+    admin: "Administrador"
+};
+
 
 interface NameInput {
     firstName: string;

@@ -4,7 +4,7 @@ import { useAuth } from "../../auth/useAuth.ts";
 import { useState } from "react";
 import AuthButton from "./AuthButtons.tsx";
 
-export const LogOutButton = () => {
+export const LogOutButton = ({ isExpand }: { isExpand: boolean }) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const logoutAction = useAuth((s) => s.logout);
@@ -26,6 +26,7 @@ export const LogOutButton = () => {
         <AuthButton
             type="button"
             title="Cerrar Sesión"
+            isExpanded={isExpand}
             onClick={handleLogout}
             disable={loading}
         />

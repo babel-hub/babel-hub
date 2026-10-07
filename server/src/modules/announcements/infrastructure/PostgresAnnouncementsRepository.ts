@@ -8,6 +8,7 @@ import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { ForbiddenError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
+import type {PoolClient} from "pg";
 
 export class PostgresAnnouncementsRepository implements IAnnouncementsRepository {
     async getFeed(
@@ -74,22 +75,9 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                     RETURNING id;
             `, [payload.title, payload.description, payload.type, payload.target_type, authUser.userSchoolId, authUser.userId, payload.caption]);
 
-            const newAnnouncementId = result.rows[0].id;
+            const newId = result.rows[0].id;
+            await this.insertTargets(client, newId, payload.target_type, payload.target_value);
 
-            if (payload.target_type !== "ALL") {
-                let role = null;
-                let courseId = null;
-                let profileId = null;
-
-                if (payload.target_type === "ROLE") role = payload.target_value;
-                else if (payload.target_type === "COURSE") courseId = payload.target_value;
-                else if (payload.target_type === "PROFILE") profileId = payload.target_value;
-
-                await client.query(`
-                    INSERT INTO announcement_target (announcement_id, role, course_id, profile_id)
-                    VALUES ($1, $2, $3, $4)
-                `, [newAnnouncementId, role, courseId, profileId]);
-            }
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
@@ -97,7 +85,7 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 action: "CREATE_ANNOUNCEMENT",
                 schoolId: authUser.userSchoolId,
                 metadata: {
-                    id: newAnnouncementId,
+                    id: newId,
                     title: payload.title,
                     targetType: payload.target_type,
                     targetValue: payload.target_value
@@ -137,20 +125,12 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 WHERE announcement_id = $1
             `, [payload.announcementId]);
 
-            if (payload.target_type !== "ALL") {
-                let role = null;
-                let courseId = null;
-                let profileId = null;
-
-                if (payload.target_type === "ROLE") role = payload.target_value;
-                else if (payload.target_type === "COURSE") courseId = payload.target_value;
-                else if (payload.target_type === "PROFILE") profileId = payload.target_value;
-
-                await client.query(`
-                    INSERT INTO announcement_target (announcement_id, role, course_id, profile_id)
-                    VALUES ($1, $2, $3, $4)
-                `, [payload.announcementId, role, courseId, profileId]);
-            }
+            await this.insertTargets(
+                client,
+                payload.announcementId,
+                payload.target_type,
+                payload.target_value,
+            );
 
             await createAuditLog(client, {
                 actorUserId: authUser.userId,
@@ -205,5 +185,28 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
         } finally {
             client.release();
         }
+    }
+
+    private async insertTargets(
+        client: PoolClient,
+        announcementId: string,
+        targetType: string,
+        targetValue: string[] | null,
+    ): Promise<void> {
+        if (targetType === "ALL" || !targetValue?.length) return;
+
+        const column =
+            targetType === "ROLE" ? "role"
+                : targetType === "COURSE" ? "course_id"
+                    : "profile_id";
+
+        const castType = targetType === "ROLE" ? "text[]" : "uuid[]";
+
+        await client.query(
+            `INSERT INTO announcement_target (announcement_id, ${column})
+             SELECT $1, unnest($2::${castType})
+                 ON CONFLICT DO NOTHING`,
+            [announcementId, targetValue],
+        );
     }
 }

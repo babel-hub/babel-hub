@@ -35,7 +35,7 @@ export function ViewAttendance({ courseId, classId, periodId, periods }: ViewAtt
     }
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
             {loading ? (
                 <div className="p-5">
                     <LoadingContent title="Cargando asistencia..." />
@@ -120,20 +120,12 @@ export function ViewAttendance({ courseId, classId, periodId, periods }: ViewAtt
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 py-8">
-                                                {
-                                                    (selectedPeriod?.start_date && todayStr < selectedPeriod.start_date.slice(0, 10))
-                                                        ? (
-                                                            <div className="md:col-span-2 lg:col-span-3">
-                                                                <NoResults title="Este periodo aún no ha comenzado"/>
-                                                            </div>
-                                                        )
-                                                        : (
-                                                            <div className="md:col-span-2 lg:col-span-3">
-                                                                <NoResults title="No hay estudiantes para mostrar su asistencia"/>
-                                                            </div>
-                                                        )
-                                                }
+                                            <td colSpan={calendarDates.length > 0 ? calendarDates.length + 1 : 2} className="text-center text-sm md:text-base text-gray-500 p-2">
+                                                {selectedPeriod?.start_date && todayStr < selectedPeriod.start_date.slice(0, 10) ? (
+                                                    <NoResults title="Este periodo aún no ha comenzado"/>
+                                                ) : (
+                                                    <NoResults title="No hay asitencias registradas"/>
+                                                )}
                                             </td>
                                         </tr>
                                     )

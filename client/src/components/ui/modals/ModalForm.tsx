@@ -2,30 +2,30 @@ import React, { useState } from "react";
 import { CancelButton } from "../buttons/Buttons.tsx";
 import { LuEye, LuEyeClosed } from "react-icons/lu";
 import { GiCancel } from "react-icons/gi";
+import { MiniSpinner } from "../Loadings.tsx";
 
 export interface FormField {
     name: string;
     label: string;
-    // 1. Added "textarea" to the type union
-    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea";
+    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea" | "checkbox";
     required?: boolean;
     placeholder?: string;
+    loadingField?: boolean;
     disabled?: boolean;
     options?: { value: string; label: string }[];
-    rows?: number; // 2. Added rows for textarea height control
+    rows?: number;
 }
 
 interface DynamicModalFormProps {
     isOpen: boolean;
-    profileCreated?: boolean; // Fixed Boolean to boolean
+    profileCreated?: boolean;
     title: string;
     fields: FormField[];
     formData: any;
     formError: string;
     formLoading: boolean;
     onClose: () => void;
-    // 3. Added HTMLTextAreaElement to the event types
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | any) => void;
     onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -39,9 +39,10 @@ export default function DynamicModalForm({
                                              formLoading,
                                              onClose,
                                              onChange,
-                                             onSubmit
+                                             onSubmit,
                                          }: DynamicModalFormProps) {
     if (!isOpen) return null;
+
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [policyAccepted, setPolicyAccepted] = useState(false);
 
@@ -50,6 +51,23 @@ export default function DynamicModalForm({
             ...prev,
             [fieldName]: !prev[fieldName]
         }));
+    };
+
+    const handleCheckboxArrayChange = (fieldName: string, optionValue: string) => {
+        const currentSelection = Array.isArray(formData[fieldName]) ? formData[fieldName] : [];
+
+        let newSelection;
+        if (currentSelection.includes(optionValue)) {
+            newSelection = currentSelection.filter((v: string) => v !== optionValue);
+        } else {
+            newSelection = [...currentSelection, optionValue];
+        }
+        onChange({
+            target: {
+                name: fieldName,
+                value: newSelection
+            }
+        });
     };
 
     const isSubmitDisabled = formLoading || (profileCreated && !policyAccepted);
@@ -69,6 +87,7 @@ export default function DynamicModalForm({
                         </svg>
                     </button>
                 </div>
+
                 <div className="px-5 py-3 overflow-y-auto">
                     <form id="dynamic-form" onSubmit={onSubmit} className="flex flex-col gap-4">
                         {fields.map((field) => (
@@ -93,6 +112,33 @@ export default function DynamicModalForm({
                                             </option>
                                         ))}
                                     </select>
+                                ) : field.type === "checkbox" ? (
+                                    field.loadingField ? (
+                                        <MiniSpinner />
+                                    ) : (
+                                        <div className="flex flex-col gap-1 max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded-lg p-2">
+                                            {
+                                                field.options?.map((opt) => {
+                                                    const currentSelection = Array.isArray(formData[field.name]) ? formData[field.name] : [];
+                                                    return (
+                                                        <label key={opt.value} className="flex checkbox-wrapper-13 items-center gap-3 cursor-pointer hover:bg-gray-100 p-1 rounded-lg transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={currentSelection.includes(opt.value)}
+                                                                onChange={() => handleCheckboxArrayChange(field.name, opt.value)}
+                                                            />
+                                                            <span className="text-sm text-gray-700 font-medium select-none">{opt.label}</span>
+                                                        </label>
+                                                    )
+                                                })
+                                            }
+                                            {
+                                                (!field.options || field.options?.length === 0) && (
+                                                    <span className="text-sm text-gray-500 py-1 text-center">No hay opciones disponibles</span>
+                                                )
+                                            }
+                                        </div>
+                                    )
                                 ) : field.type === "textarea" ? (
                                     <textarea
                                         id={`${field.name}_`}

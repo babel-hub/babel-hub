@@ -1,6 +1,13 @@
 type AnnouncementType = 'GENERAL' | 'EVENT' | 'EMERGENCY' | 'DEADLINE' | 'POLL';
 type AnnouncementTargetType = 'ALL' | 'PROFILE' | 'ROLE' | 'COURSE';
 
+export interface GetFeedParams {
+    schoolId: string;
+    viewerId: string;
+    viewerRole: string;
+    courseId?: string;
+}
+
 export interface Announcement {
     id: string;
     author: string;
@@ -18,7 +25,7 @@ export interface CreateAnnouncementPayload {
     type: AnnouncementType;
     caption: string | null;
     target_type: AnnouncementTargetType;
-    target_value: string | null;
+    target_value: string[] | null;
 }
 
 export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {
