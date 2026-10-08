@@ -15,5 +15,5 @@ interface CLassDetails {
 
 export interface ClassDetailsData {
     details: CLassDetails;
-    students:   Student[];
+    students: Student[];
 }
