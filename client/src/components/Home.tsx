@@ -1,4 +1,4 @@
-import React, { useState, type JSX } from "react";
+import React, {useState, type JSX, useEffect} from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import LogOutButton from "./auth/LogOutButton.tsx";
 import type { UserProfile } from "../auth/useAuth.ts";
@@ -7,6 +7,8 @@ import { HiMenu, HiX } from "react-icons/hi";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import logo from "../../src/assets/images/logo.png"
 import { roleTranslations } from "../types";
+import { TbSettings } from "react-icons/tb";
+import { useRef } from "react";
 
 interface GridItem {
     id: string | number;
@@ -25,9 +27,24 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
     const displayTitle = roleTranslations[user?.role || ""] || "Usuario";
     const navigate = useNavigate();
     const location = useLocation();
+    const menuRef = useRef<HTMLDivElement | null>(null);
 
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+
+
+    useEffect(() => {
+        if (!showMenu) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setShowMenu(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showMenu]);
 
     const handleNavigation = (path: string) => {
         navigate(path);
@@ -136,13 +153,17 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                     })}
                 </div>
 
-                <div className="p-2">
-                    <LogOutButton isExpand={isExpanded} />
-                </div>
-
                 <div className="border-t p-2 border-gray-100">
-                    <div className={`flex items-center bg-white rounded-xl hover:bg-gray-50 transition-colors p-1 cursor-pointer border border-transparent hover:border-gray-100 ${isExpanded ? 'justify-between' : 'md:justify-center'}`}>
-                        <div className="flex items-center gap-3 overflow-hidden">
+                    <div
+                        ref={menuRef}
+                        className={`flex relative items-center bg-white rounded-xl hover:bg-gray-50 transition-colors p-1 border border-transparent hover:border-gray-100 ${isExpanded ? 'justify-between' : 'md:justify-center'}`}
+                    >
+                        <button
+                            onClick={() => setShowMenu((open) => !open)}
+                            aria-haspopup="menu"
+                            aria-expanded={showMenu}
+                            className="flex items-center w-full cursor-pointer gap-3 overflow-hidden"
+                        >
                             <div className="w-8 h-8 shrink-0 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-bold text-xs">
                                 {userInitials}
                             </div>
@@ -155,7 +176,25 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                     {displayTitle}
                                 </span>
                             </div>
-                        </div>
+                        </button>
+
+                        {showMenu && (
+                            <div
+                                role="menu"
+                                className={`absolute top-0 -translate-y-[calc(100%+6px)] left-0 w-full p-1 bg-white shadow-sm rounded-xl border border-gray-100 ${isExpanded ? "" : "md:w-56"}`}
+                            >
+                                <div className="flex mb-1 flex-col gap-2 text-sm justify-center items-start">
+                                    <div className="p-2 rounded-xl flex items-center gap-2 hover:bg-gray-50 w-full">
+                                        <TbSettings />
+                                        <span>Configuraciones</span>
+                                    </div>
+                                </div>
+                                <div className="w-[95%] mx-auto border-t border-gray-200" />
+                                <div className="mt-1">
+                                    <LogOutButton />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

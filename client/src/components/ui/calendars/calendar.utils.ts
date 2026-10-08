@@ -4,7 +4,7 @@ export const HOUR_HEIGHT = 112;
 
 export const timeToPosition = (timeString: string) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const startHour = 5;
+    const startHour = 6;
     return (hours - startHour) * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT + 1.2;
 };
 

@@ -11,7 +11,7 @@ interface CalendarGridProps {
 }
 
 export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
-    const hours = Array.from({ length: 14 }, (_, i) => i + 5);
+    const hours = Array.from({ length: 13 }, (_, i) => i + 6);
     const days = [
         { num: 1, label: 'Lunes' },
         { num: 2, label: 'Martes' },
@@ -24,7 +24,7 @@ export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
     return (
         <div className="flex flex-col h-auto bg-white w-full min-w-2xl">
             <div className="grid grid-cols-[50px_repeat(6,1fr)] sticky top-0 bg-white z-30">
-                <div className="p-4 border-r border-gray-100 sticky left-0 bg-white z-40"></div>
+                <div className="p-4 border-r border-gray-100 sticky left-0 bg-white z-30" />
                 {days.map(day => (
                     <div key={day.num} className="p-3 text-center text-sm border-r last:border-r-0 border-gray-100 transition-colors text-gray-600 font-semibold">
                         {day.label}
@@ -44,7 +44,7 @@ export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
                 {days.map(day => (
                     <div key={day.num} className="relative">
                         {hours.map(hour => {
-                            const topOffset = (hour - 5) * HOUR_HEIGHT;
+                            const topOffset = (hour - 6) * HOUR_HEIGHT;
                             return (
                                 <React.Fragment key={hour}>
                                     <div className="w-full border-b border-gray-300 absolute left-0" style={{ top: `${topOffset}px` }}></div>

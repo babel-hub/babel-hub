@@ -3,10 +3,9 @@ interface AuthButtonProps {
     disable?: boolean;
     type?: "submit" | "button" | "reset";
     onClick?: () => void;
-    isExpanded?: boolean;
 }
 
-export default function AuthButton ({ title, disable, isExpanded, type, onClick }: AuthButtonProps) {
+export default function AuthButton ({ title, disable, type, onClick }: AuthButtonProps) {
     return (
         <button
             type={type}
@@ -17,7 +16,7 @@ export default function AuthButton ({ title, disable, isExpanded, type, onClick 
             {disable ? (
                 <div className="w-6 h-6 border-3 border-transparent border-t-white rounded-full animate-spin" />
             ) : (
-                <span className={`${isExpanded ? 'inline' : 'md:hidden'}`}>{title}</span>
+                title
             )}
         </button>
 
