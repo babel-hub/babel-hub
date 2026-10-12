@@ -11,6 +11,14 @@ export interface TeacherSchedule {
     room: string | null;
 }
 
+export interface CheckOverlapPayload {
+    classId: string;
+    day: number;
+    startTime: string;
+    endTime: string;
+    excludeScheduleId: string | undefined;
+}
+
 export interface UpsertSchedule {
     day: number,
     startTime: string,

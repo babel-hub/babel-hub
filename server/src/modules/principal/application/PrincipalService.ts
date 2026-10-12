@@ -1,38 +1,29 @@
 import type { IPrincipalRepository } from "../domain/IPrincipalRepository.js";
-import type { CreatePrincipal } from "../domain/Principal.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {CreatePrincipalPayload} from "../domain/Principal.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
+import { normalizeOptionalText } from "../../shared/domain/normalize.js";
 
 export class PrincipalService {
     constructor(private readonly principalRepository: IPrincipalRepository) {}
 
-    async createPrincipal(
-        principalEmail: string,
-        principalPassword: string,
-        principalFirstName: string,
-        principalMiddleName: string | null | undefined,
-        principalFirstLastName: string,
-        principalSecondLastName: string | null | undefined,
-        userId: string,
-        userRole: string,
-        userSchoolId: string
-    ): Promise<CreatePrincipal> {
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!principalEmail ||
-            !principalFirstName ||
-            !principalFirstLastName ||
-            !principalPassword
-        ) throw new ValidationError("Todos los campos deben estar llenos");
+    private validate(payload: CreatePrincipalPayload): void {
+        if (!payload.email?.trim() || !payload.firstName?.trim() || !payload.firstLastName?.trim() || !payload.password?.trim()) {
+            throw new ValidationError("Todos los campos deben estar llenos");
+        }
+    }
 
-        return await this.principalRepository.createPrincipal(
-            principalEmail,
-            principalPassword,
-            principalFirstName,
-            principalMiddleName ?? null,
-            principalFirstLastName,
-            principalSecondLastName ?? null,
-            userId,
-            userRole,
-            userSchoolId
-        );
+    async createPrincipal(payload: CreatePrincipalPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        this.validate(payload);
+
+        const normalized: CreatePrincipalPayload = {
+            ...payload,
+            middleName: normalizeOptionalText(payload.middleName),
+            secondLastName: normalizeOptionalText(payload.secondLastName),
+        };
+
+        return this.principalRepository.createPrincipal(normalized, auth);
     }
 }

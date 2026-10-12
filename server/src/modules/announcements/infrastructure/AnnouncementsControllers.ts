@@ -1,87 +1,77 @@
 import type { AnnouncementService } from "../application/AnnouncementService.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import type { NextFunction, Response } from "express";
+import type {
+    CreateAnnouncementPayload,
+    UpdateAnnouncementPayload
+} from "../domain/Announcements.types.js";
+import { getAuthUser } from "../../shared/auth/getAuthUser.js";
 
 export class AnnouncementsController {
     constructor(private readonly announcementService: AnnouncementService) {}
 
     getFeed = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const schoolId = request.user?.schoolId as string;
-            const role = request.user?.role as string;
+            const authUser = getAuthUser(request);
+            const courseId = request.query.courseId as string | undefined;
 
-            const profileId = request.query.profileId as string;
-            const courseId = request.query.courseId as string;
-
-            const auth = {
-                userId: request.user?.userId as string,
-                userSchoolId: request.user?.schoolId as string,
-                userRole: request.user?.role as string,
-            };
-
-            const feed = await this.announcementService.getFeed(schoolId, profileId, role, auth, courseId);
+            const feed = await this.announcementService.getFeed(courseId, authUser);
             response.status(200).json({ feed });
-        } catch (error: any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     createAnnouncement = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const { title, description, type, caption, targetType: target_type, targetValue: target_value } = request.body;
+            const authUser = getAuthUser(request);
+            const {
+                title, description, type, caption,
+                targetType: target_type,
+                targetValue: target_value
+            } = request.body;
 
-            const auth = {
-                userId: request.user?.userId as string,
-                userSchoolId: request.user?.schoolId as string,
-                userRole: request.user?.role as string,
+            const payload: CreateAnnouncementPayload = {
+                title, description, type, caption, target_type, target_value
             };
 
-            await this.announcementService.createAnnouncement({ title, description, type, caption, target_type, target_value }, auth);
+            await this.announcementService.createAnnouncement(payload, authUser);
             response.status(201).send();
-        } catch (error: any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     updateAnnouncement = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const announcementId = request.params.id as string;
-            const { title, description, type, caption, targetType: target_type, targetValue: target_value } = request.body;
+            const {
+                title, description, type, caption,
+                targetType: target_type,
+                targetValue: target_value
+            } = request.body;
 
-            const auth = {
-                userId: request.user?.userId as string,
-                userSchoolId: request.user?.schoolId as string,
-                userRole: request.user?.role as string,
+            const payload: UpdateAnnouncementPayload = {
+                announcementId, title, description, type, caption, target_type, target_value
             };
 
-            await this.announcementService.updateAnnouncement(
-                {
-                    announcementId, title, description, target_type, type, caption, target_value,
-                },
-                auth
-            );
-
-            response.status(200).send();
-        } catch (error: any) {
+            await this.announcementService.updateAnnouncement(payload, authUser);
+            response.status(204).send();
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     deleteAnnouncement = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const announcementId = request.params.id as string;
 
-            const auth = {
-                userId: request.user?.userId as string,
-                userSchoolId: request.user?.schoolId as string,
-                userRole: request.user?.role as string,
-            };
-
-            await this.announcementService.deleteAnnouncement(announcementId, auth);
-
+            await this.announcementService.deleteAnnouncement(announcementId, authUser);
             response.status(204).send();
-        } catch (error: any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 }

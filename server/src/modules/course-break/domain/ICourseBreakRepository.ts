@@ -1,5 +1,6 @@
-import type { CourseBreakByDate } from "./CourseBreak.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type { CourseBreakByDate, GetCourseBreaksByDatePayload } from "./CourseBreak.types.js";
 
 export interface ICourseBreakRepository {
-    getCourseBreaksByDate(courseId: string, date: string, schoolId: string): Promise<CourseBreakByDate[]>;
+    getCourseBreaksByDate(payload: GetCourseBreaksByDatePayload, authUser: AuthUser): Promise<CourseBreakByDate[]>;
 }

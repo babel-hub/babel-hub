@@ -1,37 +1,53 @@
 import type { IGradingTemplateRepository } from "../domain/IGradingTemplateRepository.js";
-import type { AssessmentCriteria, GradingTemplate } from "../domain/GradingTemplate.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {
+    AssessmentCriteria,
+    GradingTemplate,
+    CreateGradingTemplatePayload,
+    UpdateGradingTemplatePayload,
+    GetGradingTemplateDetailsPayload
+} from "../domain/GradingTemplate.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class GradingTemplateService {
     constructor(private readonly gradingRepository: IGradingTemplateRepository) {}
 
-    async getGradingTemplates (userSchoolId: string): Promise<GradingTemplate[]> {
-        if (!userSchoolId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas del usuario (master)');
-
-        return this.gradingRepository.getGradingTemplates(userSchoolId);
+    private validate(payload: CreateGradingTemplatePayload): void {
+        if (!payload.gradingName?.trim() || !payload.gradingScaleId?.trim()) {
+            throw new ValidationError("Hay campos obligatorios vacíos");
+        }
     }
-    async getGradingTemplateDetails (gradingId: string, userSchoolId: string): Promise<AssessmentCriteria>  {
-        if (!userSchoolId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas del usuario (master)');
-        if (!gradingId) throw new ValidationError('El id del criterio de nota no fue entregado');
 
-        return this.gradingRepository.getGradingTemplateDetails(gradingId, userSchoolId);
+    async getGradingTemplates(authUser: AuthUser): Promise<GradingTemplate[]> {
+        const auth = requireAuth(authUser);
+        return this.gradingRepository.getGradingTemplates(auth);
     }
-    async createGradingTemplate (gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!userSchoolId || !userRole ||!userId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas del usuario (master)');
-        if (!gradingName || !gradingScaleId) throw new ValidationError('Hay campos obligatorias vacios');
 
-        return this.gradingRepository.createGradingTemplate(gradingName, gradingScaleId, userId, userRole, userSchoolId);
+    async getGradingTemplateDetails(gradingId: string, authUser: AuthUser): Promise<AssessmentCriteria> {
+        const auth = requireAuth(authUser);
+        if (!gradingId) throw new ValidationError("El id del criterio de nota no fue entregado");
+
+        const payload: GetGradingTemplateDetailsPayload = { gradingId };
+        return this.gradingRepository.getGradingTemplateDetails(payload, auth);
     }
-    async deleteGradingTemplate (gradingId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!userSchoolId || !userRole ||!userId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas del usuario (master)');
-        if (!gradingId) throw new ValidationError('El id del criterio de nota no fue entregado');
 
-        return this.gradingRepository.deleteGradingTemplate(gradingId, userId, userRole, userSchoolId);
+    async createGradingTemplate(payload: CreateGradingTemplatePayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        this.validate(payload);
+        await this.gradingRepository.createGradingTemplate(payload, auth);
     }
-    async updateGradingTemplate (gradingId: string, gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!userSchoolId || !userRole ||!userId) throw new UnauthorizedError('Credenciales del usuario (master) invalidas del usuario (master)');
-        if (!gradingId || !gradingName || !gradingScaleId) throw new ValidationError('Hay campos obligatorias vacios');
 
-        return this.gradingRepository.updateGradingTemplate(gradingId, gradingName, gradingScaleId, userId, userRole, userSchoolId);
+    async updateGradingTemplate(payload: UpdateGradingTemplatePayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!payload.gradingId) throw new ValidationError("El id del criterio de nota no fue entregado");
+        this.validate(payload);
+        await this.gradingRepository.updateGradingTemplate(payload, auth);
+    }
+
+    async deleteGradingTemplate(gradingId: string, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!gradingId) throw new ValidationError("El id del criterio de nota no fue entregado");
+        await this.gradingRepository.deleteGradingTemplate({ gradingId }, auth);
     }
 }

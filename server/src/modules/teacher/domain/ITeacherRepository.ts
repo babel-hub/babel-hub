@@ -1,10 +1,16 @@
-import type { CreateTeacher, TeacherDetails, Teachers } from "./Teacher.types.js";
-import type {AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials} from "../../shared/domain/Shared.types.js";
+import type { AuthUser, TeacherCreateCredentials, TeacherUpdateCredentials } from "../../shared/domain/Shared.types.js";
+import type {CreateTeacher, TeacherDetails, TeacherRow, Teachers} from "./Teacher.types.js";
+
+export interface GetTeachersPayload {
+    available: string | undefined;
+    includeTeacherId: string | undefined;
+    isActive: boolean;
+}
 
 export interface ITeacherRepository {
-    getTeachers(userSchoolId: string, available: string | undefined, includeTeacherId: string | undefined, isActive: boolean): Promise<Teachers[]>;
-    getTeacherDetails(teacherId: string, userSchoolId: string): Promise<TeacherDetails | null>;
-    createTeacher(teacherCredentials: TeacherCreateCredentials, auth: AuthUser): Promise<CreateTeacher>;
-    updateTeacher(teacherCredentials: TeacherUpdateCredentials, auth: AuthUser): Promise<void>;
-    deleteTeacher(teacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
+    getTeachers(payload: GetTeachersPayload, authUser: AuthUser): Promise<Teachers[]>;
+    getTeacherDetails(teacherId: string, authUser: AuthUser): Promise<TeacherRow | null>;
+    createTeacher(teacherCredentials: TeacherCreateCredentials, authUser: AuthUser): Promise<CreateTeacher>;
+    updateTeacher(teacherCredentials: TeacherUpdateCredentials, authUser: AuthUser): Promise<void>;
+    deleteTeacher(teacherId: string, authUser: AuthUser): Promise<void>;
 }

@@ -45,11 +45,25 @@ export interface TeacherCourse {
     total_students: number;
 }
 
-export interface CreateCourse {
-    id: string;
+export interface GetCoursesPayload {
+    isActive: boolean;
 }
 
-export interface UpdateCourse {
-    id: string;
-    name: string;
+export interface GetCourseDetailsPayload {
+    courseId: string;
+    isActive: boolean;
+}
+
+export interface CreateCoursePayload {
+    courseName: string;
+    courseYear: string;
+    courseTeacherId: string;
+}
+
+export interface UpdateCoursePayload extends CreateCoursePayload {
+    courseId: string;
+}
+
+export interface DeleteCoursePayload {
+    courseId: string;
 }

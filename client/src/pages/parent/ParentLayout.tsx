@@ -14,11 +14,11 @@ export default function ParentLayout() {
 
     const gridItems = [
         { id: "1", icon: <BiSolidDashboard />, path: "/parent/dashboard", label: "Dashboard" },
-        { id: "7", icon: <TbMessages />, path: "/parent/comunicados", label: "Comunicados" },
-        { id: "4", icon: <BiBell />, path: "/unknow", label: "Notificaciones" },
-        { id: "5", icon: <BiMessageDetail />, path: "/unknow", label: "Mensajes" },
-        { id: "6", icon: <RiApps2Line />, path: "/parent/acumulado", label: "Acumulado" },
-        { id: "7", icon: <PiListMagnifyingGlassBold />, path: "/parent/seguimiento-academico", label: "Seguimiento" }
+        { id: "6", icon: <PiListMagnifyingGlassBold />, path: "/parent/seguimiento-academico", label: "Seguimiento" },
+        { id: "5", icon: <RiApps2Line />, path: "/parent/acumulado", label: "Acumulado" },
+        { id: "3", icon: <BiBell />, path: "/unknow", label: "Notificaciones" },
+        { id: "4", icon: <BiMessageDetail />, path: "/unknow", label: "Mensajes" },
+        { id: "2", icon: <TbMessages />, path: "/parent/comunicados", label: "Comunicados" },
     ];
 
     return (

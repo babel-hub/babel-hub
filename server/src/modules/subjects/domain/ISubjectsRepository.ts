@@ -1,9 +1,16 @@
-import type { AvailableSubjects, CreateSubject, SubjectDetails } from "./Subjects.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type {
+    AvailableSubjects,
+    CreateSubject, CreateSubjectPayload,
+    GetAvailableSubjectsPayload,
+    GetSubjectsByAreaPayload,
+    SubjectDetails, UpdateSubjectPayload
+} from "./Subjects.types.js";
 
 export interface ISubjectsRepository {
-    getSubjectsByArea(subjectAreaId: string, userSchoolId: string): Promise<SubjectDetails[]>;
-    getAvailableSubjects(courseId: string, userSchoolId: string): Promise<AvailableSubjects[]>;
-    createSubject(subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<CreateSubject>;
-    updateSubject(subjectId: string, subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
-    deleteSubject(subjectId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
+    getSubjectsByArea(payload: GetSubjectsByAreaPayload, authUser: AuthUser): Promise<SubjectDetails[]>;
+    getAvailableSubjects(payload: GetAvailableSubjectsPayload, authUser: AuthUser): Promise<AvailableSubjects[]>;
+    createSubject(payload: CreateSubjectPayload, authUser: AuthUser): Promise<CreateSubject>;
+    updateSubject(payload: UpdateSubjectPayload, authUser: AuthUser): Promise<void>;
+    deleteSubject(subjectId: string, authUser: AuthUser): Promise<void>;
 }

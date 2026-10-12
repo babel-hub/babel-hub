@@ -1,8 +1,9 @@
 import type { IClassRepository } from "../domain/IClassRepository.js";
-import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type { ClassDetails } from "../domain/Classes.types.js";
+import type { ClassDetails, CreateClass, CreateClassPayload } from "../domain/Classes.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import type {IStudentRepository} from "../../student/domain/IStudentRepository.js";
+import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type { IStudentRepository } from "../../student/domain/IStudentRepository.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class ClassService {
     constructor(
@@ -10,69 +11,65 @@ export class ClassService {
         private readonly studentRepository: IStudentRepository,
     ) {}
 
-    async getClassDetails(classId: string, schoolId: string, isActive: boolean): Promise<ClassDetails> {
+    async getClassDetails(classId: string, isActive: boolean, authUser: AuthUser): Promise<ClassDetails> {
+        const auth = requireAuth(authUser);
         if (!classId) throw new ValidationError("El ID de la clase es obligatorio.");
-        if (!schoolId) throw new UnauthorizedError("Falta el ID del colegio.");
 
-        const classDetails = await this.classRepository.getClassDetails(classId, schoolId, isActive);
-
+        const classDetails = await this.classRepository.getClassDetails(classId, isActive, auth);
         if (!classDetails) {
             throw new NotFoundError("La clase no existe o no tienes acceso a ella.");
         }
 
-        const students = await this.studentRepository.getClassStudents(classDetails.course_id, isActive);
+        const students = await this.studentRepository.getClassStudents(
+            { courseId: classDetails.course_id, isActive },
+            auth
+        );
 
         return {
             details: classDetails,
-            students: students
+            students
         };
     }
 
-    async createClass(courseId: string, subjectId: string, teacherId: string, authUser: AuthUser) {
-        if (!courseId || !subjectId || !teacherId) {
+    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+
+        if (!payload.courseId || !payload.subjectId || !payload.teacherId) {
             throw new ValidationError("Faltan parámetros obligatorios (Curso, Asignatura o Profesor).");
         }
 
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        }
-
-        return await this.classRepository.createClass(courseId, subjectId, teacherId, authUser);
+        await this.classRepository.createClass(payload, auth);
     }
 
-    async updateClass(classId: string, teacherId: string, authUser: AuthUser) {
+    async updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
         if (!classId || !teacherId) {
             throw new ValidationError("El ID de la clase y el nuevo profesor son obligatorios.");
         }
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        }
 
-        return await this.classRepository.updateClass(classId, teacherId, authUser);
+        await this.classRepository.updateClass(classId, teacherId, auth);
     }
 
-    async deleteClass(classId: string, authUser: AuthUser) {
+    async deleteClass(classId: string, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
         if (!classId) throw new ValidationError("El ID de la clase es obligatorio.");
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        }
 
-        return await this.classRepository.deleteClass(classId, authUser);
+        await this.classRepository.deleteClass(classId, auth);
     }
 
-    async getTeacherClasses(teacherId: string, teacherSchoolId: string, isActive: boolean) {
+    async getTeacherClasses(teacherId: string, isActive: boolean, authUser: AuthUser) {
+        const auth = requireAuth(authUser);
         if (!teacherId) throw new ValidationError("El ID del profesor es obligatorio.");
-        if (!teacherSchoolId) throw new UnauthorizedError("Falta el ID del colegio.");
 
-        return await this.classRepository.getTeacherClasses(teacherId, teacherSchoolId, isActive);
+        return this.classRepository.getTeacherClasses(teacherId, isActive, auth);
     }
 
-    async getTeacherClassDetails(classId: string, teacherId: string, teacherSchoolId: string) {
+    async getTeacherClassDetails(classId: string, teacherId: string, authUser: AuthUser) {
+        const auth = requireAuth(authUser);
         if (!classId) throw new ValidationError("El ID de la clase es obligatorio.");
-        if (!teacherId || !teacherSchoolId) throw new UnauthorizedError("Credenciales del profesor inválidas o incompletas.");
+        if (!teacherId) throw new ValidationError("El ID del profesor es obligatorio.");
 
-        const details = await this.classRepository.getTeacherClassDetails(classId, teacherId, teacherSchoolId);
-
+        const details = await this.classRepository.getTeacherClassDetails(classId, teacherId, auth);
         if (!details) {
             throw new NotFoundError("La clase no existe o no pertenece a este profesor.");
         }

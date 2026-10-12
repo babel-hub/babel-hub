@@ -1,3 +1,8 @@
+export interface GetUsersByNamePayload {
+    query: string;
+    limit: number;
+}
+
 export type UserProfileResponse = {
     id: string;
     first_name: string;

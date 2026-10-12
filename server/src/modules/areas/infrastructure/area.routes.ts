@@ -7,8 +7,11 @@ import { PostgresAreaRepository } from "./PostgresAreaRepository.js";
 import { AreaService } from "../application/AreaService.js";
 import { AreaControllers } from "./AreaControllers.js";
 
-const repository = new PostgresAreaRepository();
-const service = new AreaService(repository);
+import { PostgresSubjectRepository } from "../../subjects/infrastructure/PostgresSubjectRepository.js";
+
+const areaRepository = new PostgresAreaRepository();
+const subjectRepository = new PostgresSubjectRepository();
+const service = new AreaService(areaRepository, subjectRepository);
 const controller = new AreaControllers(service);
 
 const router: Router = Router();

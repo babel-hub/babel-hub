@@ -1,20 +1,21 @@
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
     AttendanceSummary,
     CalendarAttendance,
     ClassAttendance,
     CourseAttendance,
     CourseDailyAttendance,
-    BulkRecords,
-    DailyAttendance
+    DailyAttendance, GetDailyClassAttendancePayload,
+    GetDailyCourseAttendancePayload,
+    GetClassAttendancePayload, GetCalendarAttendancePayload, GetAttendanceSummaryPayload, BulkUpsertAttendancePayload
 } from "./Attendance.types.js";
-import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export interface IAttendanceRepository {
-    getDailyClassAttendance(classId: string, schoolId: string, date: string, isActive: boolean): Promise<ClassAttendance[]>;
-    getDailyCourseAttendance(courseId: string, schoolId: string, date: string, isActive: boolean): Promise<CourseDailyAttendance[]>;
-    getClassAttendance(courseId: string, classId: string, schoolId: string, startDate: string, endDate: string): Promise<CourseAttendance[]>;
-    getCalendarAttendance(studentId: string, schoolId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]>;
-    getStudentDailyAttendance(studentId: string, schoolId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]>;
-    getAttendanceSummary(schoolId: string, today: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]>;
-    bulkUpsertAttendance(classId: string, records: BulkRecords[], date: string, authUser: AuthUser): Promise<void>;
+    getDailyClassAttendance(payload: GetDailyClassAttendancePayload, authUser: AuthUser): Promise<ClassAttendance[]>;
+    getDailyCourseAttendance(payload: GetDailyCourseAttendancePayload, authUser: AuthUser): Promise<CourseDailyAttendance[]>;
+    getClassAttendance(payload: GetClassAttendancePayload, authUser: AuthUser): Promise<CourseAttendance[]>;
+    getCalendarAttendance(payload: GetCalendarAttendancePayload, authUser: AuthUser): Promise<CalendarAttendance[]>;
+    getStudentDailyAttendance(studentId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]>;
+    getAttendanceSummary(payload: GetAttendanceSummaryPayload, authUser: AuthUser): Promise<AttendanceSummary[]>;
+    bulkUpsertAttendance(payload: BulkUpsertAttendancePayload, authUser: AuthUser): Promise<void>;
 }

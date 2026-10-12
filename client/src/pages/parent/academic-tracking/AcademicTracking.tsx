@@ -34,8 +34,8 @@ export default function AcademicTracking() {
     if (students.length === 0) return <NoResults title='Estudiantes no asignados a este acudiante' />;
 
     const activeStudent = students.find(s => s.student_id === selectedStudentId);
+    if (!selectedPeriodId || !selectedStudentId || !activeStudent) return null;
 
-    if (!selectedStudentId || !activeStudent) return null;
 
     return (
         <AcademicTrackingLayout

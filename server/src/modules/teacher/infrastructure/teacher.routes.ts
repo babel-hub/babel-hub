@@ -8,14 +8,19 @@ import { TeacherServices } from "../application/TeacherServices.js";
 import { TeacherControllers } from "./TeacherControllers.js";
 import { PostgresClassScheduleRepository } from "../../class-schedule/infrastructure/PostgresClassScheduleRepository.js";
 import { PostgresAssignmentRepository } from "../../assignments/infrastructure/PostgersAssigmentRepository.js";
+import { PostgresClassRepository } from "../../classes/infrastructure/PostgresClassRepository.js";
 
 const teacherRepository = new PostgresTeacherRepository();
 const scheduleRepository = new PostgresClassScheduleRepository();
 const assignmentRepository = new PostgresAssignmentRepository();
-const service = new TeacherServices(teacherRepository, scheduleRepository, assignmentRepository);
+const classRepository = new PostgresClassRepository();
+const service = new TeacherServices(teacherRepository, scheduleRepository, assignmentRepository, classRepository);
 const controllers = new TeacherControllers(service);
 
 const router: Router = Router();
+
+// NOTE: :teacherId on /:teacherId means teacher.id (role-table PK).
+//       :teacherId on /:teacherId/schedule and /:teacherId/calendar means profile.id.
 
 router.get(
     "/",
@@ -25,7 +30,7 @@ router.get(
 );
 
 router.get(
-    "/:id",
+    "/:teacherId",
     authMiddleware,
     authorizedRoles(["principal", "admin"]),
     controllers.getTeacherDetails

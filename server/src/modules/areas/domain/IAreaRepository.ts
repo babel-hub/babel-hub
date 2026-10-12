@@ -1,10 +1,10 @@
-import type { Area, AreaDetails } from "./Areas.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type {Area, AreaDetails, CreateAreaPayload, UpdateAreaPayload} from "./Areas.types.js";
 
 export interface IAreaRepository {
-    getAreas(schoolId: string): Promise<Area[]>;
-    getAreaDetails(id: string, schoolId: string): Promise<AreaDetails | null>;
-    insertArea(name: string, authUser: AuthUser): Promise<Area>;
-    updateArea(id: string, newName: string, authUser: AuthUser): Promise<Area>;
+    getAreas(authUser: AuthUser): Promise<Area[]>;
+    getAreaDetails(id: string, authUser: AuthUser): Promise<Area | null>;
+    insertArea(payload: CreateAreaPayload, authUser: AuthUser): Promise<void>;
+    updateArea(payload: UpdateAreaPayload, authUser: AuthUser): Promise<void>;
     deleteArea(id: string, authUser: AuthUser): Promise<void>;
 }

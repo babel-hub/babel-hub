@@ -8,6 +8,12 @@ interface Student {
     is_active: boolean;
 }
 
+export interface CreateClassPayload {
+    courseId: string;
+    subjectId: string;
+    teacherId: string;
+}
+
 export interface StudentClassRow {
     class_id: string;
     subject_name: string;
@@ -41,6 +47,12 @@ export interface ClassInfo {
 export interface ClassDetails {
     details: ClassInfo;
     students: Student[];
+}
+
+export interface ClassRow {
+    class_id: string;
+    subject_name: string;
+    course_name: string;
 }
 
 export interface CreateClass {

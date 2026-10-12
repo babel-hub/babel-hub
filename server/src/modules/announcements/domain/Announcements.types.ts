@@ -1,5 +1,9 @@
-type AnnouncementType = 'GENERAL' | 'EVENT' | 'EMERGENCY' | 'DEADLINE' | 'POLL';
-type AnnouncementTargetType = 'ALL' | 'PROFILE' | 'ROLE' | 'COURSE';
+export type AnnouncementType = 'GENERAL' | 'EVENT' | 'EMERGENCY' | 'DEADLINE' | 'POLL';
+export type AnnouncementTargetType = 'ALL' | 'PROFILE' | 'ROLE' | 'COURSE';
+
+export interface GetFeedPayload {
+    courseId?: string | undefined;
+}
 
 export interface GetFeedParams {
     schoolId: string;

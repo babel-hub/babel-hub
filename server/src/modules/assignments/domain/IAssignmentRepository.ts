@@ -1,26 +1,15 @@
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
     Assignments,
-    AssignmentsByTeacherAndDate,
-    AssignmentsOverview,
+    AssignmentsByTeacherAndDate, GetAssignmentsOverviewPayload, CreateAssignmentPayload,
     UpdateAssignmentDTO
 } from "./Assignment.types.js";
-import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export interface IAssignmentRepository {
-    getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<Assignments[]>;
-    getAssignmentsByTeacherAndDate(teacherProfileId: string, startDate: string, endDate: string): Promise<AssignmentsByTeacherAndDate[]>;
-    getAssignmentOwner(assignmentId: string): Promise<string | null>;
-    createAssignment(
-        assignmentName: string,
-        assignmentDueAt: string,
-        classId: string,
-        assessmentId: string,
-        periodId: string,
-        authUser: AuthUser): Promise<void>;
-    updateAssignment(
-        assignmentId: string,
-        payload: UpdateAssignmentDTO,
-        authUser: AuthUser
-    ): Promise<void>;
+    getAssignmentsOverview(payload: GetAssignmentsOverviewPayload, authUser: AuthUser): Promise<Assignments[]>;
+    getAssignmentsByTeacherAndDate(teacherProfileId: string, startDate: string, endDate: string, authUser: AuthUser): Promise<AssignmentsByTeacherAndDate[]>;
+    getAssignmentOwner(assignmentId: string, authUser: AuthUser): Promise<string | null>;
+    createAssignment(payload: CreateAssignmentPayload, authUser: AuthUser): Promise<void>;
+    updateAssignment(assignmentId: string, payload: UpdateAssignmentDTO, authUser: AuthUser): Promise<void>;
     deleteAssignment(assignmentId: string, authUser: AuthUser): Promise<void>;
 }

@@ -37,3 +37,17 @@ export interface AssignmentsByTeacherAndDate {
     subject_name: string;
     teacher_id: string;
 }
+
+export interface GetAssignmentsOverviewPayload {
+    courseId: string;
+    classId: string;
+    periodId: string;
+}
+
+export interface CreateAssignmentPayload {
+    assignmentName: string;
+    assignmentDueAt: string;
+    classId: string;
+    assessmentId: string;
+    periodId: string;
+}

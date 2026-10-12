@@ -1,20 +1,27 @@
-import type { IStudentRepository } from "../domain/IStudentRepository.js";
 import type {
-    CreateStudent, StudentBaseRow,
+    IStudentRepository
+} from "../domain/IStudentRepository.js";
+import type {
     StudentByName,
     StudentProfileData,
-    Students
+    Students,
+    ClassStudents, GetStudentsPayload, GetClassStudentsPayload, GetStudentsByNamePayload
 } from "../domain/Student.types.js";
-import { NotFoundError, UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type { AuthUser, StudentCreateCredentials, StudentUpdateCredentials } from "../../shared/domain/Shared.types.js";
+import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {
+    AuthUser,
+    StudentCreateCredentials,
+    StudentUpdateCredentials
+} from "../../shared/domain/Shared.types.js";
 import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
 import type { IParentRepository } from "../../parent/domain/IParentRepository.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IClassRepository } from "../../classes/domain/IClassRepository.js";
 import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceRepository.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class StudentService {
-    constructor (
+    constructor(
         private readonly studentRepository: IStudentRepository,
         private readonly parentRepository: IParentRepository,
         private readonly gradesRepository: IGradeRepository,
@@ -22,92 +29,104 @@ export class StudentService {
         private readonly attendanceRepository: IAttendanceRepository
     ) {}
 
-    async getStudents(userSchoolId: string, isActive: boolean): Promise<Students[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-
-        return await this.studentRepository.getStudents(userSchoolId, isActive);
+    private normalizeCreate(credentials: StudentCreateCredentials): StudentCreateCredentials {
+        return {
+            ...credentials,
+            firstName: normalizeText(credentials.firstName),
+            middleName: normalizeOptionalText(credentials.middleName),
+            firstLastName: normalizeText(credentials.firstLastName),
+            secondLastName: normalizeOptionalText(credentials.secondLastName),
+            email: normalizeText(credentials.email),
+            userName: normalizeOptionalText(credentials.userName),
+            enrollmentCode: normalizeOptionalText(credentials.enrollmentCode),
+            phone: nullifyEmpty(credentials.phone)
+        };
     }
 
-    async getStudentDetails(studentId: string, periodId: string, startDate: string, endDate: string, userSchoolId: string): Promise<StudentProfileData> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    private normalizeUpdate(credentials: StudentUpdateCredentials): StudentUpdateCredentials {
+        return {
+            ...credentials,
+            firstName: normalizeText(credentials.firstName),
+            middleName: normalizeOptionalText(credentials.middleName),
+            firstLastName: normalizeText(credentials.firstLastName),
+            secondLastName: normalizeOptionalText(credentials.secondLastName),
+            userName: normalizeOptionalText(credentials.userName),
+            enrollmentCode: normalizeOptionalText(credentials.enrollmentCode),
+            phone: nullifyEmpty(credentials.phone),
+        };
+    }
+
+    async getStudents(isActive: boolean, authUser: AuthUser): Promise<Students[]> {
+        const auth = requireAuth(authUser);
+        const payload: GetStudentsPayload = { isActive };
+        return this.studentRepository.getStudents(payload, auth);
+    }
+
+    async getStudentDetails(
+        studentId: string,
+        periodId: string,
+        startDate: string,
+        endDate: string,
+        authUser: AuthUser
+    ): Promise<StudentProfileData> {
+        const auth = requireAuth(authUser);
         if (!studentId || !periodId) throw new ValidationError("El ID del estudiante y el periodo son obligatorios");
 
-        const student = await this.studentRepository.getStudentProfile(studentId, userSchoolId);
+        const student = await this.studentRepository.getStudentProfile(studentId, auth);
         if (!student) throw new NotFoundError("El estudiante no existe");
 
         const [classes, grades, attendance, parents] = await Promise.all([
-            this.classRepository.getStudentProfileClasses(student.course_id),
-            this.gradesRepository.getStudentProfileGrades(studentId, periodId),
-            this.attendanceRepository.getCalendarAttendance(studentId, userSchoolId, startDate, endDate),
-            this.parentRepository.getParentByStudentId(studentId)
+            this.classRepository.getStudentProfileClasses(student.course_id, auth),
+            this.gradesRepository.getStudentProfileGrades(studentId, periodId, auth),
+            this.attendanceRepository.getCalendarAttendance({ studentId, startDate, endDate }, auth),
+            this.parentRepository.getParentByStudentId(studentId, auth)
         ]);
 
         return {
             ...student,
-            parents: parents,
+            parents,
             current_classes: classes,
             recent_grades: grades,
             attendance_summary: attendance
         };
     }
 
-    async getStudentsByName(query: string, authUser: AuthUser, limit: number): Promise<StudentByName[]> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario");
+    async getStudentsByName(query: string, limit: number, authUser: AuthUser): Promise<StudentByName[]> {
+        const auth = requireAuth(authUser);
+        if (!query?.trim()) throw new ValidationError("El término de búsqueda es obligatorio");
 
-        return this.studentRepository.getStudentsByName(query, authUser, limit);
+        const payload: GetStudentsByNamePayload = { query: query.trim(), limit };
+        return this.studentRepository.getStudentsByName(payload, auth);
     }
 
-    async createStudent(studentCredentials: StudentCreateCredentials, authUser: AuthUser): Promise<CreateStudent> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async createStudent(credentials: StudentCreateCredentials, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        const normalized = this.normalizeCreate(credentials);
 
-        const normalized = {
-            ...studentCredentials,
-            firstName: normalizeText(studentCredentials.firstName),
-            middleName: normalizeOptionalText(studentCredentials.middleName),
-            firstLastName: normalizeText(studentCredentials.firstLastName),
-            secondLastName: normalizeOptionalText(studentCredentials.secondLastName),
-            email: normalizeText(studentCredentials.email),
-            userName: normalizeOptionalText(studentCredentials.userName),
-            enrollmentCode: nullifyEmpty(studentCredentials.enrollmentCode),
-            phone: nullifyEmpty(studentCredentials.phone),
+        if (!normalized.courseId || !normalized.email || !normalized.password || !normalized.firstName || !normalized.firstLastName) {
+            throw new ValidationError("Faltan campos obligatorios");
         }
 
-        if (!normalized.courseId ||
-            !normalized.email ||
-            !normalized.password ||
-            !normalized.firstName ||
-            !normalized.firstLastName
-        ) throw new ValidationError("Faltan campos obligatorios");
-
-        return await this.studentRepository.createStudent(normalized, authUser);
+        return this.studentRepository.createStudent(normalized, auth);
     }
 
-    async updateStudent(studentCredentials: StudentUpdateCredentials, authUser: AuthUser): Promise<void> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async updateStudent(credentials: StudentUpdateCredentials, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
 
-        const normalized = {
-            ...studentCredentials,
-            firstName: normalizeText(studentCredentials.firstName),
-            middleName: normalizeOptionalText(studentCredentials.middleName),
-            firstLastName: normalizeText(studentCredentials.firstLastName),
-            secondLastName: normalizeOptionalText(studentCredentials.secondLastName),
-            userName: normalizeOptionalText(studentCredentials.userName),
-            enrollmentCode: nullifyEmpty(studentCredentials.enrollmentCode),
-            phone: nullifyEmpty(studentCredentials.phone),
+        if (!credentials.studentId) throw new ValidationError("El ID del estudiante es obligatorio");
+
+        const normalized = this.normalizeUpdate(credentials);
+
+        if (!normalized.courseId || !normalized.firstName || !normalized.firstLastName) {
+            throw new ValidationError("Faltan campos obligatorios");
         }
 
-        if (!normalized.courseId ||
-            !normalized.firstName ||
-            !normalized.firstLastName
-        ) throw new ValidationError("Faltan campos obligatorios");
-
-        return await this.studentRepository.updateStudent(normalized, authUser);
+        await this.studentRepository.updateStudent(normalized, auth);
     }
 
     async deleteStudent(studentId: string, authUser: AuthUser): Promise<void> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        const auth = requireAuth(authUser);
         if (!studentId) throw new ValidationError("El ID del estudiante es obligatorio");
-
-        return await this.studentRepository.deleteStudent(studentId, authUser);
+        await this.studentRepository.deleteStudent(studentId, auth);
     }
 }

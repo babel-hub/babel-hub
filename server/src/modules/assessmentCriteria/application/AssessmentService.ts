@@ -1,61 +1,95 @@
-import type { IAssessmentRepository } from "../domain/IAssessmentRepository.js";
-import type { Assessment } from "../domain/Assessment.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import { insertValidWeight } from "../domain/Assessment.rules.js";
-import { normalizeText } from "../../shared/domain/normalize.js";
+import type {
+    IAssessmentRepository
+} from "../domain/IAssessmentRepository.js";
+import type { Assessment, CreateAssessmentPayload, UpdateAssessmentPayload } from "../domain/Assessment.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { normalizeText } from "../../shared/domain/normalize.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
+import { validateWeight } from "../domain/Assessment.rules.js";
 
 export class AssessmentService {
     constructor(private readonly assessmentRepository: IAssessmentRepository) {}
 
-    async getAssessments(userSchoolId: string): Promise<Assessment[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Falta el ID del colegio.");
-
-        return this.assessmentRepository.getAssessments(userSchoolId);
+    private validateName(name: string): string {
+        const normalized = normalizeText(name);
+        if (!normalized) throw new ValidationError("El nombre del criterio es obligatorio.");
+        return normalized;
     }
 
-    async createAssessment(assessmentName: string, assessmentWeight: number, gradingTemplateId: string, authUser: AuthUser): Promise<void> {
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        if (!assessmentName || !gradingTemplateId) throw new ValidationError("Hay campos obligatorios que están vacíos.");
+    private async assertWeightFits(
+        gradingTemplateId: string,
+        assessmentWeight: number,
+        excludeAssessmentId?: string
+    ): Promise<void> {
+        validateWeight(assessmentWeight);
 
-        insertValidWeight(assessmentWeight);
+        const currentTotal = await this.assessmentRepository.getTotalWeightForTemplate(
+            gradingTemplateId,
+            excludeAssessmentId
+        );
 
-        const currentTotal = await this.assessmentRepository.getTotalWeightForTemplate(gradingTemplateId);
         if (currentTotal + assessmentWeight > 100) {
-            if (currentTotal === 100) {
+            if (currentTotal === 100 && !excludeAssessmentId) {
                 throw new ValidationError("Esta plantilla de calificación ya tiene el 100% del peso asignado, no se pueden agregar más criterios.");
             }
-            throw new ValidationError(`El peso total no puede superar el 100%. Actualmente hay ${currentTotal}% asignado, y este criterio lo dejaría en ${assessmentWeight + currentTotal}%.`);
+            const context = excludeAssessmentId
+                ? `Actualmente hay ${currentTotal}% asignado (sin contar este criterio)`
+                : `Actualmente hay ${currentTotal}% asignado`;
+            throw new ValidationError(
+                `El peso total no puede superar el 100%. ${context}, y este cambio lo dejaría en ${currentTotal + assessmentWeight}%.`
+            );
         }
-
-        return this.assessmentRepository.createAssessment(normalizeText(assessmentName), assessmentWeight, gradingTemplateId, authUser);
     }
 
-    async updateAssessment(assessmentId: string, assessmentName: string, assessmentWeight: number, gradingTemplateId: string, authUser: AuthUser): Promise<void> {
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        }
-        if (!assessmentId) throw new ValidationError("El ID del criterio de evaluación es obligatorio.");
-        if (!assessmentName || !gradingTemplateId) {
-            throw new ValidationError("Hay campos obligatorios que están vacíos.");
-        }
+    async getAssessments(authUser: AuthUser): Promise<Assessment[]> {
+        const auth = requireAuth(authUser);
+        return this.assessmentRepository.getAssessments(auth);
+    }
 
-        insertValidWeight(assessmentWeight);
+    async createAssessment(payload: CreateAssessmentPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
 
-        const currentTotal = await this.assessmentRepository.getTotalWeightForTemplate(gradingTemplateId, assessmentId);
-        if (currentTotal + assessmentWeight > 100) {
-            throw new ValidationError(`El peso total no puede superar el 100%. Actualmente hay ${currentTotal}% asignado (sin contar este criterio), y este cambio lo dejaría en ${currentTotal + assessmentWeight}%.`);
+        const name = this.validateName(payload.assessmentName);
+        if (!payload.gradingTemplateId) {
+            throw new ValidationError("La plantilla de calificación es obligatoria.");
         }
 
-        return this.assessmentRepository.updateAssessment(assessmentId, normalizeText(assessmentName), assessmentWeight, gradingTemplateId, authUser);
+        await this.assertWeightFits(payload.gradingTemplateId, payload.assessmentWeight);
+
+        await this.assessmentRepository.createAssessment({
+            assessmentName: name,
+            assessmentWeight: payload.assessmentWeight,
+            gradingTemplateId: payload.gradingTemplateId
+        }, auth);
+    }
+
+    async updateAssessment(payload: UpdateAssessmentPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!payload.assessmentId) throw new ValidationError("El ID del criterio de evaluación es obligatorio.");
+
+        const name = this.validateName(payload.assessmentName);
+        if (!payload.gradingTemplateId) {
+            throw new ValidationError("La plantilla de calificación es obligatoria.");
+        }
+
+        await this.assertWeightFits(
+            payload.gradingTemplateId,
+            payload.assessmentWeight,
+            payload.assessmentId
+        );
+
+        await this.assessmentRepository.updateAssessment({
+            assessmentId: payload.assessmentId,
+            assessmentName: name,
+            assessmentWeight: payload.assessmentWeight,
+            gradingTemplateId: payload.gradingTemplateId
+        }, auth);
     }
 
     async deleteAssessment(assessmentId: string, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
         if (!assessmentId) throw new ValidationError("El ID del criterio de evaluación es obligatorio.");
-        if (!authUser || !authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales de usuario inválidas o incompletas.");
-        }
-
-        return this.assessmentRepository.deleteAssessment(assessmentId, authUser);
+        await this.assessmentRepository.deleteAssessment(assessmentId, auth);
     }
 }

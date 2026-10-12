@@ -1,5 +1,5 @@
-export function normalizeText(value: string): string {
-    return value.trim().toLowerCase();
+export function normalizeText(value: string | null | undefined): string {
+    return (value ?? '').trim().toLowerCase();
 }
 
 export function normalizeOptionalText(value: string | null | undefined): string | null {
@@ -8,13 +8,13 @@ export function normalizeOptionalText(value: string | null | undefined): string 
     return trimmed === '' ? null : trimmed;
 }
 
-export function nullifyEmpty(value: string | null | string[] | undefined): string | string[] | null {
+export function nullifyEmpty(value: string | null | undefined): string | null {
     if (value === null || value === undefined || value.length === 0) return null;
+    const trimmed = value.trim();
+    return trimmed === '' ? null : trimmed;
+}
 
-    if (Array.isArray(value)) {
-        return value;
-    } else {
-        const trimmed = value.trim();
-        return trimmed === '' ? null : trimmed;
-    }
+export function nullifyEmptyArray(arr: string[] | null | undefined): string[] | null {
+    if (!arr || arr.length === 0) return null;
+    return arr;
 }

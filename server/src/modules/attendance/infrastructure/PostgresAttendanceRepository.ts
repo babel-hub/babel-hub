@@ -1,20 +1,34 @@
 import type {
+    IAttendanceRepository
+} from "../domain/IAttendanceRepository.js";
+import type {
     ClassAttendance,
     CourseDailyAttendance,
-    BulkRecords,
     AttendanceSummary,
     CalendarAttendance,
     CourseAttendance,
-    DailyAttendance
+    DailyAttendance,
+    GetDailyClassAttendancePayload,
+    GetDailyCourseAttendancePayload,
+    GetClassAttendancePayload,
+    GetCalendarAttendancePayload,
+    GetAttendanceSummaryPayload,
+    BulkUpsertAttendancePayload
 } from "../domain/Attendance.types.js";
-import type { IAttendanceRepository } from "../domain/IAttendanceRepository.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
-import { NotFoundError } from "../../errors/domain/CustomErrors.js";
-import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresAttendanceRepository implements IAttendanceRepository {
-    async getDailyClassAttendance(classId: string, schoolId: string, date: string, isActive: boolean): Promise<ClassAttendance[]> {
+
+    async getDailyClassAttendance(
+        payload: GetDailyClassAttendancePayload,
+        authUser: AuthUser
+    ): Promise<ClassAttendance[]> {
+        const { classId, date, isActive } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -27,12 +41,16 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     a.status,
                     a.date
                 FROM class c
-                JOIN student s ON s.course_id = c.course_id
-                JOIN profile p ON s.profile_id = p.id
-                LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = $1 AND a.date = $2
-                WHERE c.id = $1 AND p.school_id = $3 AND p.is_active = $4
+                         JOIN course co ON c.course_id = co.id
+                         JOIN student s ON s.course_id = c.course_id
+                         JOIN profile p ON s.profile_id = p.id
+                         LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = $1 AND a.date = $2
+                WHERE c.id = $1
+                  AND co.school_id = $3
+                  AND p.school_id = $3
+                  AND p.is_active = $4
                 ORDER BY p.first_last_name ASC;
-            `, [classId, date, schoolId, isActive]);
+            `, [classId, date, userSchoolId, isActive]);
 
             return result.rows;
         } finally {
@@ -40,7 +58,13 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async getDailyCourseAttendance(courseId: string, schoolId: string, date: string, isActive: boolean): Promise<CourseDailyAttendance[]> {
+    async getDailyCourseAttendance(
+        payload: GetDailyCourseAttendancePayload,
+        authUser: AuthUser
+    ): Promise<CourseDailyAttendance[]> {
+        const { courseId, date, isActive } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -48,18 +72,22 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     s.id as student_id,
                     CASE
                         WHEN bool_or(a.status = 'present') THEN 'present'
-                        WHEN bool_or(a.status = 'late') THEN 'late'
-                        WHEN bool_or(a.status = 'absent') THEN 'absent'
+                        WHEN bool_or(a.status = 'late')    THEN 'late'
+                        WHEN bool_or(a.status = 'absent')  THEN 'absent'
                         WHEN bool_or(a.status = 'excused') THEN 'excused'
                         ELSE 'no_data'
                     END as daily_status
                 FROM student s
-                JOIN profile p ON s.profile_id = p.id
-                LEFT JOIN class c ON c.course_id = s.course_id
-                LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = c.id AND a.date = $1
-                WHERE s.course_id = $2 AND p.school_id = $3 AND p.is_active = $4
+                         JOIN profile p ON s.profile_id = p.id
+                         JOIN course co ON co.id = s.course_id
+                         LEFT JOIN class c ON c.course_id = s.course_id
+                         LEFT JOIN attendance a ON a.student_id = s.id AND a.class_id = c.id AND a.date = $1
+                WHERE s.course_id = $2
+                  AND co.school_id = $3
+                  AND p.school_id = $3
+                  AND p.is_active = $4
                 GROUP BY s.id
-            `, [date, courseId, schoolId, isActive]);
+            `, [date, courseId, userSchoolId, isActive]);
 
             return result.rows;
         } finally {
@@ -67,73 +95,182 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async bulkUpsertAttendance(classId: string, records: BulkRecords[], date: string, authUser: AuthUser): Promise<void> {
-        const { userId, userRole, userSchoolId } = authUser;
+    async getClassAttendance(
+        payload: GetClassAttendancePayload,
+        authUser: AuthUser
+    ): Promise<CourseAttendance[]> {
+        const { courseId, classId, startDate, endDate } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
-
         try {
-            await client.query('BEGIN');
+            const result = await client.query(`
+                WITH ClassDates AS (
+                    SELECT DISTINCT date AS calendar_date
+                    FROM attendance
+                    WHERE class_id = $4 AND date >= $1::date AND date <= $2::date
+                    ),
+                    CourseStudents AS (
+                        SELECT
+                            s.id as student_id,
+                            p.first_name as student_first_name,
+                            p.middle_name as student_middle_name,
+                            p.first_last_name as student_first_last_name,
+                            p.second_last_name as student_second_last_name
+                        FROM student s
+                            JOIN profile p ON s.profile_id = p.id
+                        WHERE s.course_id = $3 AND p.school_id = $5
+                    )
+                SELECT
+                    cs.student_id,
+                    cs.student_first_name,
+                    cs.student_middle_name,
+                    cs.student_first_last_name,
+                    cs.student_second_last_name,
+                    cd.calendar_date AS date,
+                    COALESCE(a.status, 'no_data') AS status
+                FROM CourseStudents cs
+                    CROSS JOIN ClassDates cd
+                    LEFT JOIN attendance a
+                ON a.student_id = cs.student_id
+                    AND a.date = cd.calendar_date
+                    AND a.class_id = $4
+                ORDER BY cs.student_first_last_name ASC, cd.calendar_date ASC;
+            `, [startDate, endDate, courseId, classId, userSchoolId]);
 
-            const classCheck = await client.query(`
-                SELECT c.id
-                FROM class c
-                JOIN course co ON c.course_id = co.id
-                WHERE c.id = $1 AND co.school_id = $2
-            `, [classId, userSchoolId]);
-
-            if (classCheck.rowCount === 0) throw new NotFoundError("La clase no existe o no pertenece a este colegio.");
-
-            const studentIds: string[] = records.map(r => r.studentId);
-            const statuses: string[] = records.map(r => r.status);
-
-            await client.query(`
-                INSERT INTO attendance (student_id, class_id, date, status)
-                SELECT unnest($1::uuid[]), $2, $3, unnest($4::text[])
-                ON CONFLICT (student_id, class_id, date) 
-                DO UPDATE SET
-                    status = EXCLUDED.status,
-                    updated_at = NOW();
-            `, [studentIds, classId, date, statuses]);
-
-            await createAuditLog(client, {
-                actorUserId: userId,
-                actorRole: userRole,
-                action: "TAKE_CLASS_ATTENDANCE",
-                schoolId: userSchoolId,
-                metadata: { classId, date, studentCount: records.length }
-            });
-
-            await client.query('COMMIT');
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
+            return result.rows;
         } finally {
             client.release();
         }
     }
 
-    async getAttendanceSummary(schoolId: string, today: string, startDate: string, endDate: string, isActive: boolean): Promise<AttendanceSummary[]> {
+    async getCalendarAttendance(
+        payload: GetCalendarAttendancePayload,
+        authUser: AuthUser
+    ): Promise<CalendarAttendance[]> {
+        const { studentId, startDate, endDate } = payload;
+        const { userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            const check = await client.query(`
+                SELECT 1 FROM student s
+                    JOIN profile p ON s.profile_id = p.id
+                WHERE s.id = $1 AND p.school_id = $2
+            `, [studentId, userSchoolId]);
+
+            if (check.rowCount === 0) {
+                throw new NotFoundError("El estudiante no existe o no pertenece a este colegio.");
+            }
+
+            const result = await client.query(`
+                SELECT
+                    d.calendar_date::date AS DATE,
+                    CASE
+                        WHEN COUNT(a.id) = 0 THEN 'no_data'
+                        WHEN bool_or(a.status = 'absent')  THEN 'absent'
+                        WHEN bool_or(a.status = 'late')    THEN 'late'
+                        WHEN bool_or(a.status = 'excused') THEN 'excused'
+                        ELSE 'present'
+                    END as daily_status
+                FROM generate_series(
+                    $1::DATE,
+                    LEAST($3::DATE, CURRENT_DATE),
+                    '1 day'::INTERVAL
+                ) AS d(calendar_date)
+                LEFT JOIN attendance a
+                    ON a.date = d.calendar_date::DATE
+                    AND a.student_id = $2
+                GROUP BY d.calendar_date
+                ORDER BY d.calendar_date DESC;
+            `, [startDate, studentId, endDate]);
+
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getStudentDailyAttendance(
+        studentId: string,
+        date: string,
+        authUser: AuthUser
+    ): Promise<DailyAttendance[]> {
+        const { userId, userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            const check = await client.query(`
+                SELECT 1
+                FROM parent_student ps
+                    JOIN parent p ON ps.parent_id = p.id
+                    JOIN profile prof ON p.profile_id = prof.id
+                WHERE p.profile_id = $1
+                  AND ps.student_id = $2
+                  AND prof.school_id = $3
+                    LIMIT 1;
+            `, [userId, studentId, userSchoolId]);
+
+            if (check.rowCount === 0) {
+                throw new NotFoundError("No tienes acceso a la información de este estudiante.");
+            }
+
+            const result = await client.query(`
+                SELECT
+                    c.id AS class_id,
+                    sub.name AS class_name,
+                    cs.start_time,
+                    cs.end_time,
+                    cs.room,
+                    COALESCE(a.status, 'no_data') AS status,
+                    a.created_at AS recorded_at
+                FROM student s
+                JOIN class c ON s.course_id = c.course_id
+                JOIN class_schedule cs ON c.id = cs.class_id
+                JOIN subject sub ON c.subject_id = sub.id
+                LEFT JOIN attendance a
+                    ON a.class_id = c.id
+                    AND a.student_id = s.id
+                    AND a.date = $1
+                WHERE s.id = $2
+                  AND cs.day_of_week = EXTRACT(ISODOW FROM $1::DATE)
+                ORDER BY cs.start_time ASC;
+            `, [date, studentId]);
+
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getAttendanceSummary(
+        payload: GetAttendanceSummaryPayload,
+        authUser: AuthUser
+    ): Promise<AttendanceSummary[]> {
+        const { today, startDate, endDate, isActive } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
                 WITH FirstRecordPerDay AS (
-                    SELECT DISTINCT ON (a.student_id, DATE(a.date))
-                        a.student_id,
-                        DATE(a.date) as record_date,
-                        a.status
-                    FROM attendance a
-                    JOIN student s ON a.student_id = s.id
-                    JOIN profile p ON s.profile_id = p.id
-                    WHERE a.date >= $1 AND a.date <= $2
-                      AND p.school_id = $3
-                      AND p.is_active = $4
-                    ORDER BY a.student_id, DATE(a.date), a.date ASC
+                        SELECT DISTINCT ON (a.student_id, DATE(a.date))
+                            a.student_id,
+                            DATE(a.date) as record_date,
+                            a.status
+                        FROM attendance a
+                            JOIN student s ON a.student_id = s.id
+                            JOIN profile p ON s.profile_id = p.id
+                        WHERE a.date >= $1 AND a.date <= $2
+                          AND p.school_id = $3
+                          AND p.is_active = $4
+                        ORDER BY a.student_id, DATE(a.date), a.date ASC
                     ),
                     TodayProblematic AS (
                         SELECT student_id
                         FROM FirstRecordPerDay
                         WHERE record_date = DATE($5)
-                        AND status IN ('absent', 'late')
+                          AND status IN ('absent', 'late')
                     ),
                     RankedDays AS (
                         SELECT
@@ -141,7 +278,7 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                             fr.status,
                             ROW_NUMBER() OVER(PARTITION BY fr.student_id ORDER BY fr.record_date DESC) as rn
                         FROM FirstRecordPerDay fr
-                        JOIN TodayProblematic tp ON fr.student_id = tp.student_id
+                            JOIN TodayProblematic tp ON fr.student_id = tp.student_id
                         WHERE fr.record_date <= DATE($5)
                     ),
                     AlertStatus AS (
@@ -161,18 +298,19 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
                     p.first_last_name as student_first_last_name,
                     p.second_last_name as student_second_last_name,
                     COUNT(fr.record_date) FILTER (WHERE fr.status = 'absent') AS total_absences,
-                    COUNT(fr.record_date) FILTER (WHERE fr.status = 'late') AS total_lates,
+                    COUNT(fr.record_date) FILTER (WHERE fr.status = 'late')   AS total_lates,
                     al.is_red_alert
                 FROM TodayProblematic tp
-                JOIN AlertStatus al ON tp.student_id = al.student_id
-                JOIN student s ON tp.student_id = s.id
-                JOIN profile p ON s.profile_id = p.id
-                JOIN course c ON s.course_id = c.id
-                JOIN FirstRecordPerDay fr ON s.id = fr.student_id
+                    JOIN AlertStatus al ON tp.student_id = al.student_id
+                    JOIN student s ON tp.student_id = s.id
+                    JOIN profile p ON s.profile_id = p.id
+                    JOIN course c ON s.course_id = c.id
+                    JOIN FirstRecordPerDay fr ON s.id = fr.student_id
                 GROUP BY
-                    c.id, c.name, s.id, p.first_name, p.middle_name, p.first_last_name, p.second_last_name, al.is_red_alert
+                    c.id, c.name, s.id, p.first_name, p.middle_name,
+                    p.first_last_name, p.second_last_name, al.is_red_alert
                 ORDER BY c.name::integer DESC, total_absences DESC, p.first_last_name ASC;
-            `, [startDate, endDate, schoolId, isActive, today]);
+            `, [startDate, endDate, userSchoolId, isActive, today]);
 
             return result.rows;
         } finally {
@@ -180,127 +318,66 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
         }
     }
 
-    async getStudentDailyAttendance(studentId: string, schoolId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]> {
+    async bulkUpsertAttendance(
+        payload: BulkUpsertAttendancePayload,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { classId, records, date } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            const check = await client.query(`
-                SELECT 1
-                FROM parent_student ps
-                JOIN parent p ON ps.parent_id = p.id
-                JOIN profile prof ON p.profile_id = prof.id
-                WHERE p.profile_id = $1 AND ps.student_id = $2 AND prof.school_id = $3
-                    LIMIT 1;
-            `, [authUser.userId, studentId, schoolId]);
+            await client.query('BEGIN');
 
-            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a la información de este estudiante.");
+            const classCheck = await client.query(`
+                SELECT c.id, c.course_id
+                FROM class c
+                JOIN course co ON c.course_id = co.id
+                WHERE c.id = $1 AND co.school_id = $2
+            `, [classId, userSchoolId]);
 
-            const query = `
-                SELECT
-                    c.id AS class_id,
-                    sub.name AS class_name,
-                    cs.start_time,
-                    cs.end_time,
-                    cs.room,
-                    COALESCE(a.status, 'no_data') AS status,
-                    a.created_at AS recorded_at
+            if (classCheck.rowCount === 0) {
+                throw new NotFoundError("La clase no existe o no pertenece a este colegio.");
+            }
+
+            const studentIds: string[] = records.map(r => r.studentId);
+            const statuses: string[]   = records.map(r => r.status);
+            const uniqueStudentIds = Array.from(new Set(studentIds));
+
+            const studentsCheck = await client.query(`
+                SELECT COUNT(DISTINCT s.id)::int AS valid_count
                 FROM student s
-                JOIN class c ON s.course_id = c.course_id
-                JOIN class_schedule cs ON c.id = cs.class_id
-                JOIN subject sub ON c.subject_id = sub.id
-                LEFT JOIN attendance a
-                    ON a.class_id = c.id
-                    AND a.student_id = s.id
-                    AND a.date = $1
-                WHERE s.id = $2
-                AND cs.day_of_week = EXTRACT(ISODOW FROM $1::DATE)
-                ORDER BY cs.start_time ASC;
-            `;
-
-            const result = await client.query(query, [date, studentId]);
-            return result.rows;
-        } finally {
-            client.release();
-        }
-    }
-
-    async getCalendarAttendance(studentId: string, schoolId: string, startDate: string, endDate: string): Promise<CalendarAttendance[]> {
-        const client = await pool.connect();
-        try {
-            const check = await client.query(`
-                SELECT 1 FROM student s
                 JOIN profile p ON s.profile_id = p.id
-                WHERE s.id = $1 AND p.school_id = $2
-            `, [studentId, schoolId]);
+                WHERE s.id = ANY($1::uuid[])
+                  AND s.course_id = $2
+                  AND p.school_id = $3
+            `, [uniqueStudentIds, classCheck.rows[0].course_id, userSchoolId]);
 
-            if (check.rowCount === 0) throw new NotFoundError("El estudiante no existe o no pertenece a este colegio.");
+            if (studentsCheck.rows[0].valid_count !== uniqueStudentIds.length) {
+                throw new ValidationError("Uno o más estudiantes no pertenecen a esta clase o colegio.");
+            }
 
-            const result = await client.query(`
-                SELECT 
-                    d.calendar_date::date AS DATE,
-                    CASE 
-                        WHEN COUNT(a.id) = 0 THEN 'no_data'
-                        WHEN bool_or(a.status = 'absent') THEN 'absent'
-                        WHEN bool_or(a.status = 'late') THEN 'late'
-                        WHEN bool_or(a.status = 'excused') THEN 'excused'
-                        ELSE 'present'
-                    END as daily_status
-                FROM generate_series(
-                    $1::DATE,
-                    LEAST($3::DATE, CURRENT_DATE),
-                    '1 day'::INTERVAL
-                ) AS d(calendar_date)
-                LEFT JOIN attendance a 
-                ON a.date = d.calendar_date::DATE
-                    AND a.student_id = $2
-                GROUP BY d.calendar_date
-                ORDER BY d.calendar_date DESC;
-            `, [startDate, studentId, endDate]);
+            await client.query(`
+                INSERT INTO attendance (student_id, class_id, date, status)
+                SELECT unnest($1::uuid[]), $2, $3, unnest($4::text[])
+                ON CONFLICT (student_id, class_id, date)
+                DO UPDATE SET
+                    status = EXCLUDED.status,
+                    updated_at = NOW();
+            `, [studentIds, classId, date, statuses]);
 
-            return result.rows;
-        } finally {
-            client.release();
-        }
-    }
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: "TAKE_CLASS_ATTENDANCE",
+                schoolId: userSchoolId,
+                metadata: { classId, date, studentCount: records.length }
+            });
 
-    async getClassAttendance(courseId: string, classId: string, schoolId: string, startDate: string, endDate: string): Promise<CourseAttendance[]> {
-        const client = await pool.connect();
-        try {
-            const result = await client.query(`
-                WITH ClassDates AS (
-                    SELECT DISTINCT date AS calendar_date
-                    FROM attendance
-                    WHERE class_id = $4
-                      AND date >= $1::date AND date <= $2::date
-                    ),
-                    CourseStudents AS (
-                        SELECT
-                            s.id as student_id,
-                            p.first_name as student_first_name,
-                            p.middle_name as student_middle_name,
-                            p.first_last_name as student_first_last_name,
-                            p.second_last_name as student_second_last_name
-                        FROM student s
-                        JOIN profile p ON s.profile_id = p.id
-                        WHERE s.course_id = $3 AND p.school_id = $5
-                    )
-                SELECT
-                    cs.student_id,
-                    cs.student_first_name,
-                    cs.student_middle_name,
-                    cs.student_first_last_name,
-                    cs.student_second_last_name,
-                    cd.calendar_date AS date,
-                    COALESCE(a.status, 'no_data') AS status
-                FROM CourseStudents cs
-                    CROSS JOIN ClassDates cd
-                    LEFT JOIN attendance a
-                ON a.student_id = cs.student_id
-                    AND a.date = cd.calendar_date
-                    AND a.class_id = $4
-                ORDER BY cs.student_first_last_name ASC, cd.calendar_date ASC;
-            `, [startDate, endDate, courseId, classId, schoolId]);
-
-            return result.rows;
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
         } finally {
             client.release();
         }

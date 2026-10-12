@@ -1,70 +1,33 @@
-import type { IClassRepository } from "../domain/IClassRepository.js";
-import { pool } from "../../../db/index.js";
-import { createAuditLog } from "../../../services/audit.service.js";
-import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 import type {
-    ClassDetails,
+    IClassRepository
+} from "../domain/IClassRepository.js";
+import type {
+    CreateClassPayload,
     ClassInfo,
+    ClassRow,
     CourseClass,
+    CreateClass,
     StudentClassRow,
     TeacherClassDetails,
     TeacherClasses
 } from "../domain/Classes.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { pool } from "../../../db/index.js";
+import { createAuditLog } from "../../../services/audit.service.js";
+import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresClassRepository implements IClassRepository {
-    async getStudentProfileClasses(courseId: string): Promise<StudentClassRow[]> {
+
+    async getClassDetails(
+        classId: string,
+        isActive: boolean,
+        authUser: AuthUser
+    ): Promise<ClassInfo | null> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            const classes = await client.query(`
-                SELECT
-                    cl.id as class_id,
-                    sub.name as subject_name,
-                    t_prof.first_name,
-                    t_prof.first_last_name
-                FROM class cl
-                JOIN subject sub ON cl.subject_id = sub.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                JOIN profile t_prof ON t.profile_id = t_prof.id
-                WHERE cl.course_id = $1 AND cl.is_active = true
-            `, [courseId]);
-
-            return classes.rows;
-        } finally {
-            client.release();
-        }
-    }
-
-    async getCourseClasses(courseId: string, isActive: boolean): Promise<CourseClass[]> {
-        const client = await pool.connect();
-        try {
-            const classes = await client.query(`
-                SELECT 
-                    cl.is_active,
-                    cl.id as class_id, 
-                    s.name as subject_name,
-                    p.first_name,
-                    p.middle_name,
-                    p.first_last_name,
-                    p.second_last_name
-                FROM class cl
-                JOIN subject s ON cl.subject_id = s.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                JOIN profile p ON t.profile_id = p.id
-                WHERE cl.course_id = $1 AND cl.is_active = $2
-                ORDER BY subject_name ASC;
-            `, [courseId, isActive]);
-
-            return classes.rows;
-        } finally {
-            client.release();
-        }
-    }
-
-    async getClassDetails(classId: string, userSchoolId: string, isActive: boolean): Promise<ClassInfo | null> {
-        const client = await pool.connect();
-        try {
-            const classDetails = await client.query(`
+            const result = await client.query(`
                 SELECT
                     cl.id,
                     cl.course_id,
@@ -77,42 +40,124 @@ export class PostgresClassRepository implements IClassRepository {
                     p.second_last_name as teacher_second_last_name,
                     cl.created_at
                 FROM class cl
-                JOIN course c ON cl.course_id = c.id
-                JOIN subject s ON cl.subject_id = s.id
-                JOIN teacher t ON cl.teacher_id = t.id
-                JOIN profile p ON t.profile_id = p.id
+                    JOIN course c ON cl.course_id = c.id
+                    JOIN subject s ON cl.subject_id = s.id
+                    JOIN teacher t ON cl.teacher_id = t.id
+                    JOIN profile p ON t.profile_id = p.id
                 WHERE cl.id = $1 AND c.school_id = $2 AND cl.is_active = $3
             `, [classId, userSchoolId, isActive]);
 
-            if (classDetails.rowCount === 0) return null;
-
-            return classDetails.rows[0];
+            if (result.rowCount === 0) return null;
+            return result.rows[0];
         } finally {
             client.release();
         }
     }
 
-    async createClass(courseId: string, subjectId: string, teacherId: string, authUser: AuthUser) {
-        const { userId, userRole, userSchoolId } = authUser;
-        const client = await pool.connect();
+    async getTeacherClassesProfile(teacherId: string, authUser: AuthUser): Promise<ClassRow[]> {
+        const { userSchoolId } = authUser;
 
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT c.id as class_id, s.name as subject_name, co.name as course_name
+                FROM class c
+                    JOIN subject s ON c.subject_id = s.id
+                    JOIN course co ON c.course_id = co.id
+                    JOIN teacher t ON c.teacher_id = t.id
+                    JOIN profile p ON t.profile_id = p.id
+                WHERE t.id = $1 AND p.school_id = $2
+                ORDER BY co.name::int ASC
+            `, [teacherId, userSchoolId]);
+
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getStudentProfileClasses(courseId: string, authUser: AuthUser): Promise<StudentClassRow[]> {
+        const { userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    cl.id as class_id,
+                    sub.name as subject_name,
+                    t_prof.first_name,
+                    t_prof.first_last_name
+                FROM class cl
+                    JOIN subject sub ON cl.subject_id = sub.id
+                    JOIN teacher t ON cl.teacher_id = t.id
+                    JOIN profile t_prof ON t.profile_id = t_prof.id
+                    JOIN course co ON cl.course_id = co.id
+                WHERE cl.course_id = $1 AND cl.is_active = true AND co.school_id = $2
+            `, [courseId, userSchoolId]);
+
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getCourseClasses(
+        courseId: string,
+        isActive: boolean,
+        authUser: AuthUser
+    ): Promise<CourseClass[]> {
+        const { userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    cl.is_active,
+                    cl.id as class_id,
+                    s.name as subject_name,
+                    p.first_name,
+                    p.middle_name,
+                    p.first_last_name,
+                    p.second_last_name
+                FROM class cl
+                    JOIN subject s ON cl.subject_id = s.id
+                    JOIN teacher t ON cl.teacher_id = t.id
+                    JOIN profile p ON t.profile_id = p.id
+                    JOIN course co ON cl.course_id = co.id
+                WHERE cl.course_id = $1 AND cl.is_active = $2 AND co.school_id = $3
+                ORDER BY subject_name ASC
+            `, [courseId, isActive, userSchoolId]);
+
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void> {
+        const { courseId, subjectId, teacherId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
+        const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const ownershipCheck = await client.query(`
                 SELECT p.id AS teacher_profile_id
                 FROM course c
-                JOIN subject s ON s.id = $2
-                JOIN area a ON s.area_id = a.id
-                JOIN teacher t ON t.id = $3
-                JOIN profile p ON t.profile_id = p.id
+                    JOIN subject s ON s.id = $2
+                    JOIN area a ON s.area_id = a.id
+                    JOIN teacher t ON t.id = $3
+                    JOIN profile p ON t.profile_id = p.id
                 WHERE c.id = $1
                   AND c.school_id = $4
                   AND a.school_id = $4
                   AND p.school_id = $4
             `, [courseId, subjectId, teacherId, userSchoolId]);
 
-            if (ownershipCheck.rowCount === 0) throw new NotFoundError("La clase no se puede crear o no tienes acceso");
+            if (ownershipCheck.rowCount === 0) {
+                throw new NotFoundError("La clase no se puede crear o no tienes acceso");
+            }
 
             const teacherProfileId = ownershipCheck.rows[0].teacher_profile_id;
 
@@ -130,15 +175,10 @@ export class PostgresClassRepository implements IClassRepository {
                 action: "CREATE_CLASS",
                 targetUserId: teacherProfileId,
                 schoolId: userSchoolId,
-                metadata: {
-                    classId: newClassId,
-                    courseId,
-                    subjectId,
-                }
+                metadata: { classId: newClassId, courseId, subjectId }
             });
 
             await client.query('COMMIT');
-            return newClassId;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
@@ -149,26 +189,37 @@ export class PostgresClassRepository implements IClassRepository {
 
     async updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void> {
         const { userId, userRole, userSchoolId } = authUser;
-        const client = await pool.connect();
 
+        const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const classData = await client.query(`
                 SELECT cl.teacher_id
                 FROM class cl
-                         JOIN course c ON cl.course_id = c.id
+                    JOIN course c ON cl.course_id = c.id
                 WHERE cl.id = $1 AND c.school_id = $2
             `, [classId, userSchoolId]);
 
-            if (classData.rowCount === 0) throw new NotFoundError("No se encontró la clase para actualizar");
+            if (classData.rowCount === 0) {
+                throw new NotFoundError("No se encontró la clase para actualizar");
+            }
+
+            const teacherCheck = await client.query(`
+                SELECT 1
+                FROM teacher t
+                JOIN profile p ON t.profile_id = p.id
+                WHERE t.id = $1 AND p.school_id = $2
+            `, [teacherId, userSchoolId]);
+
+            if (teacherCheck.rowCount === 0) {
+                throw new NotFoundError("El profesor seleccionado no pertenece a este colegio");
+            }
 
             const oldTeacherId = classData.rows[0].teacher_id;
 
             await client.query(`
-                UPDATE class
-                SET teacher_id = $1
-                WHERE id = $2
+                UPDATE class SET teacher_id = $1 WHERE id = $2
             `, [teacherId, classId]);
 
             await createAuditLog(client, {
@@ -177,9 +228,9 @@ export class PostgresClassRepository implements IClassRepository {
                 action: "UPDATE_CLASS_TEACHER",
                 schoolId: userSchoolId,
                 metadata: {
-                    classId: classId,
-                    oldTeacherId: oldTeacherId,
-                    newTeacherId: teacherId,
+                    classId,
+                    oldTeacherId,
+                    newTeacherId: teacherId
                 }
             });
 
@@ -194,46 +245,51 @@ export class PostgresClassRepository implements IClassRepository {
 
     async deleteClass(classId: string, authUser: AuthUser): Promise<void> {
         const { userId, userRole, userSchoolId } = authUser;
-        const client = await pool.connect();
 
+        const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            const verifyOwnership = await client.query(`
-                SELECT cl.id
-                FROM class cl
-                JOIN course c ON cl.course_id = c.id
-                WHERE cl.id = $1 AND c.school_id = $2
+            const result = await client.query(`
+                DELETE FROM class cl
+                    USING course c
+                WHERE cl.course_id = c.id
+                  AND cl.id = $1
+                  AND c.school_id = $2
+                    RETURNING cl.id
             `, [classId, userSchoolId]);
 
-            if (verifyOwnership.rowCount === 0) throw new NotFoundError("No se encontró la clase para eliminar");
-
-            await client.query(`
-                DELETE FROM class
-                WHERE id = $1
-            `, [classId]);
+            if (result.rowCount === 0) {
+                throw new NotFoundError("No se encontró la clase para eliminar");
+            }
 
             await createAuditLog(client, {
                 actorUserId: userId,
                 actorRole: userRole,
                 action: "DELETE_CLASS",
                 schoolId: userSchoolId,
-                metadata: { classId: classId }
+                metadata: { classId }
             });
 
             await client.query('COMMIT');
         } catch (error: any) {
             await client.query('ROLLBACK');
-
-            if (error.code === '23503') throw new ConflictError("La clase no se puede eliminar porque tiene asignaturas o estudiantes activos vinculados.");
-
+            if (error.code === '23503') {
+                throw new ConflictError("La clase no se puede eliminar porque tiene asignaturas o estudiantes activos vinculados.");
+            }
             throw error;
         } finally {
             client.release();
         }
     }
 
-    async getTeacherClasses(teacherId: string, teacherSchoolId: string, isActive: boolean): Promise<TeacherClasses[]> {
+    async getTeacherClasses(
+        teacherId: string,
+        isActive: boolean,
+        authUser: AuthUser
+    ): Promise<TeacherClasses[]> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -249,12 +305,9 @@ export class PostgresClassRepository implements IClassRepository {
                          JOIN teacher t ON cl.teacher_id = t.id
                          LEFT JOIN student st ON co.id = st.course_id
                 WHERE t.profile_id = $1 AND cl.is_active = $2 AND co.school_id = $3
-                GROUP BY cl.id,
-                         s.name,
-                         co.id,
-                         co.name
-                ORDER BY co.name::integer ASC;
-            `, [teacherId, isActive, teacherSchoolId]);
+                GROUP BY cl.id, s.name, co.id, co.name
+                ORDER BY co.name::integer ASC
+            `, [teacherId, isActive, userSchoolId]);
 
             return result.rows;
         } finally {
@@ -262,10 +315,16 @@ export class PostgresClassRepository implements IClassRepository {
         }
     }
 
-    async getTeacherClassDetails(classId: string, teacherId: string, teacherSchoolId: string): Promise<TeacherClassDetails | null> {
+    async getTeacherClassDetails(
+        classId: string,
+        teacherId: string,
+        authUser: AuthUser
+    ): Promise<TeacherClassDetails | null> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            const classDetails = await client.query(`
+            const result = await client.query(`
                 SELECT
                     cs.id AS course_id,
                     cs.name AS course_name,
@@ -294,14 +353,11 @@ export class PostgresClassRepository implements IClassRepository {
                 WHERE cl.id = $1
                   AND cs.school_id = $2
                   AND t.profile_id = $3
-                GROUP BY cs.id, cs.name, sb.name;
-            `, [classId, teacherSchoolId, teacherId]);
+                GROUP BY cs.id, cs.name, sb.name
+            `, [classId, userSchoolId, teacherId]);
 
-            const rows = classDetails.rows;
-
-            if (rows.length === 0) return null;
-
-            return classDetails.rows[0];
+            if (result.rowCount === 0) return null;
+            return result.rows[0];
         } finally {
             client.release();
         }

@@ -1,19 +1,22 @@
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
-    ClassInfo, CourseClass,
-    CreateClass,
+    ClassInfo,
+    ClassRow,
+    CourseClass,
+    CreateClass, CreateClassPayload,
     StudentClassRow,
     TeacherClassDetails,
     TeacherClasses
 } from "./Classes.types.js";
-import type {AuthUser} from "../../shared/domain/Shared.types.js";
 
 export interface IClassRepository {
-    getClassDetails(classId: string, schoolId: string, isActive: boolean): Promise<ClassInfo | null>;
-    getStudentProfileClasses(courseId: string): Promise<StudentClassRow[]>;
-    getCourseClasses(courseId: string, isActive: boolean): Promise<CourseClass[]>;
-    createClass(courseId: string, subjectId: string, teacherId: string, authUser: AuthUser): Promise<CreateClass>;
+    getClassDetails(classId: string, isActive: boolean, authUser: AuthUser): Promise<ClassInfo | null>;
+    getTeacherClassesProfile(teacherId: string, authUser: AuthUser): Promise<ClassRow[]>;
+    getStudentProfileClasses(courseId: string, authUser: AuthUser): Promise<StudentClassRow[]>;
+    getCourseClasses(courseId: string, isActive: boolean, authUser: AuthUser): Promise<CourseClass[]>;
+    createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void>;
     updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void>;
     deleteClass(classId: string, authUser: AuthUser): Promise<void>;
-    getTeacherClasses(teacherId: string, teacherSchoolId: string, isActive: boolean): Promise<TeacherClasses[]>;
-    getTeacherClassDetails(classId: string, teacherId: string, teacherSchoolId: string): Promise<TeacherClassDetails | null>;
+    getTeacherClasses(teacherId: string, isActive: boolean, authUser: AuthUser): Promise<TeacherClasses[]>;
+    getTeacherClassDetails(classId: string, teacherId: string, authUser: AuthUser): Promise<TeacherClassDetails | null>;
 }

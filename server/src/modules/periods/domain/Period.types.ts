@@ -6,10 +6,12 @@ export interface Period {
     is_current: boolean
 }
 
-export interface CreatePeriod {
-    id: string;
+export interface CreatePeriodPayload {
+    periodName: string;
+    startDate: string;
+    endDate: string;
 }
 
-export interface UpdatePeriod {
-    id: string;
+export interface UpdatePeriodPayload extends CreatePeriodPayload {
+    periodId: string;
 }

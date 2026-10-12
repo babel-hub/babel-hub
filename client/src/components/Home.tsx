@@ -168,7 +168,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                 {userInitials}
                             </div>
 
-                            <div className={`flex flex-col overflow-hidden transition-all duration-300 ${isExpanded ? "opacity-100 w-auto" : "md:hidden md:opacity-0 md:w-0"}`}>
+                            <div className={`flex flex-col items-start overflow-hidden transition-all duration-300 ${isExpanded ? "opacity-100 w-auto" : "md:hidden md:opacity-0 md:w-0"}`}>
                                 <span className="text-sm font-semibold text-gray-900 truncate capitalize">
                                     {userName}
                                 </span>

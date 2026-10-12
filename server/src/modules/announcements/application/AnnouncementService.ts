@@ -1,15 +1,19 @@
 import type { IAnnouncementsRepository } from "../domain/IAnnouncementsRepository.js";
 import type {
     Announcement,
+    GetFeedPayload,
     CreateAnnouncementPayload,
-    UpdateAnnouncementPayload
+    UpdateAnnouncementPayload,
+    AnnouncementTargetType, AnnouncementType
 } from "../domain/Announcements.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import {normalizeText, nullifyEmpty} from "../../shared/domain/normalize.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { normalizeText, nullifyEmpty, nullifyEmptyArray } from "../../shared/domain/normalize.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
-const VALID_ANNOUNCEMENT_TYPES = [ 'GENERAL', 'EVENT', 'EMERGENCY', 'DEADLINE', 'POLL' ];
-const VALID_TARGET_TYPES = [ 'ALL', 'PROFILE', 'ROLE', 'COURSE' ];
+const VALID_ANNOUNCEMENT_TYPES: readonly AnnouncementType[] = ['GENERAL', 'EVENT', 'EMERGENCY', 'DEADLINE', 'POLL'];
+const VALID_TARGET_TYPES: readonly AnnouncementTargetType[] = ['ALL', 'PROFILE', 'ROLE', 'COURSE'];
+
 export class AnnouncementService {
     constructor(private readonly announcementRepository: IAnnouncementsRepository) {}
 
@@ -18,9 +22,9 @@ export class AnnouncementService {
             title: normalizeText(payload.title),
             description: normalizeText(payload.description),
             type: payload.type,
-            caption: nullifyEmpty(payload.caption) as string | null,
+            caption: nullifyEmpty(payload.caption),
             target_type: payload.target_type,
-            target_value: nullifyEmpty(payload.target_value) as string[] | null,
+            target_value: nullifyEmptyArray(payload.target_value),
         };
     }
 
@@ -31,16 +35,9 @@ export class AnnouncementService {
             description: normalizeText(payload.description),
             type: payload.type,
             target_type: payload.target_type,
-            caption: nullifyEmpty(payload.caption) as string | null,
-            target_value: nullifyEmpty(payload.target_value) as string[] | null,
+            caption: nullifyEmpty(payload.caption),
+            target_value: nullifyEmptyArray(payload.target_value),
         };
-    }
-
-    private requireAuth(authUser: AuthUser): Required<AuthUser> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales del usuario inválidas");
-        }
-        return authUser as Required<AuthUser>;
     }
 
     private validate(payload: {
@@ -53,57 +50,44 @@ export class AnnouncementService {
         if (!payload.title || !payload.description || !payload.type) {
             throw new ValidationError("Faltan campos obligatorios");
         }
-        if (!VALID_ANNOUNCEMENT_TYPES.includes(payload.type as any)) {
+        if (!VALID_ANNOUNCEMENT_TYPES.includes(payload.type as AnnouncementType)) {
             throw new ValidationError("Tipo de comunicado inválido");
         }
-        if (payload.target_type && !VALID_TARGET_TYPES.includes(payload.target_type as any)) {
+        if (!payload.target_type || !VALID_TARGET_TYPES.includes(payload.target_type as AnnouncementTargetType)) {
             throw new ValidationError("Tipo de receptor inválido");
         }
-        if (
-            payload.target_type !== "ALL" &&
-            (!payload.target_value || payload.target_value.length === 0)
-        ) {
+        if (payload.target_type !== "ALL" && (!payload.target_value || payload.target_value.length === 0)) {
             throw new ValidationError("Debes seleccionar al menos un destinatario específico.");
         }
     }
 
-    async getFeed(
-        schoolId: string,
-        profileId: string,
-        role: string,
-        authUser: AuthUser,
-        courseId?: string
-    ): Promise<Announcement[]> {
-        const ctx = this.requireAuth(authUser);
-
-        if (!schoolId || !profileId || !role) {
-            throw new ValidationError("Faltan identificadores del usuario para cargar el feed");
-        }
-
-        return this.announcementRepository.getFeed(schoolId, profileId, role, ctx, courseId);
+    async getFeed(courseId: string | undefined, authUser: AuthUser): Promise<Announcement[]> {
+        const auth = requireAuth(authUser);
+        const payload: GetFeedPayload = { courseId };
+        return this.announcementRepository.getFeed(payload, auth);
     }
 
     async createAnnouncement(payload: CreateAnnouncementPayload, authUser: AuthUser): Promise<void> {
-        const ctx = this.requireAuth(authUser);
+        const auth = requireAuth(authUser);
         this.validate(payload);
 
         const normalized = this.normalizeCreate(payload);
-        await this.announcementRepository.createAnnouncement(normalized, ctx);
+        await this.announcementRepository.createAnnouncement(normalized, auth);
     }
 
     async updateAnnouncement(payload: UpdateAnnouncementPayload, authUser: AuthUser): Promise<void> {
-        const ctx = this.requireAuth(authUser);
-        if (!payload.announcementId) throw new ValidationError("Faltan campos obligatorios");
+        const auth = requireAuth(authUser);
+        if (!payload.announcementId) throw new ValidationError("Falta el id del comunicado");
         this.validate(payload);
 
         const normalized = this.normalizeUpdate(payload);
-        return await this.announcementRepository.updateAnnouncement(normalized, ctx);
+        await this.announcementRepository.updateAnnouncement(normalized, auth);
     }
 
     async deleteAnnouncement(announcementId: string, authUser: AuthUser): Promise<void> {
-        const ctx = this.requireAuth(authUser);
+        const auth = requireAuth(authUser);
         if (!announcementId) throw new ValidationError("Falta el id del comunicado");
 
-        return await this.announcementRepository.deleteAnnouncement(announcementId, ctx);
+        await this.announcementRepository.deleteAnnouncement(announcementId, auth);
     }
 }

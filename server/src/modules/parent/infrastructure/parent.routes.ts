@@ -16,7 +16,7 @@ const attendanceRepository = new PostgresAttendanceRepository();
 const courseBreakRepository = new PostgresCourseBreakRepository();
 
 const service = new ParentService(parentRepository, gradeRepository, attendanceRepository, courseBreakRepository);
-const controllers = new ParentControllers(service);
+const controller = new ParentControllers(service);
 
 const router: Router = Router();
 
@@ -24,42 +24,42 @@ router.get(
     "/",
     authMiddleware,
     authorizedRoles(['principal', 'admin']),
-    controllers.getParents
+    controller.getParents
 )
 
 router.get(
     "/students",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getParentStudents
+    controller.getParentStudents
 )
 
 router.get(
     "/student/:studentId/period/:periodId/grades",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getStudentGrades
+    controller.getStudentGrades
 )
 
 router.get(
     "/student/:studentId/daily/attendance",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getStudentDailyAttendance
+    controller.getStudentDailyAttendance
 )
 
 router.get(
     "/student/:studentId/daily/grades",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getStudentDailyGrades
+    controller.getStudentDailyGrades
 )
 
 router.get(
     "/student/:studentId/accumulated",
     authMiddleware,
     authorizedRoles(['parent']),
-    controllers.getAccumulatedGradesBySubject
+    controller.getAccumulatedGradesBySubject
 )
 
 router.post(
@@ -67,7 +67,7 @@ router.post(
     strictLimiter,
     authMiddleware,
     authorizedRoles(['principal', 'admin']),
-    controllers.createParent
+    controller.createParent
 );
 
 router.post(
@@ -75,7 +75,7 @@ router.post(
     strictLimiter,
     authMiddleware,
     authorizedRoles(['principal', 'admin']),
-    controllers.linkParentToStudent
+    controller.linkParentToStudent
 )
 
 router.delete(
@@ -83,7 +83,7 @@ router.delete(
     strictLimiter,
     authMiddleware,
     authorizedRoles(['principal', 'admin']),
-    controllers.deleteParent
+    controller.deleteParent
 )
 
 router.delete(
@@ -91,7 +91,7 @@ router.delete(
     strictLimiter,
     authMiddleware,
     authorizedRoles(['principal', 'admin']),
-    controllers.deleteParentStudent
+    controller.deleteParentStudent
 )
 
 export default router;

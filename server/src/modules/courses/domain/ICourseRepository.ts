@@ -1,17 +1,15 @@
 import type {
     Course,
-    CourseDetails,
-    Courses,
-    CreateCourse,
-    TeacherCourse,
-    UpdateCourse
+    Courses, CreateCoursePayload, DeleteCoursePayload, GetCourseDetailsPayload, GetCoursesPayload,
+    TeacherCourse, UpdateCoursePayload
 } from "./Course.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 
 export interface ICourseRepository {
-    getCourses(userSchoolId: string, isActive: boolean): Promise<Courses[] | []>;
-    getCourseDetails(courseId: string, userSchoolId: string, isActive: boolean): Promise<Course | null>;
-    createCourse(courseName: string, courseYear: string, courseTeacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<CreateCourse>;
-    updateCourse(courseId: string, courseName: string, courseYear: string, courseTeacherId: string, userId: string, userRole: string, userSchoolId: string): Promise<UpdateCourse>;
-    deleteCourse(courseId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
-    getTeacherCourse(userId: string, userSchoolId: string): Promise<TeacherCourse>;
+    getCourses(payload: GetCoursesPayload, authUser: AuthUser): Promise<Courses[] | []>;
+    getCourseDetails(payload: GetCourseDetailsPayload, authUser: AuthUser): Promise<Course | null>;
+    createCourse(payload: CreateCoursePayload, authUser: AuthUser): Promise<void>;
+    updateCourse(payload: UpdateCoursePayload, authUser: AuthUser): Promise<void>;
+    deleteCourse(payload: DeleteCoursePayload, authUser: AuthUser): Promise<void>;
+    getTeacherCourse(authUser: AuthUser): Promise<TeacherCourse>;
 }

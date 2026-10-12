@@ -1,11 +1,22 @@
 import type { ISubjectsRepository } from "../domain/ISubjectsRepository.js";
-import type { AvailableSubjects, CreateSubject, SubjectDetails } from "../domain/Subjects.types.js";
+import type {
+    AvailableSubjects,
+    CreateSubject,
+    CreateSubjectPayload, GetAvailableSubjectsPayload,
+    GetSubjectsByAreaPayload,
+    SubjectDetails, UpdateSubjectPayload
+} from "../domain/Subjects.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
-import {ConflictError, NotFoundError} from "../../errors/domain/CustomErrors.js";
+import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresSubjectRepository implements ISubjectsRepository {
-    async getSubjectsByArea(subjectAreaId:string, userSchoolId:string): Promise<SubjectDetails[]> {
+
+    async getSubjectsByArea(payload: GetSubjectsByAreaPayload, authUser: AuthUser): Promise<SubjectDetails[]> {
+        const { subjectAreaId } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -17,8 +28,8 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
                     g.id AS grading_template_id,
                     g.name AS grading_template_name
                 FROM subject s
-                JOIN area a ON s.area_id = a.id
-                JOIN grading_template g ON s.grading_template_id = g.id
+                         JOIN area a ON s.area_id = a.id
+                         JOIN grading_template g ON s.grading_template_id = g.id
                 WHERE s.area_id = $1 AND a.school_id = $2
                 ORDER BY s.name ASC
             `, [subjectAreaId, userSchoolId]);
@@ -29,32 +40,35 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
         }
     }
 
-    async getAvailableSubjects(courseId: string, userSchoolId: string) {
+    async getAvailableSubjects(payload: GetAvailableSubjectsPayload, authUser: AuthUser): Promise<AvailableSubjects[]> {
+        const { courseId } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            const subjects = await client.query<AvailableSubjects>(`
-                SELECT 
-                    s.id, 
+            const result = await client.query<AvailableSubjects>(`
+                SELECT
+                    s.id,
                     s.name
                 FROM subject s
-                JOIN area a ON s.area_id = a.id
+                         JOIN area a ON s.area_id = a.id
                 WHERE a.school_id = $1
-                AND s.id NOT IN (
-                    SELECT 
-                        subject_id 
-                    FROM class
-                    WHERE course_id = $2
+                  AND s.id NOT IN (
+                    SELECT subject_id FROM class WHERE course_id = $2
                 )
                 ORDER BY s.name ASC;
             `, [userSchoolId, courseId]);
 
-            return subjects.rows;
+            return result.rows;
         } finally {
             client.release();
         }
     }
 
-    async createSubject(subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<CreateSubject> {
+    async createSubject(payload: CreateSubjectPayload, authUser: AuthUser): Promise<CreateSubject> {
+        const { subjectName, subjectAreaId, gradingTemplateId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -62,7 +76,7 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
             const result = await client.query(`
                 INSERT INTO subject (name, area_id, grading_template_id)
                 VALUES ($1, $2, $3)
-                RETURNING id
+                    RETURNING id
             `, [subjectName, subjectAreaId, gradingTemplateId]);
 
             const subjectId = result.rows[0].id;
@@ -73,7 +87,7 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
                 action: "CREATE_SUBJECT",
                 schoolId: userSchoolId,
                 metadata: {
-                    subjectId: subjectId,
+                    subjectId,
                     name: subjectName,
                     area: subjectAreaId,
                 }
@@ -82,15 +96,21 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
             await client.query('COMMIT');
 
             return { id: subjectId };
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
+            if (error.code === '23503') {
+                throw new ConflictError("El área o la plantilla de evaluación no existe");
+            }
             throw error;
         } finally {
             client.release();
         }
     }
 
-    async updateSubject(subjectId: string, subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async updateSubject(payload: UpdateSubjectPayload, authUser: AuthUser): Promise<void> {
+        const { subjectId, subjectName, subjectAreaId, gradingTemplateId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -98,13 +118,15 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
             const result = await client.query(`
                 UPDATE subject s
                 SET name = $1, area_id = $2, grading_template_id = $3
-                FROM area a
+                    FROM area a
                 WHERE s.id = $4
-                AND s.area_id = a.id
-                AND a.school_id = $5
+                  AND s.area_id = a.id
+                  AND a.school_id = $5
             `, [subjectName, subjectAreaId, gradingTemplateId, subjectId, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError("No se encontro la asignatura para su actualización");
+            if (result.rowCount === 0) {
+                throw new NotFoundError("No se encontró la asignatura para su actualización");
+            }
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -115,35 +137,36 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
             });
 
             await client.query('COMMIT');
-
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
+            if (error.code === '23503') {
+                throw new ConflictError("El área o la plantilla de evaluación no existe");
+            }
             throw error;
         } finally {
             client.release();
         }
     }
 
-    async deleteSubject(subjectId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async deleteSubject(subjectId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
-            const subjectCheck = await client.query(`
-                SELECT 1
-                FROM subject s
-                JOIN area a ON s.area_id = a.id
-                WHERE s.id = $1 AND a.school_id = $2
+            const result = await client.query(`
+                DELETE FROM subject s
+                    USING area a
+                WHERE s.id = $1
+                  AND s.area_id = a.id
+                  AND a.school_id = $2
+                    RETURNING s.id, s.name
             `, [subjectId, userSchoolId]);
 
-            if (subjectCheck.rowCount === 0) throw new NotFoundError("No se encontro la asignatura para su eliminación");
-
-            const result = await client.query(`
-                DELETE FROM subject
-                WHERE id = $1
-                    RETURNING id, name
-            `, [subjectId]);
+            if (result.rowCount === 0) {
+                throw new NotFoundError("No se encontró la asignatura para su eliminación");
+            }
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -154,15 +177,11 @@ export class PostgresSubjectRepository implements ISubjectsRepository {
             });
 
             await client.query('COMMIT');
-
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
-
             if (error.code === '23503') {
-                throw new ConflictError("No se puede eliminar por que la asignatura esta asignada a clases activas");
+                throw new ConflictError("No se puede eliminar porque la asignatura está asignada a clases activas");
             }
-
             throw error;
         } finally {
             client.release();

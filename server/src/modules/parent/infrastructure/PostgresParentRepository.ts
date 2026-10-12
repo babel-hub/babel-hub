@@ -2,36 +2,16 @@ import type { IParentRepository } from "../domain/IParentRepository.js";
 import type { ParentCredentials, AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { supabase } from "../../../services/index.js";
-import { ConflictError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
-import { createAuditLog} from "../../../services/audit.service.js";
-import type {Parent, ParentStudent, RelationTypes, StudentParentRow} from "../domain/Parent.types.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { createAuditLog } from "../../../services/audit.service.js";
+import type { LinkParentToStudentPayload, Parent, ParentStudent, StudentParentRow } from "../domain/Parent.types.js";
+import {pgUniqueMessage} from "../../shared/db/pgErrors.js";
 
 export class PostgresParentRepository implements IParentRepository {
-    async getParentByStudentId(studentId:string): Promise<StudentParentRow[]> {
-        const client = await pool.connect();
-        try {
-            const parent = await client.query(`
-                    SELECT 
-                        pr.id as parent_id,
-                        pr_prof.first_name,
-                        pr_prof.middle_name,
-                        pr_prof.first_last_name,
-                        pr_prof.second_last_name,
-                        pr_prof.phone,
-                        sp.relationship_type
-                    FROM parent_student sp
-                    JOIN parent pr ON sp.parent_id = pr.id
-                    JOIN profile pr_prof ON pr.profile_id = pr_prof.id
-                    WHERE sp.student_id = $1 AND pr_prof.is_active = true
-                `, [studentId]);
 
-            return parent.rows;
-        } finally {
-            client.release();
-        }
-    }
+    async getParents(authUser: AuthUser): Promise<Parent[]> {
+        const { userSchoolId } = authUser;
 
-    async getParents(userSchoolId: string): Promise<Parent[]> {
         const client = await pool.connect();
         try {
             const parents = await client.query(`
@@ -61,14 +41,12 @@ export class PostgresParentRepository implements IParentRepository {
                             '[]'::json
                     ) AS students
                 FROM parent p
-                JOIN profile pr ON p.profile_id = pr.id
-                LEFT JOIN parent_student ps ON p.id = ps.parent_id
-                LEFT JOIN student s ON ps.student_id = s.id
-                LEFT JOIN profile spr ON s.profile_id = spr.id
+                         JOIN profile pr ON p.profile_id = pr.id
+                         LEFT JOIN parent_student ps ON p.id = ps.parent_id
+                         LEFT JOIN student s ON ps.student_id = s.id
+                         LEFT JOIN profile spr ON s.profile_id = spr.id
                 WHERE pr.school_id = $1 AND pr.is_active = true
-                GROUP BY
-                    p.id,
-                    pr.id
+                GROUP BY p.id, pr.id
                 ORDER BY pr.first_last_name ASC;
             `, [userSchoolId]);
 
@@ -79,13 +57,13 @@ export class PostgresParentRepository implements IParentRepository {
     }
 
     async getParentStudents(authUser: AuthUser): Promise<ParentStudent[]> {
+        const { userId, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const check = await client.query(`
-                SELECT 1
-                FROM parent p
-                WHERE p.profile_id = $1
-            `, [authUser.userId]);
+                SELECT 1 FROM parent p WHERE p.profile_id = $1
+            `, [userId]);
 
             if (check.rowCount === 0) throw new NotFoundError("El acudiente no fue encontrado");
 
@@ -107,7 +85,7 @@ export class PostgresParentRepository implements IParentRepository {
                 WHERE p.profile_id = $1
                   AND pr.school_id = $2
                   AND pr.is_active = true
-            `, [authUser.userId, authUser.userSchoolId]);
+            `, [userId, userSchoolId]);
 
             return result.rows;
         } finally {
@@ -115,7 +93,39 @@ export class PostgresParentRepository implements IParentRepository {
         }
     }
 
+    async getParentByStudentId(studentId: string, authUser: AuthUser): Promise<StudentParentRow[]> {
+        const { userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            const parents = await client.query(`
+                SELECT
+                    pr.id AS parent_id,
+                    pr_prof.first_name,
+                    pr_prof.middle_name,
+                    pr_prof.first_last_name,
+                    pr_prof.second_last_name,
+                    pr_prof.phone,
+                    sp.relationship_type
+                FROM parent_student sp
+                         JOIN parent pr ON sp.parent_id = pr.id
+                         JOIN profile pr_prof ON pr.profile_id = pr_prof.id
+                         JOIN student s ON sp.student_id = s.id
+                         JOIN profile s_prof ON s.profile_id = s_prof.id
+                WHERE sp.student_id = $1
+                  AND s_prof.school_id = $2
+                  AND pr_prof.is_active = true
+            `, [studentId, userSchoolId]);
+
+            return parents.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async createParent(parentCredentials: ParentCredentials, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         let authUserId: string | null = null;
         try {
@@ -131,7 +141,6 @@ export class PostgresParentRepository implements IParentRepository {
                 if (error.code === 'email_exists') {
                     throw new ConflictError("Ya existe un usuario con la misma dirección de email");
                 }
-
                 throw new ValidationError(`No se pudo crear el usuario (${error.message})`);
             }
 
@@ -159,21 +168,24 @@ export class PostgresParentRepository implements IParentRepository {
                 parentCredentials.firstLastName,
                 parentCredentials.secondLastName,
                 parentCredentials.email,
-                authUser.userSchoolId,
+                userSchoolId,
                 parentCredentials.userName,
                 parentCredentials.phone
             ]);
 
             const profileId = profile.rows[0].id;
 
-            await client.query(`INSERT INTO parent (profile_id) VALUES ($1) RETURNING id`, [profileId]);
+            await client.query(
+                `INSERT INTO parent (profile_id) VALUES ($1) RETURNING id`,
+                [profileId]
+            );
 
             await createAuditLog(client, {
                 targetUserId: profileId,
-                actorUserId: authUser.userId,
-                actorRole: authUser.userRole,
+                actorUserId: userId,
+                actorRole: userRole,
                 action: "CREATE_PARENT",
-                schoolId: authUser.userSchoolId,
+                schoolId: userSchoolId,
                 metadata: {
                     name: [
                         parentCredentials.firstName,
@@ -186,7 +198,7 @@ export class PostgresParentRepository implements IParentRepository {
             });
 
             await client.query('COMMIT');
-        } catch (error : any) {
+        } catch (error: any) {
             let rolledBack = true;
             try {
                 await client.query('ROLLBACK');
@@ -209,7 +221,11 @@ export class PostgresParentRepository implements IParentRepository {
             }
 
             if (error.code === '23505') {
-                throw new ConflictError('Ese email ya está tomado, intenta usar otro');
+                throw new ConflictError(pgUniqueMessage(error.constraint));
+            }
+
+            if (error.code === '23503') {
+                throw new ConflictError("Una referencia a otro registro es inválida");
             }
 
             throw error;
@@ -218,7 +234,10 @@ export class PostgresParentRepository implements IParentRepository {
         }
     }
 
-    async linkedParentToStudent(parentId: string, studentId: string, type: RelationTypes, authUser: AuthUser): Promise<void> {
+    async linkParentToStudent(payload: LinkParentToStudentPayload, authUser: AuthUser): Promise<void> {
+        const { parentId, studentId, type } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -226,11 +245,11 @@ export class PostgresParentRepository implements IParentRepository {
             const check = await client.query(`
                 SELECT 1
                 FROM parent pa
-                JOIN profile pp ON pa.profile_id = pp.id
-                JOIN student st ON st.id = $2
-                JOIN profile sp ON st.profile_id = sp.id
+                         JOIN profile pp ON pa.profile_id = pp.id
+                         JOIN student st ON st.id = $2
+                         JOIN profile sp ON st.profile_id = sp.id
                 WHERE pa.id = $1 AND pp.school_id = $3 AND sp.school_id = $3
-            `, [parentId, studentId, authUser.userSchoolId]);
+            `, [parentId, studentId, userSchoolId]);
 
             if (check.rowCount === 0) throw new NotFoundError("Padre o estudiante no encontrado");
 
@@ -240,21 +259,15 @@ export class PostgresParentRepository implements IParentRepository {
             `, [parentId, studentId, type]);
 
             await createAuditLog(client, {
-                actorUserId: authUser.userId,
-                actorRole: authUser.userRole,
+                actorUserId: userId,
+                actorRole: userRole,
                 action: "LINK_PARENT_STUDENT",
-                schoolId: authUser.userSchoolId,
-                metadata: {
-                    parentId,
-                    studentId,
-                    relationType: type
-                }
+                schoolId: userSchoolId,
+                metadata: { parentId, studentId, relationType: type }
             });
 
-
             await client.query('COMMIT');
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
             if (error.code === '23505') throw new ConflictError("Este padre ya está vinculado a este estudiante");
             if (error.code === '23503') throw new ConflictError("Padre o estudiante inválido");
@@ -265,24 +278,28 @@ export class PostgresParentRepository implements IParentRepository {
     }
 
     async deleteParent(parentId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const parentCheck = await client.query(`
-                SELECT 
-                    p.profile_id, 
+                SELECT
+                    p.profile_id,
                     pr.auth_profile_id,
                     pr.first_name as parent_first_name,
                     pr.middle_name as parent_middle_name,
                     pr.first_last_name as parent_first_last_name,
                     pr.second_last_name as parent_second_last_name
                 FROM parent p
-                JOIN profile pr ON p.profile_id = pr.id
+                         JOIN profile pr ON p.profile_id = pr.id
                 WHERE p.id = $1 AND pr.school_id = $2
-            `, [parentId, authUser.userSchoolId]);
+            `, [parentId, userSchoolId]);
 
-            if (parentCheck.rowCount === 0) throw new NotFoundError("El acudiente no se encontro para su eliminación");
+            if (parentCheck.rowCount === 0) {
+                throw new NotFoundError("El acudiente no se encontró para su eliminación");
+            }
 
             const {
                 profile_id,
@@ -295,25 +312,28 @@ export class PostgresParentRepository implements IParentRepository {
 
             await client.query(`DELETE FROM parent WHERE id = $1`, [parentId]);
             await client.query(`DELETE FROM profile WHERE id = $1`, [profile_id]);
-            const { error } = await supabase.auth.admin.deleteUser(auth_profile_id);
 
+            const { error } = await supabase.auth.admin.deleteUser(auth_profile_id);
             if (error) throw new ValidationError(`No se pudo eliminar el usuario (${error.message})`);
 
             await createAuditLog(client, {
-                actorUserId: authUser.userId,
-                actorRole: authUser.userRole,
+                actorUserId: userId,
+                actorRole: userRole,
                 action: 'DELETE_PARENT',
-                schoolId: authUser.userSchoolId,
+                schoolId: userSchoolId,
                 metadata: {
                     parentId,
-                    name: [parent_first_name, parent_middle_name ?? "", parent_first_last_name, parent_second_last_name ?? ""].join(" ")
+                    name: [
+                        parent_first_name,
+                        parent_middle_name ?? "",
+                        parent_first_last_name,
+                        parent_second_last_name ?? ""
+                    ].join(" ")
                 }
             });
 
             await client.query('COMMIT');
-
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             let rolledBack = true;
             try {
                 await client.query('ROLLBACK');
@@ -326,7 +346,9 @@ export class PostgresParentRepository implements IParentRepository {
                 console.error(`[CRITICAL] Uncertain state deleting parent, profile_id may still exist while Supabase user was deleted. Manual reconciliation needed.`);
             }
 
-            if (error.code === '23503') throw new ConflictError("No se puede eliminar el acudiente porque tiene información guardada.");
+            if (error.code === '23503') {
+                throw new ConflictError("No se puede eliminar el acudiente porque tiene información guardada.");
+            }
 
             throw error;
         } finally {
@@ -334,7 +356,9 @@ export class PostgresParentRepository implements IParentRepository {
         }
     }
 
-    async deleteParentStudent(linkId: string, authUser: AuthUser): Promise<void> {
+    async deleteParentStudent(id: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -346,35 +370,33 @@ export class PostgresParentRepository implements IParentRepository {
                     p_parent.first_name as parent_first,
                     p_parent.first_last_name as parent_last
                 FROM parent_student sp
-                JOIN student s ON sp.student_id = s.id
-                JOIN profile p_student ON s.profile_id = p_student.id
-                JOIN parent pr ON sp.parent_id = pr.id
-                JOIN profile p_parent ON pr.profile_id = p_parent.id
+                         JOIN student s ON sp.student_id = s.id
+                         JOIN profile p_student ON s.profile_id = p_student.id
+                         JOIN parent pr ON sp.parent_id = pr.id
+                         JOIN profile p_parent ON pr.profile_id = p_parent.id
                 WHERE sp.id = $1 AND p_student.school_id = $2
-            `, [linkId, authUser.userSchoolId]);
+            `, [id, userSchoolId]);
 
             if (check.rowCount === 0) throw new NotFoundError("El vínculo no se encontró o no tienes permisos");
 
-            await client.query(`
-                DELETE FROM parent_student WHERE id = $1
-            `, [linkId]);
+            await client.query(`DELETE FROM parent_student WHERE id = $1`, [id]);
 
             const row = check.rows[0];
 
             await createAuditLog(client, {
-                actorUserId: authUser.userId,
-                actorRole: authUser.userRole,
+                actorUserId: userId,
+                actorRole: userRole,
                 action: 'UNLINK_PARENT_STUDENT',
-                schoolId: authUser.userSchoolId,
+                schoolId: userSchoolId,
                 metadata: {
-                    linkId,
+                    linkId: id,
                     student: `${row.student_first} ${row.student_last}`,
-                    parent: `${row.parent_first} ${row.parent_last}`,
+                    parent: `${row.parent_first} ${row.parent_last}`
                 }
             });
 
             await client.query('COMMIT');
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
             throw error;
         } finally {

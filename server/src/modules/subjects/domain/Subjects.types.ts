@@ -15,3 +15,21 @@ export interface AvailableSubjects {
     id: string;
     name: string;
 }
+
+export interface GetSubjectsByAreaPayload {
+    subjectAreaId: string;
+}
+
+export interface GetAvailableSubjectsPayload {
+    courseId: string;
+}
+
+export interface CreateSubjectPayload {
+    subjectName: string;
+    subjectAreaId: string;
+    gradingTemplateId: string;
+}
+
+export interface UpdateSubjectPayload extends CreateSubjectPayload {
+    subjectId: string;
+}

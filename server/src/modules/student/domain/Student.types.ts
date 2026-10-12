@@ -24,6 +24,20 @@ export interface CreateStudent {
 
 export interface StudentByName extends BaseStudent {}
 
+export interface GetStudentsPayload {
+    isActive: boolean;
+}
+
+export interface GetClassStudentsPayload {
+    courseId: string;
+    isActive: boolean;
+}
+
+export interface GetStudentsByNamePayload {
+    query: string;
+    limit: number;
+}
+
 // Student details interface
 
 export interface LinkedParent {

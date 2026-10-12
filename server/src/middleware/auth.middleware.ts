@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { UserRole } from "../types/types.js";
 import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
+import type { AuthUser } from "../modules/shared/domain/Shared.types.js";
 
 export interface AuthenticatedRequest extends Request {
     user?: {
@@ -11,6 +12,7 @@ export interface AuthenticatedRequest extends Request {
         email?: string | undefined;
         schoolId?: string | undefined;
     };
+    authUser?: AuthUser;
 }
 
 interface SupabaseJwtPayload {
@@ -31,7 +33,7 @@ function getJwksClient() {
         const jwksUri = `${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`;
 
         client = jwksClient({
-            jwksUri: jwksUri,
+            jwksUri,
             cache: true,
             cacheMaxAge: 60 * 60 * 1000,
             rateLimit: true,
@@ -54,7 +56,6 @@ function getKey(header: jwt.JwtHeader, callback: any) {
         const signingKey = key?.getPublicKey();
         callback(null, signingKey);
     });
-
 }
 
 export async function authMiddleware(

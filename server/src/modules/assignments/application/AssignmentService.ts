@@ -1,11 +1,13 @@
-import type { AssignmentsStructure, UpdateAssignmentDTO } from "../domain/Assignment.types.js";
-import type { IAssignmentRepository } from "../domain/IAssignmentRepository.js";
-import {ForbiddenError, UnauthorizedError, ValidationError} from "../../errors/domain/CustomErrors.js";
-import { assertValidDueDate } from "../domain/Assignment.rules.js";
-
-import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
+import type {
+    IAssignmentRepository
+} from "../domain/IAssignmentRepository.js";
+import type { AssignmentsStructure, UpdateAssignmentDTO, CreateAssignmentPayload, GetAssignmentsOverviewPayload } from "../domain/Assignment.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { ForbiddenError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { assertValidDueDate } from "../domain/Assignment.rules.js";
+import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAssessmentRepository } from "../../assessmentCriteria/domain/IAssessmentRepository.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class AssignmentService {
     constructor(
@@ -14,14 +16,23 @@ export class AssignmentService {
         private readonly assessmentRepository: IAssessmentRepository
     ) {}
 
-    async getAssignmentsOverview(courseId: string, classId: string, periodId: string, userSchoolId: string): Promise<AssignmentsStructure> {
-        if (!userSchoolId) throw new UnauthorizedError('Datos del usuario master son invalidos');
-        if (!classId || !courseId || !periodId) throw new ValidationError('Los datos son inválidos');
+    async getAssignmentsOverview(
+        courseId: string,
+        classId: string,
+        periodId: string,
+        authUser: AuthUser
+    ): Promise<AssignmentsStructure> {
+        const auth = requireAuth(authUser);
+        if (!classId || !courseId || !periodId) {
+            throw new ValidationError("Los datos son inválidos");
+        }
+
+        const payload: GetAssignmentsOverviewPayload = { courseId, classId, periodId };
 
         const [assignments, assessments, grades] = await Promise.all([
-            this.assignmentRepository.getAssignmentsOverview(courseId, classId, periodId, userSchoolId),
-            this.assessmentRepository.getAssessmentByAssignment(classId),
-            this.gradeRepository.getGradesByClass(classId)
+            this.assignmentRepository.getAssignmentsOverview(payload, auth),
+            this.assessmentRepository.getAssessmentByAssignment(classId, auth),
+            this.gradeRepository.getGradesByClass(classId, auth)
         ]);
 
         const assignmentsByCriteria = new Map<string, any[]>();
@@ -44,61 +55,61 @@ export class AssignmentService {
                 weight: ac.weight,
                 assignments: assignmentsByCriteria.get(ac.id) ?? []
             })),
-            grades: grades
+            grades
         };
     }
 
-    async createAssignment(
-        assignmentName: string,
-        assignmentDueAt: string,
-        classId: string,
-        assessmentId: string,
-        periodId: string,
-        authUser: AuthUser): Promise<void> {
-        if (!classId || !assessmentId || !periodId) throw new ValidationError('Los datos de la clase, el criterio o el periodo están vacíos');
-        if (!assignmentName || !assignmentDueAt) throw new ValidationError('Todos los campos obligatorios deben estar llenos');
+    async createAssignment(payload: CreateAssignmentPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
 
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError('Credenciales del usuario inválidas');
+        if (!payload.classId || !payload.assessmentId || !payload.periodId) {
+            throw new ValidationError("Los datos de la clase, el criterio o el periodo están vacíos");
+        }
+        if (!payload.assignmentName || !payload.assignmentDueAt) {
+            throw new ValidationError("Todos los campos obligatorios deben estar llenos");
         }
 
-        assertValidDueDate(assignmentDueAt);
+        assertValidDueDate(payload.assignmentDueAt);
 
-        return this.assignmentRepository.createAssignment(assignmentName, assignmentDueAt, classId, assessmentId, periodId, authUser);
+        await this.assignmentRepository.createAssignment(payload, auth);
     }
 
     async updateAssignment(
         assignmentId: string,
         payload: UpdateAssignmentDTO,
-        authUser: AuthUser): Promise<void> {
-        if (!assignmentId) throw new ValidationError('los datos de la clase, criterio o asignación estan vacios');
-        if (payload.assignmentName === undefined && payload.assignmentDueAt === undefined) throw new ValidationError('Debe proporcionar al menos un campo para actualizar');
+        authUser: AuthUser
+    ): Promise<void> {
+        const auth = requireAuth(authUser);
 
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError('Credenciales del usuario inválidas');
+        if (!assignmentId) {
+            throw new ValidationError("El ID de la asignación es obligatorio");
+        }
+        if (payload.assignmentName === undefined && payload.assignmentDueAt === undefined) {
+            throw new ValidationError("Debe proporcionar al menos un campo para actualizar");
         }
 
         if (payload.assignmentDueAt) {
             assertValidDueDate(payload.assignmentDueAt);
         }
 
-        return this.assignmentRepository.updateAssignment(assignmentId, payload, authUser);
+        await this.assignmentRepository.updateAssignment(assignmentId, payload, auth);
     }
 
     async deleteAssignment(assignmentId: string, authUser: AuthUser): Promise<void> {
-        if (!authUser.userId) throw new UnauthorizedError('Credenciales inválidas');
-        if (!assignmentId) throw new ValidationError('El ID de la asignación está vacío');
+        const auth = requireAuth(authUser);
+        if (!assignmentId) throw new ValidationError("El ID de la asignación es obligatorio");
 
-        const assignmentOwnerId = await this.assignmentRepository.getAssignmentOwner(assignmentId);
+        const assignmentOwnerId = await this.assignmentRepository.getAssignmentOwner(assignmentId, auth);
 
         if (!assignmentOwnerId) {
-            throw new ValidationError('La asignación no existe');
+            throw new NotFoundError("La asignación no existe");
         }
 
-        if (authUser.userRole === 'teacher' && authUser.userId !== assignmentOwnerId) {
-            throw new ForbiddenError('No tienes permisos para modificar esta asignación');
+        // Both ids are profile.id — comparison is valid.
+        if (auth.userRole === 'teacher' && auth.userId !== assignmentOwnerId) {
+            throw new ForbiddenError("No tienes permisos para modificar esta asignación");
         }
 
-        return await this.assignmentRepository.deleteAssignment(assignmentId, authUser);
+        await this.assignmentRepository.deleteAssignment(assignmentId, auth);
     }
 }

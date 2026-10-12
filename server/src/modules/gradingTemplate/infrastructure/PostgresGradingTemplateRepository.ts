@@ -1,11 +1,22 @@
 import type { IGradingTemplateRepository } from "../domain/IGradingTemplateRepository.js";
-import type {AssessmentCriteria, GradingTemplate} from "../domain/GradingTemplate.types.js";
+import type {
+    AssessmentCriteria,
+    GradingTemplate,
+    CreateGradingTemplatePayload,
+    UpdateGradingTemplatePayload,
+    DeleteGradingTemplatePayload,
+    GetGradingTemplateDetailsPayload
+} from "../domain/GradingTemplate.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresGradingTemplateRepository implements IGradingTemplateRepository {
-    async getGradingTemplates (userSchoolId: string): Promise<GradingTemplate[]> {
+
+    async getGradingTemplates(authUser: AuthUser): Promise<GradingTemplate[]> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -17,7 +28,7 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
                     s.min_value AS scale_min,
                     s.max_value AS scale_max
                 FROM grading_template g
-                JOIN scale s ON g.scale_id = s.id
+                         JOIN scale s ON g.scale_id = s.id
                 WHERE g.school_id = $1
                 ORDER BY g.name ASC;
             `, [userSchoolId]);
@@ -28,24 +39,27 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
         }
     }
 
-    async getGradingTemplateDetails(gradingId: string, userSchoolId: string): Promise<AssessmentCriteria> {
+    async getGradingTemplateDetails(
+        payload: GetGradingTemplateDetailsPayload,
+        authUser: AuthUser
+    ): Promise<AssessmentCriteria> {
+        const { gradingId } = payload;
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const grading = await client.query(`
-                SELECT
-                    name AS grading_name
+                SELECT name AS grading_name
                 FROM grading_template
                 WHERE school_id = $1 AND id = $2
             `, [userSchoolId, gradingId]);
 
-            if (grading.rowCount === 0) throw new NotFoundError(`No se encontro el criterio con el id ${gradingId}`);
+            if (grading.rowCount === 0) {
+                throw new NotFoundError(`No se encontró el criterio con el id ${gradingId}`);
+            }
 
-            const assessment = await client.query(`
-                SELECT
-                    id,
-                    name,
-                    weight,
-                    grading_template_id
+            const assessments = await client.query(`
+                SELECT id, name, weight, grading_template_id
                 FROM assessment_criteria
                 WHERE grading_template_id = $1
                 ORDER BY name ASC;
@@ -53,24 +67,29 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
 
             return {
                 grading_name: grading.rows[0].grading_name,
-                assessments: assessment.rows
+                assessments: assessments.rows
             };
         } finally {
             client.release();
         }
     }
-    async createGradingTemplate(gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+
+    async createGradingTemplate(
+        payload: CreateGradingTemplatePayload,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { gradingName, gradingScaleId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            await client.query(`BEGIN`);
+            await client.query('BEGIN');
 
             const grading = await client.query(`
-                INSERT INTO grading_template(name, school_id, scale_id)
+                INSERT INTO grading_template (name, school_id, scale_id)
                 VALUES ($1, $2, $3)
-                RETURNING id
+                    RETURNING id
             `, [gradingName, userSchoolId, gradingScaleId]);
-
-            const gradingId = grading.rows[0].id;
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -78,63 +97,28 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
                 action: "CREATE_GRADING_TEMPLATE",
                 schoolId: userSchoolId,
                 metadata: {
-                    gradingId: gradingId,
-                    gradingName: gradingName,
+                    gradingId: grading.rows[0].id,
+                    gradingName
                 }
-            })
+            });
 
-            await client.query(`COMMIT`);
-
-            return;
+            await client.query('COMMIT');
         } catch (error: any) {
-            await client.query(`ROLLBACK`);
+            await client.query('ROLLBACK');
             if (error.code === '23503') throw new ConflictError("La escala seleccionada no existe");
             throw error;
         } finally {
             client.release();
         }
     }
-    async deleteGradingTemplate(gradingId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
 
-            const grading = await client.query(`
-                SELECT 1
-                FROM grading_template
-                WHERE id = $1 AND school_id = $2
-            `, [gradingId, userSchoolId]);
+    async updateGradingTemplate(
+        payload: UpdateGradingTemplatePayload,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { gradingId, gradingName, gradingScaleId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
 
-            if (grading.rowCount === 0) throw new NotFoundError(`No fue posible eliminar el criterio con id ${gradingId}`)
-
-            await client.query(`
-                DELETE FROM grading_template
-                WHERE id = $1 AND school_id = $2
-            `, [gradingId, userSchoolId]);
-
-            await createAuditLog(client, {
-                actorUserId: userId,
-                actorRole: userRole,
-                action: "DELETE_GRADING_TEMPLATE",
-                schoolId: userSchoolId,
-                metadata: {
-                    gradingId: gradingId
-                }
-            })
-
-            await client.query('COMMIT');
-            return;
-        } catch (error: any) {
-            await client.query('ROLLBACK');
-
-            if (error.code === '23503') throw new ConflictError(" El criterio tiene evaluaciones activas");
-
-            throw error;
-        } finally {
-            client.release();
-        }
-    }
-    async updateGradingTemplate(gradingId: string, gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -142,10 +126,12 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
             const result = await client.query(`
                 UPDATE grading_template
                 SET name = $1, scale_id = $2
-                WHERE id = $3 and school_id = $4
+                WHERE id = $3 AND school_id = $4
             `, [gradingName, gradingScaleId, gradingId, userSchoolId]);
 
-            if (result.rowCount === 0) throw new NotFoundError(`No se encontro el criterio con id ${gradingId}`);
+            if (result.rowCount === 0) {
+                throw new NotFoundError(`No se encontró el criterio con id ${gradingId}`);
+            }
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -153,17 +139,54 @@ export class PostgresGradingTemplateRepository implements IGradingTemplateReposi
                 action: "UPDATE_GRADING_TEMPLATE",
                 schoolId: userSchoolId,
                 metadata: {
-                    gradingId: gradingId,
-                    gradingName: gradingName
+                    gradingId,
+                    gradingName
                 }
-            })
+            });
 
             await client.query('COMMIT');
-
-            return;
         } catch (error: any) {
             await client.query('ROLLBACK');
             if (error.code === '23503') throw new ConflictError("La escala seleccionada no existe");
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteGradingTemplate(
+        payload: DeleteGradingTemplatePayload,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { gradingId } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const result = await client.query(`
+                DELETE FROM grading_template
+                WHERE id = $1 AND school_id = $2
+                    RETURNING id
+            `, [gradingId, userSchoolId]);
+
+            if (result.rowCount === 0) {
+                throw new NotFoundError(`No fue posible eliminar el criterio con id ${gradingId}`);
+            }
+
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: "DELETE_GRADING_TEMPLATE",
+                schoolId: userSchoolId,
+                metadata: { gradingId }
+            });
+
+            await client.query('COMMIT');
+        } catch (error: any) {
+            await client.query('ROLLBACK');
+            if (error.code === '23503') throw new ConflictError("El criterio tiene evaluaciones activas");
             throw error;
         } finally {
             client.release();

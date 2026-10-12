@@ -1,77 +1,83 @@
 import type { GradingTemplateService } from "../application/GradingTemplateService.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import type { Response, NextFunction } from "express";
+import type {
+    CreateGradingTemplatePayload,
+    UpdateGradingTemplatePayload
+} from "../domain/GradingTemplate.types.js";
+import { getAuthUser } from "../../shared/auth/getAuthUser.js";
 
 export class GradingTemplateController {
     constructor(private readonly gradingTemplateService: GradingTemplateService) {}
 
     getGradingTemplates = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = getAuthUser(request);
 
-            const records = await this.gradingTemplateService.getGradingTemplates(userSchoolId);
+            const records = await this.gradingTemplateService.getGradingTemplates(authUser);
             response.status(200).json({ gradings: records });
-        } catch (error:any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     getGradingTemplateDetails = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const gradingId = request.params.gradingId as string;
-            const userSchoolId = request.user!.schoolId as string;
 
-            const records = await this.gradingTemplateService.getGradingTemplateDetails(gradingId, userSchoolId);
+            const records = await this.gradingTemplateService.getGradingTemplateDetails(gradingId, authUser);
             response.status(200).json({ gradings_details: records });
-        } catch (error:any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     createGradingTemplate = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const { name, scaleId } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const payload: CreateGradingTemplatePayload = {
+                gradingName: name,
+                gradingScaleId: scaleId
+            };
 
-            await this.gradingTemplateService.createGradingTemplate(name, scaleId, userId, userRole, userSchoolId);
+            await this.gradingTemplateService.createGradingTemplate(payload, authUser);
             response.status(201).send();
-        } catch (error:any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     updateGradingTemplate = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const gradingId = request.params.gradingId as string;
             const { name, scaleId } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
+            const payload: UpdateGradingTemplatePayload = {
+                gradingId,
+                gradingName: name,
+                gradingScaleId: scaleId
+            };
 
-            await this.gradingTemplateService.updateGradingTemplate(gradingId, name, scaleId, userId, userRole, userSchoolId);
-            response.status(200).send();
-        } catch (error:any) {
+            await this.gradingTemplateService.updateGradingTemplate(payload, authUser);
+            response.status(204).send();
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     deleteGradingTemplate = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const gradingId = request.params.gradingId as string;
 
-            const userId = request.user!.userId as string;
-            const userRole = request.user!.role as string;
-            const userSchoolId = request.user!.schoolId as string;
-
-            await this.gradingTemplateService.deleteGradingTemplate(gradingId, userId, userRole, userSchoolId);
-            response.status(200).send();
-        } catch (error:any) {
+            await this.gradingTemplateService.deleteGradingTemplate(gradingId, authUser);
+            response.status(204).send();
+        } catch (error) {
             next(error);
         }
-    }
-
+    };
 }

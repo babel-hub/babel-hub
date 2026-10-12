@@ -62,3 +62,41 @@ export interface DailyAttendance {
     status: Status;
     recorded_at: string | null;
 }
+
+export interface GetDailyClassAttendancePayload {
+    classId: string;
+    date: string;
+    isActive: boolean;
+}
+
+export interface GetDailyCourseAttendancePayload {
+    courseId: string;
+    date: string;
+    isActive: boolean;
+}
+
+export interface GetClassAttendancePayload {
+    courseId: string;
+    classId: string;
+    startDate: string;
+    endDate: string;
+}
+
+export interface GetCalendarAttendancePayload {
+    studentId: string;
+    startDate: string;
+    endDate: string;
+}
+
+export interface GetAttendanceSummaryPayload {
+    today: string;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+}
+
+export interface BulkUpsertAttendancePayload {
+    classId: string;
+    records: BulkRecords[];
+    date: string;
+}

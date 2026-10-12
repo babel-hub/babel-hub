@@ -16,3 +16,20 @@ export interface AssessmentCriteria {
         grading_template_id: string;
     }[];
 }
+
+export interface GetGradingTemplateDetailsPayload {
+    gradingId: string;
+}
+
+export interface CreateGradingTemplatePayload {
+    gradingName: string;
+    gradingScaleId: string;
+}
+
+export interface UpdateGradingTemplatePayload extends CreateGradingTemplatePayload {
+    gradingId: string;
+}
+
+export interface DeleteGradingTemplatePayload {
+    gradingId: string;
+}

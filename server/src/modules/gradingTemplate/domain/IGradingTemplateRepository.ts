@@ -1,9 +1,13 @@
-import type { AssessmentCriteria, GradingTemplate } from "./GradingTemplate.types.js";
+import type {AssessmentCriteria, CreateGradingTemplatePayload,
+    DeleteGradingTemplatePayload, GetGradingTemplateDetailsPayload, GradingTemplate, UpdateGradingTemplatePayload} from "./GradingTemplate.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+
+
 
 export interface IGradingTemplateRepository {
-    getGradingTemplates(userSchoolId: string): Promise<GradingTemplate[]>;
-    getGradingTemplateDetails(gradingId: string, userSchoolId: string): Promise<AssessmentCriteria>;
-    createGradingTemplate(gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
-    deleteGradingTemplate(gradingId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
-    updateGradingTemplate(gradingId: string, gradingName: string, gradingScaleId: string, userId: string, userRole: string, userSchoolId: string): Promise<void>;
+    getGradingTemplates(authUser: AuthUser): Promise<GradingTemplate[]>;
+    getGradingTemplateDetails(payload: GetGradingTemplateDetailsPayload, authUser: AuthUser): Promise<AssessmentCriteria>;
+    createGradingTemplate(payload: CreateGradingTemplatePayload, authUser: AuthUser): Promise<void>;
+    updateGradingTemplate(payload: UpdateGradingTemplatePayload, authUser: AuthUser): Promise<void>;
+    deleteGradingTemplate(payload: DeleteGradingTemplatePayload, authUser: AuthUser): Promise<void>;
 }

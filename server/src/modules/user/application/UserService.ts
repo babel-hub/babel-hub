@@ -1,30 +1,24 @@
 import type { IUserRepository } from "../domain/IUserRepository.js";
-import type {UserProfileResponse, UserSearch} from "../domain/User.types.js";
-import { NotFoundError, UnauthorizedError } from "../../errors/domain/CustomErrors.js";
-import type {AuthUser} from "../../shared/domain/Shared.types.js";
+import type { GetUsersByNamePayload, UserProfileResponse, UserSearch } from "../domain/User.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class UserService {
     constructor(private readonly userRepository: IUserRepository) {}
 
-    private requireAuth(authUser: AuthUser): Required<AuthUser> {
-        if (!authUser.userId || !authUser.userRole || !authUser.userSchoolId) {
-            throw new UnauthorizedError("Credenciales del usuario inválidas");
-        }
-        return authUser as Required<AuthUser>;
-    }
-
-    async getUser(userId: string): Promise<UserProfileResponse> {
-        if (!userId) throw new UnauthorizedError("Al cargar el usuario, no cargaron los datos");
-
-        const user = await this.userRepository.getUser(userId);
+    async getUser(authUserId: string): Promise<UserProfileResponse> {
+        if (!authUserId) throw new ValidationError("No se pudo identificar al usuario");
+        const user = await this.userRepository.getUser(authUserId);
         if (!user) throw new NotFoundError("Usuario no existe");
-
         return user;
     }
 
-    async getUsersByName(query: string, authUser: AuthUser, limit: number): Promise<UserSearch[]> {
-        const ctx = this.requireAuth(authUser);
+    async getUsersByName(query: string, limit: number, authUser: AuthUser): Promise<UserSearch[]> {
+        const auth = requireAuth(authUser);
+        if (!query?.trim()) throw new ValidationError("El término de búsqueda es obligatorio");
 
-        return await this.userRepository.getUsersByName(query, ctx, limit);
+        const payload: GetUsersByNamePayload = { query: query.trim(), limit };
+        return this.userRepository.getUsersByName(payload, auth);
     }
 }

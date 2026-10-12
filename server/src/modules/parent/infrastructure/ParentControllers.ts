@@ -1,161 +1,144 @@
 import type { ParentService } from "../application/ParentService.js";
 import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
+import type { RelationTypes } from "../domain/Parent.types.js";
+import { getAuthUser } from "../../shared/auth/getAuthUser.js";
+import type { ParentCredentials } from "../../shared/domain/Shared.types.js";
 
 export class ParentControllers {
-    constructor (private readonly parentService: ParentService) {}
+    constructor(private readonly parentService: ParentService) {}
 
     getParents = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userSchoolId = request.user!.schoolId as string;
+            const authUser = getAuthUser(request);
 
-            const parents = await this.parentService.getParents(userSchoolId);
+            const parents = await this.parentService.getParents(authUser);
             response.status(200).json({ parents });
-        } catch (error : any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     getAccumulatedGradesBySubject = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const studentId = request.params.studentId as string;
             const classId = request.query.classId as string;
             const periodId = request.query.periodId as string;
             const subjectName = request.query.subjectName as string;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            const accumulated = await this.parentService.getAccumulatedGradesBySubject(studentId, classId, periodId, subjectName, { userId, userRole, userSchoolId });
+            const accumulated = await this.parentService.getAccumulatedGradesBySubject(
+                studentId, classId, periodId, subjectName, authUser
+            );
             response.status(200).json({ accumulated });
-        } catch (error : any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     getParentStudents = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const authUser = getAuthUser(request);
 
-            const student = await this.parentService.getParentStudents({ userId, userRole, userSchoolId });
-            response.status(200).json({ student });
-        } catch (error : any) {
+            const students = await this.parentService.getParentStudents(authUser);
+            response.status(200).json({ students });
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     getStudentGrades = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const studentId = request.params.studentId as string;
             const periodId = request.params.periodId as string;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            const grades = await this.parentService.getStudentGrades(studentId, periodId, { userId, userRole, userSchoolId });
-            response.status(200).json({ grades });
-        } catch (error : any) {
-            next(error);
-        }
-    }
-
-    getStudentDailyGrades = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
-        try {
-            const studentId = request.params.studentId as string;
-            const date = request.query.date as string;
-
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            const grades = await this.parentService.getStudentDailyGrades(studentId, date, { userId, userRole, userSchoolId });
+            const grades = await this.parentService.getStudentGrades(studentId, periodId, authUser);
             response.status(200).json({ grades });
         } catch (error) {
             next(error);
         }
-    }
+    };
 
+    getStudentDailyGrades = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const studentId = request.params.studentId as string;
+            const date = request.query.date as string;
+
+            const grades = await this.parentService.getStudentDailyGrades(studentId, date, authUser);
+            response.status(200).json({ grades });
+        } catch (error) {
+            next(error);
+        }
+    };
 
     getStudentDailyAttendance = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const courseId = request.query.courseId as string;
             const studentId = request.params.studentId as string;
             const date = request.query.date as string;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            const timeline = await this.parentService.getStudentDailyAttendance(courseId, studentId, date, { userId, userRole, userSchoolId });
+            const timeline = await this.parentService.getStudentDailyAttendance(courseId, studentId, date, authUser);
             response.status(200).json({ timeline });
-        } catch (error : any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     createParent = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const { email, password, firstName, middleName, firstLastName, secondLastName, userName, phone } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
+            const credentials: ParentCredentials = {
+                firstName, middleName, firstLastName, secondLastName,
+                userName, phone, email, password
+            };
 
-            await this.parentService.createParent({ firstName, middleName, firstLastName, secondLastName, password, email, userName, phone }, { userId, userRole, userSchoolId });
+            await this.parentService.createParent(credentials, authUser);
             response.status(201).send();
-        } catch (error : any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     linkParentToStudent = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const { parentId, studentId, relationshipType } = request.body;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            await this.parentService.linkedParentToStudent(parentId, studentId, relationshipType, { userId, userRole, userSchoolId });
+            await this.parentService.linkParentToStudent(
+                parentId, studentId, relationshipType as RelationTypes, authUser
+            );
             response.status(201).send();
-        } catch (error : any) {
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     deleteParent = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const parentId = request.params.parentId as string;
 
-            const userId = request.user!.userId as string;
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-
-            await this.parentService.deleteParent(parentId, { userId, userRole, userSchoolId });
-            response.status(200).send();
-        } catch (error : any) {
+            await this.parentService.deleteParent(parentId, authUser);
+            response.status(204).send();
+        } catch (error) {
             next(error);
         }
-    }
+    };
 
     deleteParentStudent = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const linkId = request.params.id as string;
 
-            const auth = {
-                userId: request.user!.userId as string,
-                userSchoolId: request.user!.schoolId as string,
-                userRole: request.user!.role as string
-            }
-
-            await this.parentService.deleteParentStudent(linkId, auth);
-            response.status(200).send();
-        } catch (error : any) {
+            await this.parentService.deleteParentStudent(linkId, authUser);
+            response.status(204).send();
+        } catch (error) {
             next(error);
         }
-    }
+    };
 }

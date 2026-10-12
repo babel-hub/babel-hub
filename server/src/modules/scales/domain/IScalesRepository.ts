@@ -1,6 +1,7 @@
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type { Scales } from "./Scales.types.js";
 
 export interface IScalesRepository {
-    getScales: (userSchoolId: string) => Promise<Scales[]>;
-    getClassScale: (classId: string, userSchoolId: string) => Promise<Scales>;
+    getScales(authUser: AuthUser): Promise<Scales[]>;
+    getClassScale(classId: string, authUser: AuthUser): Promise<Scales>;
 }

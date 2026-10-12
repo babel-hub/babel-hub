@@ -1,10 +1,10 @@
-import type { CreatePeriod, Period, UpdatePeriod } from "./Period.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type { CreatePeriodPayload, Period, UpdatePeriodPayload } from "./Period.types.js";
 
 export interface IPeriodsRepository {
-    getPeriods(userSchoolId: string): Promise<Period[]>;
-    checkPeriodOverlap(schoolId: string, startDate: string, endDate: string, excludePeriodId?: string): Promise<boolean>;
-    createPeriod(periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void>;
-    updatePeriod(periodId: string, periodName: string, startDate: string, endDate: string, authUser: AuthUser): Promise<void>;
+    getPeriods(authUser: AuthUser): Promise<Period[]>;
+    checkPeriodOverlap(userSchoolId: string, startDate: string, endDate: string, excludePeriodId?: string): Promise<boolean>;
+    createPeriod(payload: CreatePeriodPayload, authUser: AuthUser): Promise<void>;
+    updatePeriod(payload: UpdatePeriodPayload, authUser: AuthUser): Promise<void>;
     deletePeriod(periodId: string, authUser: AuthUser): Promise<void>;
 }

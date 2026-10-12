@@ -60,3 +60,15 @@ export interface SubjectAccumulated {
     scale_passing: number;
     breakdown: CriteriaBreakdown[];
 }
+
+export interface GetAccumulatedGradesBySubjectPayload {
+    studentId: string;
+    classId: string;
+    periodId: string;
+    subjectName: string;
+}
+
+export interface BulkUpsertGradesPayload {
+    assignmentId: string;
+    records: GradeRecord[];
+}

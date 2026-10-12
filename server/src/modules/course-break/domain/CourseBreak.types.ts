@@ -4,3 +4,8 @@ export interface CourseBreakByDate {
     start_time: string;
     end_time: string;
 }
+
+export interface GetCourseBreaksByDatePayload {
+    courseId: string;
+    date: string;
+}

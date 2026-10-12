@@ -1,11 +1,12 @@
 import type { IParentRepository } from "../domain/IParentRepository.js";
 import type { AuthUser, ParentCredentials } from "../../shared/domain/Shared.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
 import type {
-    DailyScheduleWithBreaks,
+    DailyScheduleWithBreaks, LinkParentToStudentPayload,
     Parent,
     ParentStudent,
     RelationTypes,
+    StudentParentRow,
     TimelineItem
 } from "../domain/Parent.types.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
@@ -13,6 +14,7 @@ import type { IAttendanceRepository } from "../../attendance/domain/IAttendanceR
 import type { StudentDailyGrade, StudentGrade, SubjectAccumulated } from "../../grade/domain/Grade.types.js";
 import { normalizeOptionalText, normalizeText, nullifyEmpty } from "../../shared/domain/normalize.js";
 import type { ICourseBreakRepository } from "../../course-break/domain/ICourseBreakRepository.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class ParentService {
     constructor(
@@ -22,51 +24,81 @@ export class ParentService {
         private readonly courseBreakRepository: ICourseBreakRepository
     ) {}
 
-    async getParents(userSchoolId: string): Promise<Parent[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    private normalizeCredentials(credentials: ParentCredentials): ParentCredentials {
+        return {
+            ...credentials,
+            firstName: normalizeText(credentials.firstName),
+            middleName: normalizeOptionalText(credentials.middleName),
+            firstLastName: normalizeText(credentials.firstLastName),
+            secondLastName: normalizeOptionalText(credentials.secondLastName),
+            email: normalizeText(credentials.email),
+            userName: normalizeOptionalText(credentials.userName),
+            phone: nullifyEmpty(credentials.phone),
+        };
+    }
 
-        return await this.parentRepository.getParents(userSchoolId);
+    private validateCredentials(credentials: ParentCredentials): void {
+        if (!credentials.email || !credentials.firstName || !credentials.firstLastName || !credentials.password) {
+            throw new ValidationError("Faltan campos obligatorios del formulario");
+        }
+    }
+
+    async getParents(authUser: AuthUser): Promise<Parent[]> {
+        const auth = requireAuth(authUser);
+        return this.parentRepository.getParents(auth);
     }
 
     async getParentStudents(authUser: AuthUser): Promise<ParentStudent[]> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-
-        return await this.parentRepository.getParentStudents(authUser);
+        const auth = requireAuth(authUser);
+        return this.parentRepository.getParentStudents(auth);
     }
 
-    async getAccumulatedGradesBySubject(studentId: string, classId: string, periodId: string, subjectName: string, authUser: AuthUser): Promise<SubjectAccumulated> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!studentId || !classId || !subjectName || !periodId) throw new ValidationError("Hay campos que no estan siendo enviados");
-
-        return await this.gradeRepository.getAccumulatedGradesBySubject(studentId, classId, periodId, subjectName, authUser);
+    async getParentByStudentId(studentId: string, authUser: AuthUser): Promise<StudentParentRow[]> {
+        const auth = requireAuth(authUser);
+        if (!studentId) throw new ValidationError("El id del estudiante no está siendo enviado");
+        return this.parentRepository.getParentByStudentId(studentId, auth);
     }
 
+    async getAccumulatedGradesBySubject(
+        studentId: string,
+        classId: string,
+        periodId: string,
+        subjectName: string,
+        authUser: AuthUser
+    ): Promise<SubjectAccumulated> {
+        const auth = requireAuth(authUser);
+        if (!studentId || !classId || !subjectName || !periodId) {
+            throw new ValidationError("Hay campos que no están siendo enviados");
+        }
+        return this.gradeRepository.getAccumulatedGradesBySubject({ studentId, classId, periodId, subjectName }, auth);
+    }
 
     async getStudentGrades(studentId: string, periodId: string, authUser: AuthUser): Promise<StudentGrade[]> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario");
-        if (!studentId || !periodId) throw new ValidationError("Hay campos que no estan siendo enviados");
-
-        return await this.gradeRepository.getStudentGrades(studentId, periodId, authUser);
+        const auth = requireAuth(authUser);
+        if (!studentId || !periodId) throw new ValidationError("Hay campos que no están siendo enviados");
+        return this.gradeRepository.getStudentGrades(studentId, periodId, auth);
     }
 
     async getStudentDailyGrades(studentId: string, date: string, authUser: AuthUser): Promise<StudentDailyGrade[]> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario");
-        if (!studentId) throw new ValidationError("El id del estudiante no esta siendo enviado");
-        if (!date) throw new ValidationError("El campo de las fecha no esta siendo enviado");
-
-        return await this.gradeRepository.getStudentDailyGrades(studentId, date, authUser);
+        const auth = requireAuth(authUser);
+        if (!studentId) throw new ValidationError("El id del estudiante no está siendo enviado");
+        if (!date) throw new ValidationError("El campo de la fecha no está siendo enviado");
+        return this.gradeRepository.getStudentDailyGrades(studentId, date, auth);
     }
 
-    async getStudentDailyAttendance(courseId: string, studentId: string, date: string, authUser: AuthUser): Promise<DailyScheduleWithBreaks> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) {
-            throw new UnauthorizedError("Faltan credenciales del usuario");
-        }
+    async getStudentDailyAttendance(
+        courseId: string,
+        studentId: string,
+        date: string,
+        authUser: AuthUser
+    ): Promise<DailyScheduleWithBreaks> {
+        const auth = requireAuth(authUser);
         if (!studentId || !courseId) throw new ValidationError("El id del estudiante o del curso no están siendo enviados");
         if (!date) throw new ValidationError("El campo de la fecha no está siendo enviado");
 
         const [classes, breaks] = await Promise.all([
-            this.attendanceRepository.getStudentDailyAttendance(studentId, authUser.userSchoolId, date, authUser),
-            this.courseBreakRepository.getCourseBreaksByDate(courseId, date, authUser.userSchoolId)
+            this.attendanceRepository.getStudentDailyAttendance(studentId, date, auth),
+            this.courseBreakRepository.getCourseBreaksByDate({ courseId, date }, auth)
         ]);
 
         const timelineItems: TimelineItem[] = [
@@ -74,54 +106,42 @@ export class ParentService {
             ...breaks.map((b) => ({ ...b, type: "break" as const })),
         ].sort((a, b) => a.start_time.localeCompare(b.start_time));
 
-        return {
-            timeline: timelineItems
-        };
+        return { timeline: timelineItems };
     }
 
     async createParent(parentCredentials: ParentCredentials, authUser: AuthUser): Promise<void> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        const auth = requireAuth(authUser);
 
-        const normalized = {
-            ...parentCredentials,
-            firstName: normalizeText(parentCredentials.firstName),
-            middleName: normalizeOptionalText(parentCredentials.middleName),
-            firstLastName: normalizeText(parentCredentials.firstLastName),
-            secondLastName: normalizeOptionalText(parentCredentials.secondLastName),
-            email: normalizeText(parentCredentials.email),
-            userName: normalizeOptionalText(parentCredentials.userName),
-            phone: nullifyEmpty(parentCredentials.phone),
-        }
+        const normalized = this.normalizeCredentials(parentCredentials);
+        this.validateCredentials(normalized);
 
-        if (
-            !normalized.email ||
-            !normalized.firstName ||
-            !normalized.firstLastName ||
-            !normalized.password
-        ) throw new ValidationError("Faltan campos obligatorios del formulario");
-
-        return await this.parentRepository.createParent(normalized, authUser);
+        await this.parentRepository.createParent(normalized, auth);
     }
 
-    async linkedParentToStudent(parentId: string, studentId: string, type: RelationTypes, authUser: AuthUser): Promise<void> {
-        if (!parentId || !studentId || !type) throw new ValidationError("Faltan campos obligatorios del formulario");
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async linkParentToStudent(
+        parentId: string,
+        studentId: string,
+        type: RelationTypes,
+        authUser: AuthUser
+    ): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!parentId || !studentId || !type) {
+            throw new ValidationError("Faltan campos obligatorios del formulario");
+        }
 
-        return await this.parentRepository.linkedParentToStudent(parentId, studentId, type, authUser);
+        const payload: LinkParentToStudentPayload = { parentId, studentId, type };
+        await this.parentRepository.linkParentToStudent(payload, auth);
     }
 
     async deleteParent(parentId: string, authUser: AuthUser): Promise<void> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+        const auth = requireAuth(authUser);
         if (!parentId) throw new ValidationError("El id del acudiente no existe");
-
-        return await this.parentRepository.deleteParent(parentId, authUser);
+        await this.parentRepository.deleteParent(parentId, auth);
     }
 
     async deleteParentStudent(id: string, authUser: AuthUser): Promise<void> {
-        if (!authUser.userSchoolId || !authUser.userRole || !authUser.userId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!id) throw new ValidationError("El id del registro no esta siendo enviado");
-
-        return await this.parentRepository.deleteParentStudent(id, authUser);
-
+        const auth = requireAuth(authUser);
+        if (!id) throw new ValidationError("El id del registro no está siendo enviado");
+        await this.parentRepository.deleteParentStudent(id, auth);
     }
 }

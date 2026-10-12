@@ -13,6 +13,12 @@ interface LinkedStudent {
     relationship_type: 'father' | 'mother' | 'other';
 }
 
+export interface LinkParentToStudentPayload {
+    parentId: string;
+    studentId: string;
+    type: RelationTypes;
+}
+
 export interface Parent {
     parent_id: string;
     profile_id: string;

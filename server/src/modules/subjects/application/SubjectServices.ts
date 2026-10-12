@@ -1,43 +1,56 @@
 import type { ISubjectsRepository } from "../domain/ISubjectsRepository.js";
-import type { AvailableSubjects, CreateSubject, SubjectDetails} from "../domain/Subjects.types.js";
-import { UnauthorizedError, ValidationError } from "../../errors/domain/CustomErrors.js";
+import type {
+    AvailableSubjects,
+    CreateSubject,
+    CreateSubjectPayload, GetAvailableSubjectsPayload,
+    GetSubjectsByAreaPayload,
+    SubjectDetails, UpdateSubjectPayload
+} from "../domain/Subjects.types.js";
+import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { requireAuth } from "../../shared/auth/requireAuth.js";
 
 export class SubjectServices {
-    constructor(private readonly subjectRepository : ISubjectsRepository) {}
+    constructor(private readonly subjectRepository: ISubjectsRepository) {}
 
-    async getSubjectsByArea(subjectAreaId: string, userSchoolId: string): Promise<SubjectDetails[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    private validate(payload: CreateSubjectPayload): void {
+        if (!payload.subjectName?.trim() || !payload.subjectAreaId?.trim() || !payload.gradingTemplateId?.trim()) {
+            throw new ValidationError("Faltan campos obligatorios");
+        }
+    }
+
+    async getSubjectsByArea(subjectAreaId: string, authUser: AuthUser): Promise<SubjectDetails[]> {
+        const auth = requireAuth(authUser);
         if (!subjectAreaId) throw new ValidationError("Faltan campos obligatorios");
 
-        return await this.subjectRepository.getSubjectsByArea(subjectAreaId, userSchoolId);
+        const payload: GetSubjectsByAreaPayload = { subjectAreaId };
+        return this.subjectRepository.getSubjectsByArea(payload, auth);
     }
 
-    async getAvailableSubjects(courseId: string, userSchoolId: string): Promise<AvailableSubjects[]> {
-        if (!userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
+    async getAvailableSubjects(courseId: string, authUser: AuthUser): Promise<AvailableSubjects[]> {
+        const auth = requireAuth(authUser);
         if (!courseId) throw new ValidationError("El ID del curso es obligatorio");
 
-        return this.subjectRepository.getAvailableSubjects(courseId, userSchoolId);
+        const payload: GetAvailableSubjectsPayload = { courseId };
+        return this.subjectRepository.getAvailableSubjects(payload, auth);
     }
 
-    async createSubject(subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<CreateSubject> {
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!subjectName || !subjectAreaId || !gradingTemplateId) throw new ValidationError("Faltan campos obligatorios");
-
-        return await this.subjectRepository.createSubject(subjectName, subjectAreaId, gradingTemplateId, userId, userRole, userSchoolId);
+    async createSubject(payload: CreateSubjectPayload, authUser: AuthUser): Promise<CreateSubject> {
+        const auth = requireAuth(authUser);
+        this.validate(payload);
+        return this.subjectRepository.createSubject(payload, auth);
     }
 
-    async updateSubject(subjectId: string, subjectName: string, subjectAreaId: string, gradingTemplateId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
+    async updateSubject(payload: UpdateSubjectPayload, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!payload.subjectId) throw new ValidationError("El ID de la asignatura es obligatorio");
+        this.validate(payload);
+        await this.subjectRepository.updateSubject(payload, auth);
+    }
+
+    async deleteSubject(subjectId: string, authUser: AuthUser): Promise<void> {
+        const auth = requireAuth(authUser);
         if (!subjectId) throw new ValidationError("El ID de la asignatura es obligatorio");
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!subjectName || !subjectAreaId || !gradingTemplateId) throw new ValidationError("Faltan campos obligatorios");
-
-        return await this.subjectRepository.updateSubject(subjectId, subjectName, subjectAreaId, gradingTemplateId, userId, userRole, userSchoolId);
-    }
-
-    async deleteSubject(subjectId: string, userId: string, userRole: string, userSchoolId: string): Promise<void> {
-        if (!userId || !userRole || !userSchoolId) throw new UnauthorizedError("Faltan credenciales del usuario (master)");
-        if (!subjectId) throw new ValidationError("El ID de la asignatura es obligatorio");
-
-        return await this.subjectRepository.deleteSubject(subjectId, userId, userRole, userSchoolId);
+        await this.subjectRepository.deleteSubject(subjectId, auth);
     }
 }

@@ -1,44 +1,60 @@
-import type { IGradeRepository } from "../domain/IGradeRepository.js";
+import type {
+    IGradeRepository,
+} from "../domain/IGradeRepository.js";
 import type {
     GradeByAssignment,
-    GradeRecord,
     StudentDailyGrade,
-    StudentGrade, StudentGradeRow, SubjectAccumulated,
-    ValidScales
+    StudentGrade,
+    StudentGradeRow,
+    SubjectAccumulated,
+    GetAccumulatedGradesBySubjectPayload,
+    BulkUpsertGradesPayload
 } from "../domain/Grade.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
-import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
+import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
-import {getRawAsset} from "node:sea";
 
 export class PostgresGradeRepository implements IGradeRepository {
-    async getStudentProfileGrades(studentId: string, periodId: string): Promise<StudentGradeRow[]> {
+
+    async getStudentProfileGrades(
+        studentId: string,
+        periodId: string,
+        authUser: AuthUser
+    ): Promise<StudentGradeRow[]> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
-            const grades = await client.query(`
-                    SELECT 
-                        g.assignment_id,
-                        a.name as assignment_title,
-                        sub.name as class_name,
-                        g.value,
-                        g.created_at as graded_at
-                    FROM grade g
-                    JOIN assignment a ON g.assignment_id = a.id
-                    JOIN class cl ON a.class_id = cl.id
-                    JOIN subject sub ON cl.subject_id = sub.id
-                    WHERE g.student_id = $1 AND a.period_id = $2
-                    ORDER BY g.created_at DESC
+            const result = await client.query(`
+                SELECT
+                    g.assignment_id,
+                    a.name as assignment_title,
+                    sub.name as class_name,
+                    g.value,
+                    g.created_at as graded_at
+                FROM grade g
+                         JOIN assignment a ON g.assignment_id = a.id
+                         JOIN class cl ON a.class_id = cl.id
+                         JOIN subject sub ON cl.subject_id = sub.id
+                         JOIN student s ON g.student_id = s.id
+                         JOIN profile p ON s.profile_id = p.id
+                WHERE g.student_id = $1
+                  AND a.period_id = $2
+                  AND p.school_id = $3
+                ORDER BY g.created_at DESC
                     LIMIT 5
-                `, [studentId, periodId]);
+            `, [studentId, periodId, userSchoolId]);
 
-            return grades.rows;
+            return result.rows;
         } finally {
             client.release();
         }
     }
 
-    async getGradesByClass(classId: string): Promise<GradeByAssignment[]> {
+    async getGradesByClass(classId: string, authUser: AuthUser): Promise<GradeByAssignment[]> {
+        const { userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             const result = await client.query(`
@@ -49,9 +65,11 @@ export class PostgresGradeRepository implements IGradeRepository {
                     g.value::float AS value,
                     g.comment
                 FROM grade g
-                JOIN assignment a ON g.assignment_id = a.id
-                WHERE a.class_id = $1
-            `, [classId]);
+                    JOIN assignment a ON g.assignment_id = a.id
+                    JOIN class cl ON a.class_id = cl.id
+                    JOIN course co ON cl.course_id = co.id
+                WHERE a.class_id = $1 AND co.school_id = $2
+            `, [classId, userSchoolId]);
 
             return result.rows;
         } finally {
@@ -59,18 +77,26 @@ export class PostgresGradeRepository implements IGradeRepository {
         }
     }
 
-    async getAccumulatedGradesBySubject(studentId: string, classId: string, periodId: string, subjectName: string, authUser: AuthUser): Promise<SubjectAccumulated> {
+    async getAccumulatedGradesBySubject(
+        payload: GetAccumulatedGradesBySubjectPayload,
+        authUser: AuthUser
+    ): Promise<SubjectAccumulated> {
+        const { studentId, classId, periodId, subjectName } = payload;
+        const { userId } = authUser;
+
         const client = await pool.connect();
         try {
             const check = await client.query(`
                 SELECT 1
                 FROM parent_student ps
-                         JOIN parent p ON ps.parent_id = p.id
+                    JOIN parent p ON ps.parent_id = p.id
                 WHERE p.profile_id = $1 AND ps.student_id = $2
-                    LIMIT 1;
-            `, [authUser.userId, studentId]);
+                    LIMIT 1
+            `, [userId, studentId]);
 
-            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+            if (check.rowCount === 0) {
+                throw new NotFoundError("No tienes acceso a este estudiante");
+            }
 
             const accumulated = await client.query(`
                 WITH CriteriaAverages AS (
@@ -83,25 +109,20 @@ export class PostgresGradeRepository implements IGradeRepository {
                         sc.min_value::float,
                         sc.passing_value::float
                     FROM student s
-                    JOIN class c ON s.course_id = c.course_id
-                    JOIN subject sub ON c.subject_id = sub.id
-                    JOIN grading_template gt ON sub.grading_template_id = gt.id
-                    JOIN scale sc ON gt.scale_id = sc.id
-                    JOIN assessment_criteria ac ON gt.id = ac.grading_template_id
-                    LEFT JOIN assignment a 
-                        ON c.id = a.class_id 
-                               AND ac.id = a.assessment_criteria_id
+                        JOIN class c ON s.course_id = c.course_id
+                        JOIN subject sub ON c.subject_id = sub.id
+                        JOIN grading_template gt ON sub.grading_template_id = gt.id
+                        JOIN scale sc ON gt.scale_id = sc.id
+                        JOIN assessment_criteria ac ON gt.id = ac.grading_template_id
+                        LEFT JOIN assignment a
+                            ON c.id = a.class_id
+                                AND ac.id = a.assessment_criteria_id
                                 AND a.period_id = $3
-                        
-                    LEFT JOIN grade g ON a.id = g.assignment_id AND g.student_id = s.id
+                        LEFT JOIN grade g ON a.id = g.assignment_id AND g.student_id = s.id
                     WHERE s.id = $1 AND c.id = $2
                     GROUP BY
-                        sub.name,
-                        ac.name,
-                        ac.weight,
-                        sc.max_value,
-                        sc.min_value,
-                        sc.passing_value
+                        sub.name, ac.name, ac.weight,
+                        sc.max_value, sc.min_value, sc.passing_value
                 )
                 SELECT
                     subject_name,
@@ -117,11 +138,7 @@ export class PostgresGradeRepository implements IGradeRepository {
                             )
                     ) AS breakdown
                 FROM CriteriaAverages
-                GROUP BY
-                    subject_name,
-                    scale_max,
-                    scale_min,
-                    scale_passing;
+                GROUP BY subject_name, scale_max, scale_min, scale_passing
             `, [studentId, classId, periodId]);
 
             return accumulated.rows[0];
@@ -130,18 +147,26 @@ export class PostgresGradeRepository implements IGradeRepository {
         }
     }
 
-    async getStudentGrades(studentId: string, periodId: string, authUser: AuthUser): Promise<StudentGrade[]> {
+    async getStudentGrades(
+        studentId: string,
+        periodId: string,
+        authUser: AuthUser
+    ): Promise<StudentGrade[]> {
+        const { userId } = authUser;
+
         const client = await pool.connect();
         try {
             const check = await client.query(`
                 SELECT 1
                 FROM parent_student ps
-                JOIN parent p ON ps.parent_id = p.id
+                         JOIN parent p ON ps.parent_id = p.id
                 WHERE p.profile_id = $1 AND ps.student_id = $2
-                    LIMIT 1;
-            `, [authUser.userId, studentId]);
+                    LIMIT 1
+            `, [userId, studentId]);
 
-            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+            if (check.rowCount === 0) {
+                throw new NotFoundError("No tienes acceso a este estudiante");
+            }
 
             const result = await client.query(`
                 WITH CriteriaAverages AS (
@@ -155,22 +180,21 @@ export class PostgresGradeRepository implements IGradeRepository {
                         sc.min_value,
                         sc.passing_value
                     FROM student s
-                    JOIN class c ON s.course_id = c.course_id
-                    JOIN subject sub ON c.subject_id = sub.id
-                    JOIN grading_template gt ON sub.grading_template_id = gt.id
-                    JOIN scale sc ON gt.scale_id = sc.id
-                    JOIN assessment_criteria ac ON gt.id = ac.grading_template_id
-                    LEFT JOIN assignment a
-                        ON c.id = a.class_id
-                            AND a.assessment_criteria_id = ac.id
-                            AND a.period_id = $2
-
-                    LEFT JOIN grade g
-                        ON a.id = g.assignment_id
-                            AND g.student_id = s.id
-                    
+                             JOIN class c ON s.course_id = c.course_id
+                             JOIN subject sub ON c.subject_id = sub.id
+                             JOIN grading_template gt ON sub.grading_template_id = gt.id
+                             JOIN scale sc ON gt.scale_id = sc.id
+                             JOIN assessment_criteria ac ON gt.id = ac.grading_template_id
+                             LEFT JOIN assignment a
+                                       ON c.id = a.class_id
+                                           AND a.assessment_criteria_id = ac.id
+                                           AND a.period_id = $2
+                             LEFT JOIN grade g
+                                       ON a.id = g.assignment_id
+                                           AND g.student_id = s.id
                     WHERE s.id = $1
-                    GROUP BY c.id, sub.name, ac.id, ac.weight, sc.max_value, sc.min_value, sc.passing_value
+                    GROUP BY c.id, sub.name, ac.id, ac.weight,
+                             sc.max_value, sc.min_value, sc.passing_value
                 )
                 SELECT
                     class_id,
@@ -181,7 +205,7 @@ export class PostgresGradeRepository implements IGradeRepository {
                     passing_value
                 FROM CriteriaAverages
                 GROUP BY class_id, subject_name, max_value, min_value, passing_value
-                ORDER BY subject_name ASC;
+                ORDER BY subject_name ASC
             `, [studentId, periodId]);
 
             return result.rows;
@@ -190,20 +214,28 @@ export class PostgresGradeRepository implements IGradeRepository {
         }
     }
 
-    async getStudentDailyGrades(studentId: string, date: string, authUser: AuthUser): Promise<StudentDailyGrade[]> {
+    async getStudentDailyGrades(
+        studentId: string,
+        date: string,
+        authUser: AuthUser
+    ): Promise<StudentDailyGrade[]> {
+        const { userId } = authUser;
+
         const client = await pool.connect();
         try {
             const check = await client.query(`
                 SELECT 1
                 FROM parent_student ps
-                JOIN parent p ON ps.parent_id = p.id
+                    JOIN parent p ON ps.parent_id = p.id
                 WHERE p.profile_id = $1 AND ps.student_id = $2
-                LIMIT 1;
-            `, [authUser.userId, studentId]);
+                    LIMIT 1
+            `, [userId, studentId]);
 
-            if (check.rowCount === 0) throw new NotFoundError("No tienes acceso a este estudiante");
+            if (check.rowCount === 0) {
+                throw new NotFoundError("No tienes acceso a este estudiante");
+            }
 
-            const grades = await client.query(`
+            const result = await client.query(`
                 SELECT
                     c.id AS class_id,
                     sub.name AS subject_name,
@@ -214,62 +246,88 @@ export class PostgresGradeRepository implements IGradeRepository {
                     g.comment AS comment,
                     g.created_at AS graded_at
                 FROM student st
-                JOIN class c ON st.course_id = c.course_id
-                JOIN subject sub ON c.subject_id = sub.id
-                JOIN assignment ass ON c.id = ass.class_id
-                JOIN assessment_criteria ac ON ass.assessment_criteria_id = ac.id
-                JOIN grade g ON st.id = g.student_id AND ass.id = g.assignment_id
+                         JOIN class c ON st.course_id = c.course_id
+                         JOIN subject sub ON c.subject_id = sub.id
+                         JOIN assignment ass ON c.id = ass.class_id
+                         JOIN assessment_criteria ac ON ass.assessment_criteria_id = ac.id
+                         JOIN grade g ON st.id = g.student_id AND ass.id = g.assignment_id
                 WHERE st.id = $1
                   AND g.value IS NOT NULL
                   AND (g.created_at AT TIME ZONE 'America/Bogota')::DATE = $2
-                ORDER BY sub.name ASC;
+                ORDER BY sub.name ASC
             `, [studentId, date]);
 
-            return grades.rows;
+            return result.rows;
         } finally {
             client.release();
         }
     }
 
-    async bulkUpsertGrades(assignmentId: string, records: GradeRecord[], authUser: AuthUser): Promise<void> {
+    async bulkUpsertGrades(
+        payload: BulkUpsertGradesPayload,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { assignmentId, records } = payload;
+        const { userId, userRole, userSchoolId } = authUser;
+
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
 
             const ownershipCheck = await client.query(`
-                SELECT 1
+                SELECT cl.course_id
                 FROM assignment a
-                JOIN class cl ON a.class_id = cl.id
-                JOIN course c ON cl.course_id = c.id
+                    JOIN class cl ON a.class_id = cl.id
+                    JOIN course c ON cl.course_id = c.id
                 WHERE a.id = $1 AND c.school_id = $2
-            `, [assignmentId, authUser.userSchoolId]);
+            `, [assignmentId, userSchoolId]);
 
-            if (ownershipCheck.rowCount === 0) throw new NotFoundError("Asignación no encontrada o sin acceso");
+            if (ownershipCheck.rowCount === 0) {
+                throw new NotFoundError("Asignación no encontrada o sin acceso");
+            }
 
-            const students: string[] = records.map(record => (record.studentId));
-            const values: number[] = records.map((record) => (record.value));
-            const comments: (string | null)[] = records.map(record => record.comment ?? null);
+            const courseId = ownershipCheck.rows[0].course_id;
+
+            const studentIds: string[] = records.map(r => r.studentId);
+            const uniqueStudentIds = Array.from(new Set(studentIds));
+
+            const studentsCheck = await client.query(`
+                SELECT COUNT(DISTINCT s.id)::int AS valid_count
+                FROM student s
+                JOIN profile p ON s.profile_id = p.id
+                WHERE s.id = ANY($1::uuid[])
+                  AND s.course_id = $2
+                  AND p.school_id = $3
+            `, [uniqueStudentIds, courseId, userSchoolId]);
+
+            if (studentsCheck.rows[0].valid_count !== uniqueStudentIds.length) {
+                throw new ValidationError("Uno o más estudiantes no pertenecen a la clase o colegio.");
+            }
+
+            const values: number[] = records.map(r => r.value);
+            const comments: (string | null)[] = records.map(r => r.comment ?? null);
 
             await client.query(`
                 INSERT INTO grade (value, assignment_id, student_id, comment)
                 SELECT unnest($1::numeric[]), $2::uuid, unnest($3::uuid[]), unnest($4::text[])
-                ON CONFLICT(student_id, assignment_id)
-                DO UPDATE SET value = EXCLUDED.value, comment = EXCLUDED.comment, updated_at = NOW();
-            `, [values, assignmentId, students, comments]);
+                ON CONFLICT (student_id, assignment_id)
+                DO UPDATE SET value = EXCLUDED.value, comment = EXCLUDED.comment, updated_at = NOW()
+            `, [values, assignmentId, studentIds, comments]);
 
             await createAuditLog(client, {
-                actorUserId: authUser.userId,
-                actorRole: authUser.userRole,
+                actorUserId: userId,
+                actorRole: userRole,
                 action: "BULK_UPSERT_GRADES",
-                schoolId: authUser.userSchoolId,
+                schoolId: userSchoolId,
                 metadata: { assignmentId, studentCount: records.length }
-            })
+            });
 
             await client.query('COMMIT');
-            return;
-        } catch (error : any) {
+        } catch (error: any) {
             await client.query('ROLLBACK');
-            if (error.code === '23503') throw new ConflictError("Uno o más estudiantes o la asignación no existen");
+            if (error.code === '23503') {
+                throw new ConflictError("Uno o más estudiantes o la asignación no existen");
+            }
             throw error;
         } finally {
             client.release();

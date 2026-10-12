@@ -1,79 +1,83 @@
 import type { SubjectServices } from "../application/SubjectServices.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import type { Response, NextFunction } from "express";
+import { getAuthUser } from "../../shared/auth/getAuthUser.js";
+import type { CreateSubjectPayload, UpdateSubjectPayload } from "../domain/Subjects.types.js";
 
 export class SubjectControllers {
-    constructor(private readonly subjectServices : SubjectServices ) {}
+    constructor(private readonly subjectServices: SubjectServices) {}
 
     getSubjectsByArea = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const areaId = request.params.areaId as string;
 
-            const userSchoolId = request.user!.schoolId as string;
-
-            const records = await this.subjectServices.getSubjectsByArea(areaId, userSchoolId);
+            const records = await this.subjectServices.getSubjectsByArea(areaId, authUser);
             response.status(200).json({ subjects: records });
-        } catch (error : any) {
-            next(error)
+        } catch (error) {
+            next(error);
         }
-    }
+    };
 
     getAvailableSubjects = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const courseId = request.query.courseId as string;
 
-            const userSchoolId = request.user!.schoolId as string;
-
-            const records = await this.subjectServices.getAvailableSubjects(courseId, userSchoolId);
-            response.status(200).json({ availableSubjects: records })
-        } catch (error : any) {
-            next(error)
+            const records = await this.subjectServices.getAvailableSubjects(courseId, authUser);
+            response.status(200).json({ availableSubjects: records });
+        } catch (error) {
+            next(error);
         }
-    }
+    };
 
     createSubject = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
+            const authUser = getAuthUser(request);
             const { name, areaId, gradingTemplateId } = request.body;
 
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-            const userId = request.user!.userId as string;
+            const payload: CreateSubjectPayload = {
+                subjectName: name,
+                subjectAreaId: areaId,
+                gradingTemplateId
+            };
 
-            const record = await this.subjectServices.createSubject(name, areaId, gradingTemplateId, userId, userRole, userSchoolId);
-            response.status(201).json({ subject: record });
-        } catch (error : any) {
-            next(error)
+            const subject = await this.subjectServices.createSubject(payload, authUser);
+            response.status(201).json({ subject });
+        } catch (error) {
+            next(error);
         }
-    }
+    };
 
     updateSubject = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const id = request.params.id as string;
+            const authUser = getAuthUser(request);
+            const subjectId = request.params.id as string;
             const { name, areaId, gradingTemplateId } = request.body;
 
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-            const userId = request.user!.userId as string;
+            const payload: UpdateSubjectPayload = {
+                subjectId,
+                subjectName: name,
+                subjectAreaId: areaId,
+                gradingTemplateId
+            };
 
-            await this.subjectServices.updateSubject(id, name, areaId, gradingTemplateId, userId, userRole, userSchoolId);
+            await this.subjectServices.updateSubject(payload, authUser);
             response.status(204).send();
-        } catch (error : any) {
-            next(error)
+        } catch (error) {
+            next(error);
         }
-    }
+    };
 
     deleteSubject = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
-            const id = request.params.id as string;
+            const authUser = getAuthUser(request);
+            const subjectId = request.params.id as string;
 
-            const userSchoolId = request.user!.schoolId as string;
-            const userRole = request.user!.role as string;
-            const userId = request.user!.userId as string;
-
-            await this.subjectServices.deleteSubject(id, userId, userRole, userSchoolId);
+            await this.subjectServices.deleteSubject(subjectId, authUser);
             response.status(204).send();
-        } catch (error : any) {
-            next(error)
+        } catch (error) {
+            next(error);
         }
-    }
+    };
 }

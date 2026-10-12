@@ -1,11 +1,11 @@
-import type { Assessment, BaseAssessment } from './Assessment.types.js';
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
+import type {Assessment, BaseAssessment, CreateAssessmentPayload, UpdateAssessmentPayload} from "./Assessment.types.js";
 
 export interface IAssessmentRepository {
-    getAssessments(userSchoolId: string): Promise<Assessment[]>;
-    getAssessmentByAssignment(classId: string): Promise<BaseAssessment[]>;
+    getAssessments(authUser: AuthUser): Promise<Assessment[]>;
+    getAssessmentByAssignment(classId: string, authUser: AuthUser): Promise<BaseAssessment[]>;
     getTotalWeightForTemplate(gradingTemplateId: string, excludeAssessmentId?: string): Promise<number>;
-    createAssessment(assessmentName: string, assessmentWeight: number, gradingTemplateId: string, authUser: AuthUser): Promise<void>;
-    updateAssessment(assessmentId: string, assessmentName: string, assessmentWeight: number, gradingTemplateId: string, authUser: AuthUser): Promise<void>;
+    createAssessment(payload: CreateAssessmentPayload, authUser: AuthUser): Promise<void>;
+    updateAssessment(payload: UpdateAssessmentPayload, authUser: AuthUser): Promise<void>;
     deleteAssessment(assessmentId: string, authUser: AuthUser): Promise<void>;
 }
