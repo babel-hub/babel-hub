@@ -1,17 +1,14 @@
 import { useTeacherClasses } from "../hooks/useTeacherClasses.ts";
 import { LoadingPage } from "../../../../../components/ui/Loadings.tsx";
 import { InteractiveHomeList } from "../../../../../components/ui/lists/InteractiveHomeList.tsx";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import { NoOutletInfo } from "../../../../../components/ui/blocks/NoOutletInfo.tsx";
-import { HiOutlineClipboardList } from "react-icons/hi";
 import { LuClipboardPenLine } from "react-icons/lu";
 import { useState } from "react";
 import {ClassScheduleModal} from "./ClassScheduleModal.tsx";
 
 export function ClassListLayout() {
     const { id: activeCourseId } = useParams();
-    const navigate = useNavigate();
-
     const [scheduleClassId, setScheduleClassId] = useState<string | null>(null);
 
     const { loading, error, classes, course } = useTeacherClasses();
@@ -26,7 +23,7 @@ export function ClassListLayout() {
                         <InteractiveHomeList
                             isActive={activeCourseId === course.id}
                             disabled={true}
-                            onClick={() => navigate(`${course.id}`)}
+                            goTo={`${course.id}`}
                             avatarText={course.name ? course.name.replace("-", "") : "UNK"}
                             title={<span className="capitalize">Curso {course.name}</span>}
                             subtitle={`${course.total_students} Estudiantes`}
@@ -53,16 +50,11 @@ export function ClassListLayout() {
                                 <InteractiveHomeList
                                     key={item.class_id}
                                     isActive={activeCourseId === item.class_id}
-                                    onClick={() => navigate(`${item.class_id}`)}
+                                    goTo={`${item.class_id}`}
                                     avatarText={item.course_name ? item.course_name.replace("-", "") : "UNK"}
                                     title={<span className="capitalize">{item.subject_name} • {item.course_name}</span>}
                                     subtitle={`${item.total_students} estudiantes`}
                                     menuOptions={[
-                                        {
-                                            label: "Ver asistencia",
-                                            onClick: () => navigate(`/teacher/clases/${item.class_id}?button=see attendance`),
-                                            icon: <HiOutlineClipboardList className="size-4" />
-                                        },
                                         {
                                             label: "Ver notas",
                                             disabled: true,
