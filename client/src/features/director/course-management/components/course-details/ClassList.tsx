@@ -1,24 +1,31 @@
 import type { ClassItem } from "../../types";
 import { CourseDetailsClassRows } from "../ui/CourseDetailsClassRows.tsx";
 import { memo } from "react";
+import {HiMiniPlusSmall} from "react-icons/hi2";
 
 interface ClassListProps {
+    createClass: () => void;
     classes: ClassItem[];
     onEdit: (cls: ClassItem) => void;
     onDelete: (cls: ClassItem) => void;
-    onNavigate: (id: string) => void;
 }
 
 export const ClassList = memo(function ClassList({
+                                                     createClass,
                                                      classes,
-                                                     onNavigate,
                                                      onEdit,
                                                      onDelete
                                                  }: ClassListProps) {
     return (
         <div className="absolute right-5 top-full w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden">
-            <div className="p-3 bg-gray-50 border-b border-gray-100">
+            <div className="p-2 flex items-center justify-between bg-gray-50 border-b border-gray-100">
                 <h3 className="font-bold text-sm text-gray-700">Clases Asignadas</h3>
+                <button
+                    onClick={createClass}
+                    className="flex font-base py-0.5 cursor-pointer px-2 items-center justify-center bg-primary hover:bg-primary-darker rounded-lg text-white"
+                >
+                    <HiMiniPlusSmall className="size-6"/>
+                </button>
             </div>
 
             <ul className="divide-y w-full divide-gray-100 max-h-[300px] overflow-y-auto">
@@ -26,7 +33,6 @@ export const ClassList = memo(function ClassList({
                     <CourseDetailsClassRows
                         key={cls.class_id}
                         cls={cls}
-                        onNavigate={onNavigate}
                         onEdit={onEdit}
                         onDelete={onDelete}
                     />

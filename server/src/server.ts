@@ -24,6 +24,7 @@ import gradeRoutes from "./modules/grade/infrastructure/grade.routes.js";
 import parentRoutes from "./modules/parent/infrastructure/parent.routes.js";
 import classScheduleRoutes from "./modules/class-schedule/infrastructure/classSchedule.routes.js";
 import announcementsRoutes from "./modules/announcements/infrastructure/announcements.routes.js";
+import cumulativeRoutes from "./modules/cumulative/infrastructure/cumulative.routes.js";
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use("/assignments", assignmentRoutes);
 app.use("/grades", gradeRoutes);
 app.use("/class-schedule", classScheduleRoutes);
 app.use("/announcements", announcementsRoutes);
+app.use("/api/cumulative", cumulativeRoutes);
 
 app.use(globalErrorHandler);
 

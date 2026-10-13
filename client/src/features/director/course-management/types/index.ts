@@ -1,3 +1,11 @@
+interface BaseStudent {
+    student_id: string;
+    student_first_name: string;
+    student_first_last_name: string;
+    student_middle_name: string | null;
+    student_second_last_name: string | null;
+}
+
 export interface ClassItem {
     is_active: boolean;
     class_id: string;
@@ -8,12 +16,7 @@ export interface ClassItem {
     second_last_name: string | null;
 }
 
-export interface Student {
-    student_id: string;
-    student_first_name: string;
-    student_middle_name: string | null;
-    student_first_last_name: string;
-    student_second_last_name: string | null;
+export interface Student extends BaseStudent {
     email: string;
     is_active: boolean;
 }
@@ -69,4 +72,33 @@ export interface Payload {
     name: string;
     year: string;
     teacherId: string;
+}
+
+// Cumulative
+
+interface BaseAttendance {
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+}
+
+export interface CumulativeAttendance extends BaseStudent, BaseAttendance {}
+
+export interface Subjects {
+    class_id: string;
+    subject_name: string;
+    final_grade: number;
+}
+
+export interface CumulativeGrades extends BaseStudent {
+    period_average: number | null;
+    subjects: Subjects[];
+}
+
+export interface CumulativeSummary extends BaseStudent {
+    period_average: number | null;
+    attendance_rate: number;
+    total_absences: number;
+    attendance: BaseAttendance;
 }

@@ -13,7 +13,7 @@ import type { CoursesListData } from "../../types";
 
 export function CoursesListLayout() {
     const navigate = useNavigate();
-    const { id: activeCourseId } = useParams<{ id: string }>();
+    const { courseId: activeCourseId } = useParams<{ courseId: string }>();
 
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [courseToEdit, setCourseToEdit] = useState<CoursesListData | null>(null);
@@ -32,10 +32,6 @@ export function CoursesListLayout() {
     const handleDelete = useCallback((course: CoursesListData) => {
         setCourseToDelete(course);
     }, []);
-
-    const handleNavigate = useCallback((id: string) => {
-        navigate(`${id}`);
-    }, [navigate]);
 
     if (loading) return <LoadingPage title="Cargando cursos..." />
 
@@ -59,7 +55,6 @@ export function CoursesListLayout() {
                     activeCourseId={activeCourseId}
                     onEditCourse={handleEdit}
                     onDeleteCourse={handleDelete}
-                    onNavigate={handleNavigate}
                     loadingDelete={loadingDelete}
                 />
             </div>

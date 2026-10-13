@@ -1,5 +1,5 @@
 import { PrimaryButton } from "../../../../../components/ui/buttons/Buttons.tsx";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
 import { useCourseData } from "../../hooks/course-details/useCourseData.ts";
 import { formatterDate, type ModalModeTypes } from "../../../../../types";
@@ -11,13 +11,13 @@ import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.t
 import { useDeleteClass } from "../../hooks/course-details/useDeleteClass.ts";
 import { CourseDetailsFormModal } from "../ui/CourseDetailsFormModal.tsx";
 import toast from "react-hot-toast";
+import { PrimaryLink } from "../../../../../components/ui/link/PrimaryLink.tsx";
 
 export function CourseDetailsLayout() {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
+    const { courseId } = useParams<{ courseId: string }>();
 
     const date = formatterDate.format(new Date());
-    const { loading, course, attendance, refetch } = useCourseData(id, date);
+    const { loading, course, attendance, refetch } = useCourseData(courseId, date);
     const { loadingDelete, deleteClassById } = useDeleteClass(refetch);
 
     const classesDropDown = useRef<HTMLDivElement>(null)
@@ -43,10 +43,6 @@ export function CourseDetailsLayout() {
         return () => document.removeEventListener('mousedown', handleClassesDropDown);
     }, []);
 
-    const handleNavigate = useCallback((classId: string) => {
-        navigate(`clase/${classId}`);
-    }, [navigate]);
-
     const handleUpdate = useCallback((cls: ClassItem) => {
         setClassToEdit(cls);
         setModalMode("edit");
@@ -58,7 +54,7 @@ export function CourseDetailsLayout() {
         setShowClasses(false);
     }, []);
 
-    if (!id) {
+    if (!courseId) {
         toast.error("No se encontró el ID del curso en la URL");
         return null;
     };
@@ -68,24 +64,29 @@ export function CourseDetailsLayout() {
 
     return (
         <div className="flex flex-col h-full w-full">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-xl md:text-1xl xl:text-2xl font-bold text-custom-black">
-                        Curso: {course.course.course_name}
+                        Curso
+                        <span className="text-primary-darker text-base md:text-lg xl:text-xl"> {course.course.course_name}</span>
                     </h1>
-                    <p className="text-gray-500 text-sm">Año Lectivo: {course.course.year}</p>
                 </div>
-                <div className="flex flex-col md:flex-row w-full md:w-auto gap-3 xl:gap-5 items-center">
-                    <PrimaryButton onClick={() => setModalMode("create")} title="Asignar asignatura"/>
+                <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 items-center">
+                    <PrimaryLink
+                        goTo="acumulados" children="Acumulados"
+                    />
+                    <PrimaryLink
+                        goTo="horario" children="Horario"
+                    />
                     <div className="w-full md:w-auto" ref={classesDropDown}>
                         <PrimaryButton
                             onClick={() => setShowClasses(!showClasses)}
-                            title="Ver clases"
+                            title="Clases"
                         />
                         {showClasses && (
                             <ClassList
+                                createClass={() => setModalMode("create")}
                                 classes={course.classes}
-                                onNavigate={handleNavigate}
                                 onEdit={handleUpdate}
                                 onDelete={handleDelete}
                             />
@@ -115,7 +116,7 @@ export function CourseDetailsLayout() {
 
             {modalMode !== 'none' && (
                 <CourseDetailsFormModal
-                    id={id}
+                    id={courseId}
                     courseName={course.course.course_name}
                     mode={modalMode}
                     classToEdit={classToEdit}

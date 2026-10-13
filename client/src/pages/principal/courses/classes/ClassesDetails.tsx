@@ -14,15 +14,15 @@ import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 
 export default function ClassesDetails() {
-    const { id, courseId } = useParams<{ id: string, courseId: string }>();
+    const { classId, courseId } = useParams<{ classId: string, courseId: string }>();
 
     const { periods } = usePeriods();
     const [tab, setTab] = useState<TabTypes>("students")
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
 
-    if (!id || !courseId) return null;
+    if (!classId|| !courseId) return null;
 
-    const { data, loading } = useClassData(id);
+    const { data, loading } = useClassData(classId);
     const initialDate = formatterDate.format(new Date());
     const [date, setDate] = useState<string>(initialDate)
 
@@ -36,7 +36,7 @@ export default function ClassesDetails() {
     if (!periods || periods.length === 0) return <NoResults title="No se encontraron periodos" />;
     if (loading) return <LoadingContent title="Cargando clase..."/>;
 
-    // update this
+    // update this UI
     if (!data) return <div className="p-6 text-gray-500 text-center flex-1">Clase no encontrada.</div>;
     if (!selectedPeriodId) return null;
 
@@ -56,7 +56,7 @@ export default function ClassesDetails() {
             {tab === "students" && (<Students students={data.students} />)}
             {tab === "register attendance" && (<RegisterAttendance classData={data} date={date} />)}
             {tab === "see attendance" && (<ViewAttendance periodId={selectedPeriodId} classData={data} courseId={courseId} periods={periods} />)}
-            {tab === "assignments" && (<Assignments periodId={selectedPeriodId} classData={data} courseId={courseId} classId={id} />)}
+            {tab === "assignments" && (<Assignments periodId={selectedPeriodId} classData={data} courseId={courseId} classId={classId} />)}
         </ClassLayout>
     )
 }

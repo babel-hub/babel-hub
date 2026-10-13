@@ -1,5 +1,5 @@
 import React, {useState, type JSX, useEffect} from "react";
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import {Outlet, useNavigate, useLocation, Link} from "react-router-dom";
 import LogOutButton from "./auth/LogOutButton.tsx";
 import type { UserProfile } from "../auth/useAuth.ts";
 import ErrorBoundary from "./core/ErrorBoundary.tsx";
@@ -45,11 +45,6 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [showMenu]);
-
-    const handleNavigation = (path: string) => {
-        navigate(path);
-        setIsMobileOpen(false);
-    };
 
     const userInitials = user?.first_name
         ? `${user.first_name.charAt(0).toUpperCase()}${user.first_last_name.charAt(0).toUpperCase()}`
@@ -121,19 +116,21 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                         const isActive = location.pathname.startsWith(item.path);
 
                         return (
-                            <button
+                            <Link
                                 key={item.id}
-                                disabled={disabled}
-                                onClick={() => handleNavigation(item.path)}
+                                to={disabled ? "/#" : item.path}
+                                onClick={(e) => {
+                                    if (disabled) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                aria-disabled={disabled}
                                 className={`
-                                    flex items-center gap-3 transition-all cursor-pointer rounded-xl p-2 group
-                                    ${isActive
-                                    ? "bg-gray-100/80 text-custom-black"
-                                    : "hover:bg-gray-50 text-gray-600"
-                                }
-                                    ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+                                    flex items-center gap-3 transition-all rounded-xl p-2 group
+                                    ${isActive ? "bg-gray-100/80 text-custom-black" : "hover:bg-gray-50 text-gray-600"}
+                                    ${disabled ? "opacity-50 cursor-not-allowed pointer-events-none" : "cursor-pointer"}
                                     ${!isExpanded ? "md:justify-center" : "justify-start"}
-                                `}
+    `}
                                 title={!isExpanded ? item.label : ""}
                             >
                                 <div className={`shrink-0 transition-colors ${isActive ? "text-primary" : "text-gray-500 group-hover:text-custom-black"}`}>
@@ -148,7 +145,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                 `}>
                                     {item.label}
                                 </span>
-                            </button>
+                            </Link>
                         );
                     })}
                 </div>

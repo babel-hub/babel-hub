@@ -36,6 +36,7 @@ import StudentProfile from "../pages/principal/community/students/StudentProfile
 import PrincipalAnnouncementsLayout from "../pages/principal/announcements/PrincipalAnnouncementsLayout.tsx";
 import TeacherAnnouncementsLayout from "../pages/teacher/announcements/TeacherAnnouncementsLayout.tsx";
 import ParentAnnouncementsLayout from "../pages/parent/announcements/ParentAnnouncementsLayout.tsx";
+import PrincipalCumulativeRecord from "../pages/principal/courses/cumulative-record/PrincipalCumulativeRecord.tsx";
 
 const queryClient = new QueryClient();
 
@@ -82,8 +83,9 @@ function App() {
                         <Route path="dashboard" index element={<PrincipalDashboard />} />
 
                         <Route path="cursos" element={<Courses />}>
-                            <Route path=":id" element={<CourseDetails />} />
-                            <Route path=":courseId/clase/:id" element={<ClassesDetails />} />
+                            <Route path=":courseId" element={<CourseDetails />} />
+                            <Route path=":courseId/clase/:classId" element={<ClassesDetails />} />
+                            <Route path=":courseId/acumulados" element={<PrincipalCumulativeRecord />} />
                         </Route>
 
                         <Route path="comunidad" element={<Community />} />
