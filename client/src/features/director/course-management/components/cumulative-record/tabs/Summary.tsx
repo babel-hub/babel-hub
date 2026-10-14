@@ -1,24 +1,16 @@
-import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
-import { useCumulativeSummary } from "../../../hooks/cumulative-records/useCumulativeSummary.ts";
-import {reverseName} from "../../../../../../types";
+import { reverseName } from "../../../../../../types";
+import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
+import type {CumulativeSummary} from "../../../types";
+import {LoadingContent} from "../../../../../../components/ui/Loadings.tsx";
 
 interface SummaryProps {
-    courseId: string;
-    periodId: string;
+    summary: CumulativeSummary[];
+    loading: boolean;
 }
 
-export function Summary({ courseId, periodId }: SummaryProps) {
-    const { summary, loading } = useCumulativeSummary(courseId, periodId);
-
-    if (loading) return <LoadingContent title="Cargando resumen..." />;
-
-    if (!summary || summary.length === 0) {
-        return (
-            <div className="flex items-center justify-center p-8 text-gray-500">
-                No hay datos registrados para este curso en este periodo.
-            </div>
-        );
-    }
+export function Summary({ summary, loading }: SummaryProps) {
+    if (loading) return <LoadingContent title="" />;
+    if (!summary || summary.length === 0) return <NoResults title="No hay datos registrados para este curso en este periodo"/>;
 
     return (
         <div className="px-4 pb-4 grid grid-cols-5 gap-3">

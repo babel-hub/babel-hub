@@ -61,3 +61,10 @@ export interface AssignmentsOverview {
     assessment_criteria: AssessmentCriteria[];
     grades: Grades[];
 }
+
+export interface CumulativeMetrics {
+    activeStudents: number;
+    overallAverage: number;
+    attendanceRate: number;
+    totalAbsences: number;
+}

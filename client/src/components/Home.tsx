@@ -123,6 +123,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                                     if (disabled) {
                                         e.preventDefault();
                                     }
+                                    setIsMobileOpen(false);
                                 }}
                                 aria-disabled={disabled}
                                 className={`
@@ -198,7 +199,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
 
             <div className="flex-1 overflow-y-auto bg-gray-50 relative">
                 <ErrorBoundary>
-                    <div className="p-3 min-h-full">
+                    <div className="md:p-3 min-h-full">
                         <Outlet />
                     </div>
                 </ErrorBoundary>

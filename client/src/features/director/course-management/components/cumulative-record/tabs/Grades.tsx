@@ -1,6 +1,7 @@
 import { useCumulativeGrades } from "../../../hooks/cumulative-records/useCumulativeGrades.ts";
 import { LoadingContent } from "../../../../../../components/ui/Loadings.tsx";
 import {reverseName} from "../../../../../../types";
+import {NoResults} from "../../../../../../components/ui/blocks/NoResults.tsx";
 
 interface GradesProps {
     courseId: string;
@@ -11,14 +12,7 @@ export function Grades({ courseId, periodId }: GradesProps) {
     const { grades, loading } = useCumulativeGrades(courseId, periodId);
 
     if (loading) return <LoadingContent title="" />;
-
-    if (!grades || grades.length === 0) {
-        return (
-            <div className="flex items-center justify-center p-8 text-gray-500">
-                No hay calificaciones registradas para este curso en este periodo.
-            </div>
-        );
-    }
+    if (!grades || grades.length === 0) return <NoResults title="No hay calificaciones registradas para este curso en este periodo"/>
 
     const subjectHeaders = grades[0]?.subjects?.map(s => s.subject_name) || [];
 

@@ -71,7 +71,7 @@ export function CourseDetailsLayout() {
                         <span className="text-primary-darker text-base md:text-lg xl:text-xl"> {course.course.course_name}</span>
                     </h1>
                 </div>
-                <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 items-center">
+                <div className="flex w-full md:w-auto gap-2 items-center">
                     <PrimaryLink
                         goTo="acumulados" children="Acumulados"
                     />

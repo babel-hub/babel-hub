@@ -2,20 +2,19 @@ import {LuClipboardCheck, LuClipboardPenLine, LuClipboardX, LuUsers} from "react
 import { useNavigate } from "react-router-dom";
 import React from "react";
 import ButtonChevronBack from "../../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
-import type { TabCumulativeTypes } from "../../../../../types/types.ts";
+import type {CumulativeMetrics, TabCumulativeTypes} from "../../../../../types/types.ts";
+import { MetricButton } from "../../../../../../shared/components/cumulative/ui/MetricButton.tsx";
 
 interface CumulativeRecordLayoutProps {
     tab: TabCumulativeTypes;
     setTab: (tab: TabCumulativeTypes) => void;
     children: React.ReactNode;
+    metrics: CumulativeMetrics;
+    loading: boolean;
 }
 
-export function CumulativeRecordLayout({ children, tab, setTab }: CumulativeRecordLayoutProps) {
+export function CumulativeRecordLayout({ children, tab, setTab, metrics, loading }: CumulativeRecordLayoutProps) {
     const navigate = useNavigate();
-
-    const overallAverage = 4.7;
-    const attendanceRate = 96;
-    const totalAbsences = 15;
 
     return (
         <div className="flex flex-col h-full w-full">
@@ -29,61 +28,53 @@ export function CumulativeRecordLayout({ children, tab, setTab }: CumulativeReco
             </div>
 
             <div className="flex p-4 items-center gap-5">
-                <button
+                <MetricButton
+                    active={tab === "summary"}
                     onClick={() => setTab("summary")}
-                    className={`border flex gap-5 items-start rounded-xl p-2 ${tab === "summary" ? "bg-primary text-white border-primary" : "bg-transparent border-gray-200 text-custom-black"}`}
-                >
-                    <LuUsers className={`size-7 ${tab === "summary" ? "text-white" : "text-primary-darker"}`} />
-                    <div className="flex flex-col gap-1 items-end">
-                        <span className="text-2xl font-semibold">20</span>
-                        <div className="text-right flex flex-col justify-center">
-                            <p className="text-sm font-medium leading-5">Resumen del grupo</p>
-                            <span className={`text-xs ${tab === "summary" ? "text-white" : "text-gray-500"} leading-none`}>Estudiantes activos</span>
-                        </div>
-                    </div>
-                </button>
+                    loading={loading}
+                    icon={<LuUsers />}
+                    value={metrics.activeStudents}
+                    title="Resumen del grupo"
+                    subtitle="Estudiantes activos"
+                    skeletonDescriptionSize="w-10 h-3"
+                    skeletonTitleSize="h-7 w-10"
+                />
 
-                <button
+                <MetricButton
+                    active={tab === "grades"}
                     onClick={() => setTab("grades")}
-                    className={`border flex gap-5 items-start rounded-xl p-2 ${tab === "grades" ? "bg-primary text-white border-primary" : "bg-transparent border-gray-200 text-custom-black"}`}
-                >
-                    <LuClipboardPenLine className={`size-7 ${tab === "grades" ? "text-white" : "text-primary-darker"}`} />
-                    <div className="flex flex-col gap-1 items-end">
-                        <span className="text-2xl font-semibold">{overallAverage}</span>
-                        <div className="text-right flex flex-col justify-center">
-                            <p className="text-sm font-medium leading-5">Promedio general</p>
-                            <span className={`text-xs ${tab === "grades" ? "text-white" : "text-gray-500"} leading-none`}>Aumento un 4%</span>
-                        </div>
-                    </div>
-                </button>
+                    loading={loading}
+                    icon={<LuClipboardPenLine />}
+                    value={metrics.overallAverage.toFixed(2)}
+                    title="Promedio general"
+                    subtitle="Aumentó un -%"
+                    skeletonDescriptionSize="w-10 h-3"
+                    skeletonTitleSize="h-7 w-14"
+                />
 
-                <button
+                <MetricButton
+                    active={tab === "attendance"}
                     onClick={() => setTab("attendance")}
-                    className={`border flex gap-5 items-start rounded-xl p-2 ${tab === "attendance" ? "bg-primary text-white border-primary" : "bg-transparent border-gray-200 text-custom-black"}`}
-                >
-                    <LuClipboardCheck className={`size-7 ${tab === "attendance" ? "text-white" : "text-primary-darker"}`} />
-                    <div className="flex flex-col gap-1 items-end">
-                        <span className="text-2xl font-semibold">{attendanceRate}%</span>
-                        <div className="text-right flex flex-col justify-center">
-                            <p className="text-sm font-medium leading-5">Asistencia general</p>
-                            <span className={`text-xs ${tab === "attendance" ? "text-white" : "text-gray-500"} leading-none`}>Disminuyo un 4%</span>
-                        </div>
-                    </div>
-                </button>
+                    loading={loading}
+                    icon={<LuClipboardCheck />}
+                    value={`${metrics.attendanceRate.toFixed(2)}%`}
+                    title="Asistencia general"
+                    subtitle="Disminuyó un -%"
+                    skeletonDescriptionSize="w-10 h-3"
+                    skeletonTitleSize="h-7 w-16"
+                />
 
-                <button
+                <MetricButton
+                    active={tab === "absents"}
                     onClick={() => setTab("absents")}
-                    className={`border flex gap-5 items-start rounded-xl p-2 ${tab === "absents" ? "bg-primary text-white border-primary" : "bg-transparent border-gray-200 text-custom-black"}`}
-                >
-                    <LuClipboardX className={`size-7 ${tab === "absents" ? "text-white" : "text-primary-darker"}`} />
-                    <div className="flex flex-col gap-1 items-end">
-                        <span className="text-2xl font-semibold">{totalAbsences}</span>
-                        <div className="text-right flex flex-col justify-center">
-                            <p className="text-sm font-medium leading-5">Faltas cometidas</p>
-                            <span className={`text-xs ${tab === "absents" ? "text-white" : "text-gray-500"} leading-none`}>Disminuyeron 3</span>
-                        </div>
-                    </div>
-                </button>
+                    loading={loading}
+                    icon={<LuClipboardX />}
+                    value={metrics.totalAbsences}
+                    title="Faltas cometidas"
+                    subtitle="Disminuyeron -"
+                    skeletonDescriptionSize="w-10 h-3"
+                    skeletonTitleSize="h-7 w-10"
+                />
             </div>
 
             <div className="flex-1 no-scrollbar overflow-y-auto">
