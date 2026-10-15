@@ -1,20 +1,18 @@
-import { useNavigate } from "react-router-dom";
 import { useAreas } from "../../../../../shared/hooks/useAreas.ts";
 import { useDeleteArea } from "../../hooks/areas/useDeleteArea.ts";
 import { useEffect, useRef, useState } from "react";
-import type { AreaProps } from "../../types";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
 import type { ModalModeTypes } from "../../../../../types";
 import { AreasFormModal } from "../ui/AreasFormModal.tsx";
 import { HiPlus } from "react-icons/hi";
 import {AreaRows} from "./AreaRows.tsx";
+import type { Area } from "../../../../../shared/types/types.ts";
 
 export function AreasLayout() {
-    const navigate = useNavigate();
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const ref = useRef<HTMLDivElement>(null);
-    const [areaToDelete, setAreaToDelete] = useState<AreaProps | null>(null);
-    const [areaToEdit, setAreaToEdit] = useState<AreaProps | undefined>(undefined);
+    const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
+    const [areaToEdit, setAreaToEdit] = useState<Area | null>(null);
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
 
     const { areas, reloadAreas } = useAreas();
@@ -31,23 +29,19 @@ export function AreasLayout() {
         return () => document.removeEventListener('mousedown', onClick);
     }, [activeMenuId]);
 
-    const handleNavigate = (url: string) => {
-        navigate(`areas/${url}`);
-    };
-
-    const handleEdit = (area: AreaProps) => {
+    const handleEdit = (area: Area) => {
         setAreaToEdit(area);
         setModalMode('edit');
         setActiveMenuId(null);
     };
 
-    const handleDelete = (area: AreaProps) => {
+    const handleDelete = (area: Area) => {
         setAreaToDelete(area);
         setActiveMenuId(null);
     };
 
     const handleCreate = () => {
-        setAreaToEdit(undefined);
+        setAreaToEdit(null);
         setModalMode("create");
     };
 
@@ -70,13 +64,12 @@ export function AreasLayout() {
 
 
             <ul className="flex flex-col gap-2">
-                {areas.map((area: AreaProps) => (
+                {areas.map((area: Area) => (
                     <AreaRows
                         key={area.id}
                         area={area}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        navigate={handleNavigate}
                     />
                 ))}
             </ul>
@@ -99,13 +92,13 @@ export function AreasLayout() {
                 <AreasFormModal
                     mode={modalMode}
                     onSuccess={async () => {
-                        setAreaToEdit(undefined);
+                        setAreaToEdit(null);
                         await reloadAreas();
                         setModalMode('none');
                     }}
                     area={areaToEdit}
                     onClose={() => {
-                        setAreaToEdit(undefined);
+                        setAreaToEdit(null);
                         setModalMode('none');
                     }}
                 />

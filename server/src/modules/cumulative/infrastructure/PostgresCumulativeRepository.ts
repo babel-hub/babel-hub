@@ -31,9 +31,11 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                      CourseClasses AS (
                          SELECT
                              c.id AS class_id,
-                             s.name AS subject_name
+                             s.name AS subject_name,
+                             gt.scale_id
                          FROM class c
                             JOIN subject s ON c.subject_id = s.id
+                            JOIN grading_template gt ON s.grading_template_id = gt.id
                             JOIN course co ON c.course_id = co.id
                          WHERE c.course_id = $1
                            AND co.school_id = $4
@@ -71,6 +73,7 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                     json_agg(
                             json_build_object(
                                     'class_id', cc.class_id,
+                                    'scale_id', cc.scale_id,
                                     'subject_name', cc.subject_name,
                                     'final_grade', COALESCE(ROUND(sfg.final_grade::numeric, 2)::float, 0)
                             )

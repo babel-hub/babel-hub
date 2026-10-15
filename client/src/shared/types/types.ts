@@ -1,6 +1,3 @@
-type AnnouncementType = 'GENERAL' | 'EVENT' | 'EMERGENCY' | 'DEADLINE' | 'POLL';
-type AnnouncementTargetType = 'ALL' | 'PROFILE' | 'ROLE' | 'COURSE';
-
 export interface Teacher {
     id: string;
     teacher_first_name: string;
@@ -26,6 +23,19 @@ export interface Area {
     school_id: string;
     name: string;
 }
+
+export interface Scale {
+    id: string;
+    name: string;
+    min_value: number;
+    max_value: number;
+    passing_value: number;
+}
+
+// Announcements
+
+type AnnouncementType = 'GENERAL' | 'EVENT' | 'EMERGENCY' | 'DEADLINE' | 'POLL';
+type AnnouncementTargetType = 'ALL' | 'PROFILE' | 'ROLE' | 'COURSE';
 
 export interface Announcement {
     id: string;
@@ -58,4 +68,52 @@ export interface UserSearch {
     first_last_name: string;
     second_last_name: string;
     role: string;
+}
+
+// Cumulative
+
+export type TabCumulativeTypes = 'attendance' | 'grades' | 'absents' | 'summary';
+
+interface BaseStudent {
+    student_id: string;
+    student_first_name: string;
+    student_first_last_name: string;
+    student_middle_name: string | null;
+    student_second_last_name: string | null;
+}
+
+
+export interface CumulativeMetrics {
+    activeStudents: number;
+    overallAverage: number;
+    attendanceRate: number;
+    totalAbsences: number;
+}
+
+interface BaseAttendance {
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+}
+
+export interface CumulativeAttendance extends BaseStudent, BaseAttendance {}
+
+export interface Subjects {
+    class_id: string;
+    scale_id: string;
+    subject_name: string;
+    final_grade: number;
+}
+
+export interface CumulativeGrades extends BaseStudent {
+    period_average: number | null;
+    subjects: Subjects[];
+}
+
+export interface CumulativeSummary extends BaseStudent {
+    period_average: number | null;
+    attendance_rate: number;
+    total_absences: number;
+    attendance: BaseAttendance;
 }

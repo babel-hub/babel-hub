@@ -1,12 +1,12 @@
 import type { IScalesRepository } from "../domain/IScalesRepository.js";
-import type { Scales } from "../domain/Scales.types.js";
+import type { Scale } from "../domain/Scales.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { NotFoundError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresScaleRepository implements IScalesRepository {
 
-    async getScales(authUser: AuthUser): Promise<Scales[]> {
+    async getScales(authUser: AuthUser): Promise<Scale[]> {
         const { userSchoolId } = authUser;
 
         // Scales by school id in a future version
@@ -29,7 +29,7 @@ export class PostgresScaleRepository implements IScalesRepository {
         }
     }
 
-    async getClassScale(classId: string, authUser: AuthUser): Promise<Scales> {
+    async getClassScale(classId: string, authUser: AuthUser): Promise<Scale> {
         const { userSchoolId } = authUser;
 
         const client = await pool.connect();
@@ -42,9 +42,9 @@ export class PostgresScaleRepository implements IScalesRepository {
                     sc.max_value::float AS max_value,
                     sc.passing_value::float AS passing_value
                 FROM class c
-                         JOIN subject s ON c.subject_id = s.id
-                         JOIN grading_template g ON s.grading_template_id = g.id
-                         JOIN scale sc ON g.scale_id = sc.id
+                    JOIN subject s ON c.subject_id = s.id
+                    JOIN grading_template g ON s.grading_template_id = g.id
+                    JOIN scale sc ON g.scale_id = sc.id
                 WHERE c.id = $1 AND g.school_id = $2
             `, [classId, userSchoolId]);
 

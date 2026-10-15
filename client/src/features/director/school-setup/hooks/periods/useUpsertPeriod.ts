@@ -7,7 +7,7 @@ export const useUpsertPeriod = (onSuccess: () => void) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const upsertPeriod = async (mode: modeTypes, periodId: string | undefined, payload: any) => {
+    const upsertPeriod = async (mode: modeTypes, periodId: string | null, payload: any) => {
         setLoading(true);
         setError("");
 

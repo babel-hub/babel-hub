@@ -1,5 +1,5 @@
 import api from "../../../../api/client.ts";
-import type { AreaDetails, GradingDetails, GradingTemplate, Scale } from "../types";
+import type { AreaDetails, GradingDetails, GradingTemplate } from "../types";
 
 // Area Endpoints
 
@@ -58,11 +58,6 @@ export const getGradingTemplates = async (): Promise<GradingTemplate[]> => {
 export const getGradingDetails = async (gradingId: string): Promise<GradingDetails> => {
     const response = await api.get(`/grading_templates/${gradingId}`);
     return response.data.gradings_details;
-}
-
-export const getScales = async (): Promise<Scale[]> => {
-    const response = await api.get(`/scales`);
-    return response.data.scales;
 }
 
 export const createGradingTemplate = async (payload: any): Promise<void> => {

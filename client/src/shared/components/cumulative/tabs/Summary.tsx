@@ -1,7 +1,7 @@
-import { reverseName } from "../../../../../../types";
-import { NoResults } from "../../../../../../components/ui/blocks/NoResults.tsx";
-import type {CumulativeSummary} from "../../../types";
-import {LoadingContent} from "../../../../../../components/ui/Loadings.tsx";
+import type { CumulativeSummary } from "../../../types/types.ts";
+import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
+import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
+import { reverseName } from "../../../../types";
 
 interface SummaryProps {
     summary: CumulativeSummary[];
@@ -17,26 +17,26 @@ export function Summary({ summary, loading }: SummaryProps) {
             <div className="relative overflow-x-auto no-scrollbar col-span-3 md:rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left text-gray-600">
                     <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
-                        <tr>
-                            <th scope="col" className="p-2 sticky left-0 bg-gray-100 z-10 min-w-3xs">
-                                Estudiante
-                            </th>
-                            <th scope="col" className="p-2 min-w-[120px] text-center">
-                                Promedio
-                            </th>
-                            <th scope="col" className="p-2 min-w-[140px] text-center">
-                                Tasa de Asistencia
-                            </th>
-                            <th scope="col" className="p-2 min-w-[100px] text-center">
-                                Faltas
-                            </th>
-                            <th scope="col" className="p-2 min-w-[100px] text-center">
-                                Retardos
-                            </th>
-                            <th scope="col" className="p-2 min-w-[100px] text-center">
-                                Excusas
-                            </th>
-                        </tr>
+                    <tr>
+                        <th scope="col" className="p-2 sticky left-0 bg-gray-100 z-10 min-w-3xs">
+                            Estudiante
+                        </th>
+                        <th scope="col" className="p-2 min-w-[120px] text-center">
+                            Promedio
+                        </th>
+                        <th scope="col" className="p-2 min-w-[140px] text-center">
+                            Tasa de Asistencia
+                        </th>
+                        <th scope="col" className="p-2 min-w-[100px] text-center">
+                            Faltas
+                        </th>
+                        <th scope="col" className="p-2 min-w-[100px] text-center">
+                            Retardos
+                        </th>
+                        <th scope="col" className="p-2 min-w-[100px] text-center">
+                            Excusas
+                        </th>
+                    </tr>
                     </thead>
                     <tbody>
                     {summary.map((student, index) => {

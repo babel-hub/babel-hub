@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCumulativeSummary } from "../../api";
-import type { CumulativeSummary } from "../../types";
+import type { CumulativeSummary } from "../../types/types.ts";
 
 export const useCumulativeSummary = (courseId: string, periodId: string) => {
     const [loading, setLoading] = useState<boolean>(false);

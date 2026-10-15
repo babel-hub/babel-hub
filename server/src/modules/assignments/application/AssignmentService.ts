@@ -8,12 +8,14 @@ import { assertValidDueDate } from "../domain/Assignment.rules.js";
 import type { IGradeRepository } from "../../grade/domain/IGradeRepository.js";
 import type { IAssessmentRepository } from "../../assessmentCriteria/domain/IAssessmentRepository.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
+import type { IScalesRepository } from "../../scales/domain/IScalesRepository.js";
 
 export class AssignmentService {
     constructor(
         private readonly assignmentRepository: IAssignmentRepository,
         private readonly gradeRepository: IGradeRepository,
-        private readonly assessmentRepository: IAssessmentRepository
+        private readonly assessmentRepository: IAssessmentRepository,
+        private readonly scalesRepository: IScalesRepository,
     ) {}
 
     async getAssignmentsOverview(
@@ -29,10 +31,11 @@ export class AssignmentService {
 
         const payload: GetAssignmentsOverviewPayload = { courseId, classId, periodId };
 
-        const [assignments, assessments, grades] = await Promise.all([
+        const [assignments, assessments, grades, scale] = await Promise.all([
             this.assignmentRepository.getAssignmentsOverview(payload, auth),
             this.assessmentRepository.getAssessmentByAssignment(classId, auth),
-            this.gradeRepository.getGradesByClass(classId, auth)
+            this.gradeRepository.getGradesByClass(classId, auth),
+            this.scalesRepository.getClassScale(classId, auth)
         ]);
 
         const assignmentsByCriteria = new Map<string, any[]>();
@@ -55,7 +58,8 @@ export class AssignmentService {
                 weight: ac.weight,
                 assignments: assignmentsByCriteria.get(ac.id) ?? []
             })),
-            grades
+            grades,
+            scale
         };
     }
 

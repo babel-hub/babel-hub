@@ -1,4 +1,5 @@
 import type { GradeByAssignment } from "../../grade/domain/Grade.types.js";
+import type { Scale } from "../../scales/domain/Scales.types.js";
 
 export interface Assignments {
     id: string;
@@ -18,7 +19,8 @@ export interface AssignmentsOverview {
 }
 
 export interface AssignmentsStructure extends AssignmentsOverview {
-    grades: GradeByAssignment[]
+    grades: GradeByAssignment[];
+    scale: Scale;
 }
 
 export interface UpdateAssignmentDTO {

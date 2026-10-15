@@ -1,11 +1,12 @@
-import { CumulativeRecordLayout, Grades, Absents, Attendance, Summary } from "../../../../features/director/course-management";
-import type {CumulativeMetrics, TabCumulativeTypes} from "../../../../features/types/types";
-import {useEffect, useMemo, useState} from "react";
-import {useParams} from "react-router-dom";
-import {usePeriods} from "../../../../shared/hooks/usePeriods.ts";
-import {LoadingContent} from "../../../../components/ui/Loadings.tsx";
-import {NoResults} from "../../../../components/ui/blocks/NoResults.tsx";
-import { useCumulativeSummary } from "../../../../features/director/course-management/hooks/cumulative-records/useCumulativeSummary.ts";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
+import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
+import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
+import type { CumulativeMetrics, TabCumulativeTypes } from "../../../../shared/types/types.ts";
+import { useCumulativeSummary } from "../../../../shared/hooks/cumulative/useCumulativeSummary.ts";
+
+import { CumulativeRecordLayout, Grades, Absents, Summary, Attendance } from "../../../../shared/components/cumulative";
 
 export default function PrincipalCumulativeRecord() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -43,7 +44,12 @@ export default function PrincipalCumulativeRecord() {
     if (!selectedPeriodId) return <LoadingContent title="" />;
 
     return (
-        <CumulativeRecordLayout loading={loading} tab={tab} setTab={setTab} metrics={metrics}>
+        <CumulativeRecordLayout
+            loading={loading}
+            tab={tab}
+            setTab={setTab}
+            metrics={metrics}
+        >
             {tab === "summary" && <Summary loading={loading} summary={summary} />}
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
             {tab === "absents" && <Absents />}

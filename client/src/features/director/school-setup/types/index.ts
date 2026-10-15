@@ -1,15 +1,4 @@
-export interface PeriodProps {
-    id: string,
-    name: string,
-    start_date: string,
-    end_date: string
-}
-
-export interface AreaProps {
-    id: string;
-    name: string;
-    school_id: string;
-}
+import type { Area } from "../../../../shared/types/types.ts";
 
 export interface SubjectsProps {
     id: string;
@@ -19,7 +8,7 @@ export interface SubjectsProps {
 }
 
 export interface AreaDetails {
-    area: AreaProps;
+    area: Area;
     subjects: SubjectsProps[];
 }
 
@@ -42,12 +31,4 @@ export interface Assessment {
 export interface GradingDetails {
     grading_name: string;
     assessments: Assessment[];
-}
-
-export interface Scale {
-    id: string;
-    name: string;
-    min_value: number;
-    max_value: number;
-    passing_value: number;
 }

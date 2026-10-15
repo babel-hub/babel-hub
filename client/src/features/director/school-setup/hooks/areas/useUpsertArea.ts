@@ -7,7 +7,7 @@ export const useUpsertArea = (onSuccess: () => void) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const upsertArea = async (mode: modeTypes, areaId: string | undefined, payload: any) => {
+    const upsertArea = async (mode: modeTypes, areaId: string | null, payload: any) => {
         setLoading(true);
         setError("");
 

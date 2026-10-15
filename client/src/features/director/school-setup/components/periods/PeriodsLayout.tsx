@@ -2,31 +2,31 @@ import { usePeriods } from "../../../../../shared/hooks/usePeriods.ts";
 import { useState } from "react";
 import { type ModalModeTypes } from "../../../../../types";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
-import type { PeriodProps } from "../../types";
 import { useDeletePeriod } from "../../hooks/periods/useDeletePeriod.ts";
 import { PeriodsFormModal } from "../ui/PeriodsFormModal.tsx";
 import { HiPlus } from "react-icons/hi";
 import { PeriodRows } from "./PeriodRows.tsx";
+import type { Period } from "../../../../../shared/types/types.ts";
 
 export function PeriodsLayout() {
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
-    const [periodToDelete, setPeriodToDelete] = useState<PeriodProps | null>(null);
-    const [periodToEdit, setPeriodToEdit] = useState<PeriodProps | undefined>(undefined);
+    const [periodToDelete, setPeriodToDelete] = useState<Period | null>(null);
+    const [periodToEdit, setPeriodToEdit] = useState<Period | null>(null);
 
     const { periods, reloadPeriods } = usePeriods();
     const { loadingDelete, deletePeriodById } = useDeletePeriod(reloadPeriods);
 
     const handleCreatePeriod = () => {
-        setPeriodToEdit(undefined);
+        setPeriodToEdit(null);
         setModalMode('create');
     };
 
-    const handleEditPeriod = (period: PeriodProps) => {
+    const handleEditPeriod = (period: Period) => {
         setPeriodToEdit(period);
         setModalMode('edit');
     };
 
-    const handleDeletePeriod = (period: PeriodProps) => {
+    const handleDeletePeriod = (period: Period) => {
         setPeriodToDelete(period);
     };
 
@@ -74,13 +74,13 @@ export function PeriodsLayout() {
                 <PeriodsFormModal
                     mode={modalMode}
                     onSuccess={async () => {
-                        setPeriodToEdit(undefined);
+                        setPeriodToEdit(null);
                         await reloadPeriods();
                         setModalMode('none');
                     }}
                     period={periodToEdit}
                     onClose={() => {
-                        setPeriodToEdit(undefined);
+                        setPeriodToEdit(null);
                         setModalMode('none');
                     }}
                 />

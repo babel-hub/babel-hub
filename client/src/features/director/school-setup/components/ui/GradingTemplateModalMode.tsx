@@ -1,9 +1,10 @@
-import type { GradingTemplate, Scale } from "../../types";
+import type { GradingTemplate } from "../../types";
 import DynamicModalForm, { type FormField } from "../../../../../components/ui/modals/ModalForm.tsx";
 import { useState } from "react";
-import { useGradingTemplateModalData } from "../../hooks/grading-templates/useGradingTemplateModalData.ts";
-import {useUpsertGradingTemplate} from "../../hooks/grading-templates/useUpsertGradingTemplate.ts";
-import type {modeTypes} from "../../../../types/types.ts";
+import { useUpsertGradingTemplate } from "../../hooks/grading-templates/useUpsertGradingTemplate.ts";
+import type { modeTypes } from "../../../../types/types.ts";
+import { useScales } from "../../../../../shared/hooks/useScales.ts";
+import type { Scale } from "../../../../../shared/types/types.ts";
 
 interface GradingTemplateModalModeProps {
     mode: modeTypes;
@@ -15,12 +16,14 @@ interface GradingTemplateModalModeProps {
 
 export function GradingTemplateModalMode({ mode, gradingTemplate, onCancel, gradingTemplateId, onSuccess }: GradingTemplateModalModeProps) {
     const isCreateMode = mode === "create";
-    const { scales } = useGradingTemplateModalData();
+    const { scales } = useScales();
     const { loading, upsertGradingTemplate, error, setError } = useUpsertGradingTemplate(onSuccess);
     const [formData, setFormData] = useState({
         name: gradingTemplate?.name || "",
         scaleId: gradingTemplate?.scale_id || ""
     });
+
+    console.log(scales);
 
     const gradingFields: FormField[] = [
         { name: "name", label: "Nombre del Template", type: "text", placeholder: "Ej. 70/20/10", required: true },

@@ -1,4 +1,4 @@
-export interface Scales {
+export interface Scale {
     id: string;
     name: string;
     min_value: number;

@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from "react-hot-toast";
 import type { AssessmentCriteria } from "../../../../../../types";
-import { getAssignmentOverview, getClassScale } from "../../api";
-import type { Scales } from "../../../../../types/types.ts";
+import { getAssignmentOverview } from "../../api";
+import type { Scale } from "../../../../../types/types.ts";
 
 export const useAssignmentOverview = (courseId: string, classId: string, periodId: string, students: number) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [assignmentsOverview, setAssignmentsOverview] = useState<AssessmentCriteria[] | null>(null);
     const [trigger, setTrigger] = useState<number>(0);
-    const [scale, setScale] = useState<Scales | null>(null);
+    const [scale, setScale] = useState<Scale | null>(null);
 
     const refetch = useCallback(() => {
         setTrigger((prev) => prev + 1);
@@ -23,12 +23,9 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
 
             setLoading(true);
             try {
-                const [record, classScale] = await Promise.all([
-                    getAssignmentOverview(courseId, classId, periodId, controller.signal),
-                    getClassScale(classId, controller.signal)
-                ]);
+                const record = await getAssignmentOverview(courseId, classId, periodId, controller.signal);
 
-                const { assessment_criteria, grades } = record;
+                const { assessment_criteria, grades, scale } = record;
 
                 const gradesByAssignment = new Map<string, any[]>();
 
@@ -59,7 +56,7 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
 
                 if (isMounted) {
                     setAssignmentsOverview(criteriaWithGrades)
-                    setScale(classScale)
+                    setScale(scale)
                 };
             } catch (error: any) {
                 if (error.name === "CanceledError" || error.name === "AbortError") return;

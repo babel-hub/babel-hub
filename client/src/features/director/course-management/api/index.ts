@@ -53,32 +53,3 @@ export const updateClass = async (id: string, payload: UpdateClass) => {
 export const deleteCLass = async (id: string) => {
     await api.delete(`/classes/${id}`)
 }
-
-// Course cumulative
-
-export const getCumulativeSummary = async (courseId: string, periodId: string) => {
-    const response = await api.get(`/api/cumulative/${courseId}/summary`, {
-        params: {
-            periodId
-        }
-    });
-    return response.data.summary;
-}
-
-export const getCumulativeGrades = async (courseId: string, periodId: string) => {
-    const response = await api.get(`/api/cumulative/${courseId}/grades`, {
-        params: {
-            periodId
-        }
-    });
-    return response.data.grades;
-}
-
-export const getCumulativeAttendance = async (courseId: string, periodId: string) => {
-    const response = await api.get(`/api/cumulative/${courseId}/attendance`, {
-        params: {
-            periodId
-        }
-    });
-    return response.data.attendance;
-}

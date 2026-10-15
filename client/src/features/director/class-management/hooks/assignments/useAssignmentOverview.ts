@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAssignmentOverview, getClassScale } from "../../api";
+import { getAssignmentOverview } from "../../api";
 import toast from "react-hot-toast";
 import type { AssessmentCriteria } from "../../../../../types";
-import type { Scale } from "../../../school-setup/types";
+import type { Scale } from "../../../../../shared/types/types.ts";
 
 export const useAssignmentOverview = (courseId: string, classId: string, periodId: string, students: number) => {
     const [loading, setLoading] = useState<boolean>(false);
@@ -23,12 +23,8 @@ export const useAssignmentOverview = (courseId: string, classId: string, periodI
 
             setLoading(true);
             try {
-                const [record, scale] = await Promise.all([
-                    getAssignmentOverview(courseId, classId, periodId, controller.signal),
-                    getClassScale(classId, controller.signal)
-                ]);
-
-                const { assessment_criteria, grades } = record;
+                const record = await getAssignmentOverview(courseId, classId, periodId, controller.signal);
+                const { assessment_criteria, grades, scale } = record;
 
                 const gradesByAssignment = new Map<string, any[]>();
 

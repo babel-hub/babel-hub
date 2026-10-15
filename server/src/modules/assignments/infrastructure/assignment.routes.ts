@@ -9,12 +9,14 @@ import { AssignmentService } from "../application/AssignmentService.js";
 
 import { PostgresGradeRepository } from "../../grade/infrastructure/PostgresGradeRepository.js";
 import { PostgresAssessmentRepository } from "../../assessmentCriteria/infrastructure/PostgresAssessmentRepository.js";
+import { PostgresScaleRepository } from "../../scales/infrastructure/PostgresScaleRepository.js";
 
 const assignmentRepository = new PostgresAssignmentRepository();
 const gradeRepository = new PostgresGradeRepository();
 const assessmentRepository = new PostgresAssessmentRepository();
+const scaleRepository = new PostgresScaleRepository();
 
-const service = new AssignmentService(assignmentRepository, gradeRepository, assessmentRepository);
+const service = new AssignmentService(assignmentRepository, gradeRepository, assessmentRepository, scaleRepository);
 const controller = new AssignmentController(service);
 
 const router: Router = Router();

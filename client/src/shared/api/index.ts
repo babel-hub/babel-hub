@@ -3,7 +3,7 @@ import type {
     Announcement,
     Area,
     CreateAnnouncementPayload,
-    Period,
+    Period, Scale,
     Teacher,
     UpdateAnnouncementPayload, UserSearch
 } from "../types/types.ts";
@@ -26,6 +26,10 @@ export const getAreas = async (): Promise<Area[]> => {
     return response.data.areas;
 }
 
+export const getScales = async (): Promise<Scale[]> => {
+    const response = await api.get(`/scales`);
+    return response.data.scales;
+}
 // Announcements
 
 export const getUsers = async (query: string): Promise<UserSearch[]> => {
@@ -60,4 +64,32 @@ export const updateAnnouncement = async (announcementId: string, payload: Omit<U
 
 export const deleteAnnouncement = async (announcementId: string): Promise<void> => {
     return await api.delete(`/announcements/${announcementId}`);
+}
+
+// Cumulative
+export const getCumulativeSummary = async (courseId: string, periodId: string) => {
+    const response = await api.get(`/api/cumulative/${courseId}/summary`, {
+        params: {
+            periodId
+        }
+    });
+    return response.data.summary;
+}
+
+export const getCumulativeGrades = async (courseId: string, periodId: string) => {
+    const response = await api.get(`/api/cumulative/${courseId}/grades`, {
+        params: {
+            periodId
+        }
+    });
+    return response.data.grades;
+}
+
+export const getCumulativeAttendance = async (courseId: string, periodId: string) => {
+    const response = await api.get(`/api/cumulative/${courseId}/attendance`, {
+        params: {
+            periodId
+        }
+    });
+    return response.data.attendance;
 }

@@ -3,9 +3,8 @@ import type { AssessmentCriteria, Grades } from "../../types";
 export type AttendanceStatus = 'absent' | 'late' | 'present' | 'excused' | 'no_data';
 export type modeTypes = 'create' | 'edit';
 export type TabTypes = 'students' | 'register attendance' | 'see attendance' | 'assignments';
-export type TabCumulativeTypes = 'attendance' | 'grades' | 'absents' | 'summary';
 
-export interface Scales {
+export interface Scale {
     id: string;
     name: string;
     min_value: number;
@@ -60,11 +59,5 @@ export interface StudentPeriodAttendance {
 export interface AssignmentsOverview {
     assessment_criteria: AssessmentCriteria[];
     grades: Grades[];
-}
-
-export interface CumulativeMetrics {
-    activeStudents: number;
-    overallAverage: number;
-    attendanceRate: number;
-    totalAbsences: number;
+    scale: Scale;
 }

@@ -1,14 +1,14 @@
 import DynamicModalForm, { type FormField } from "../../../../../components/ui/modals/ModalForm.tsx";
-import type { PeriodProps } from "../../types";
 import React, { useState } from "react";
 import { useUpsertPeriod } from "../../hooks/periods/useUpsertPeriod.ts";
 import type { modeTypes } from "../../../../types/types.ts";
+import type { Period } from "../../../../../shared/types/types.ts";
 
 interface periodFormModalProps {
     mode: modeTypes;
     onSuccess: () => void;
     onClose: () => void;
-    period: PeriodProps | undefined;
+    period: Period | null;
 }
 
 const periodFormItems: FormField[] = [
@@ -48,7 +48,7 @@ export function PeriodsFormModal({ mode, onSuccess, period, onClose }: periodFor
             name: formData.name.trim().toLowerCase(),
         };
 
-        await upsertPeriod(mode, period?.id, payload);
+        await upsertPeriod(mode, period ? period.id : null, payload);
     }
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

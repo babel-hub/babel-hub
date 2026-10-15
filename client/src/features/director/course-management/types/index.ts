@@ -73,32 +73,3 @@ export interface Payload {
     year: string;
     teacherId: string;
 }
-
-// Cumulative
-
-interface BaseAttendance {
-    present: number;
-    absent: number;
-    late: number;
-    excused: number;
-}
-
-export interface CumulativeAttendance extends BaseStudent, BaseAttendance {}
-
-export interface Subjects {
-    class_id: string;
-    subject_name: string;
-    final_grade: number;
-}
-
-export interface CumulativeGrades extends BaseStudent {
-    period_average: number | null;
-    subjects: Subjects[];
-}
-
-export interface CumulativeSummary extends BaseStudent {
-    period_average: number | null;
-    attendance_rate: number;
-    total_absences: number;
-    attendance: BaseAttendance;
-}

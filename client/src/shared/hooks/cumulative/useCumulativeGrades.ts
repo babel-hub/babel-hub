@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCumulativeGrades} from "../../api";
-import type {CumulativeGrades} from "../../types";
+import type { CumulativeGrades } from "../../types/types.ts";
 
 export const useCumulativeGrades = (courseId: string, periodId: string) => {
     const [loading, setLoading] = useState<boolean>(false);

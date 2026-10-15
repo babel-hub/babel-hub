@@ -15,6 +15,7 @@ interface BaseAttendance {
 
 interface Subjects {
     class_id: string;
+    scale_id: string;
     subject_name: string;
     final_grade: number;
 }

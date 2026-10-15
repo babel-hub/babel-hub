@@ -1,6 +1,6 @@
 import api from "../../../../../api/client.ts";
 import type { ClassDetailsData } from "../types";
-import type { ClassAttendance, Scales, CourseAttendance, AssignmentsOverview } from "../../../../types/types.ts";
+import type { ClassAttendance, CourseAttendance, AssignmentsOverview } from "../../../../types/types.ts";
 
 export const getTeacherClass = async (id: string, controller: any): Promise<ClassDetailsData> => {
     const response = await api.get(`/classes/${id}/teacher`, { signal: controller.signal });
@@ -59,11 +59,6 @@ export const deleteAssignment = async (assignmentId: string): Promise<void> => {
 }
 
 // Grade Endpoint
-
-export const getClassScale = async (classId: string, signal?: AbortSignal): Promise<Scales> => {
-    const records = await api.get(`/scales/class/${classId}`, { signal });
-    return records.data.scale;
-}
 
 export const bulkGrades = async (classId: string, assignmentId: string, payload: any): Promise<void> => {
     return await api.post(`/grades/class/${classId}/assignment/${assignmentId}`, {

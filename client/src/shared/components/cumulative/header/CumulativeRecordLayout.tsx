@@ -1,9 +1,9 @@
-import {LuClipboardCheck, LuClipboardPenLine, LuClipboardX, LuUsers} from "react-icons/lu";
+import { LuClipboardCheck, LuClipboardPenLine, LuClipboardX, LuUsers } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import React from "react";
-import ButtonChevronBack from "../../../../../../components/ui/buttons/ButtonChevrowBack.tsx";
-import type {CumulativeMetrics, TabCumulativeTypes} from "../../../../../types/types.ts";
-import { MetricButton } from "../../../../../../shared/components/cumulative/ui/MetricButton.tsx";
+import ButtonChevronBack from "../../../../components/ui/buttons/ButtonChevrowBack.tsx";
+import { MetricButton } from "../ui/MetricButton.tsx";
+import type { CumulativeMetrics, TabCumulativeTypes } from "../../../types/types.ts";
 
 interface CumulativeRecordLayoutProps {
     tab: TabCumulativeTypes;

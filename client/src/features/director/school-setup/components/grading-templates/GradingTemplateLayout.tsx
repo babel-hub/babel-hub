@@ -1,5 +1,4 @@
 import { useGradingTemplateData } from "../../hooks/grading-templates/useGradingTemplateData.ts";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import type { GradingTemplate } from "../../types";
 import type { ModalModeTypes } from "../../../../../types";
@@ -10,18 +9,12 @@ import { HiPlus } from "react-icons/hi";
 import { GradingTemplateRows } from "./GradingTemplateRows.tsx";
 
 export function GradingTemplateLayout() {
-    const navigate = useNavigate();
-
     const [gradingTemplateToEdit, setGradingTemplateToEdit] = useState<GradingTemplate | null>(null);
     const [gradingTemplateToDelete, setGradingTemplateToDelete] = useState<GradingTemplate | null>(null);
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
 
     const { gradingTemplates, refetch } = useGradingTemplateData();
     const { loadingDelete, deleteGradingTemplateById } = useDeleteGradingTemplate(refetch);
-
-    const handleNavigate = (id: string) => {
-        navigate(`grading-templates/${id}`);
-    }
 
     const handleDelete = (gradingTemplate: GradingTemplate) => {
         setGradingTemplateToDelete(gradingTemplate);
@@ -60,7 +53,6 @@ export function GradingTemplateLayout() {
                         gradingTemplate={gradingTemplate}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        navigate={handleNavigate}
                     />
                 ))}
             </ul>
