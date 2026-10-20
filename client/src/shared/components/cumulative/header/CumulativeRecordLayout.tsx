@@ -69,7 +69,7 @@ export function CumulativeRecordLayout({ children, tab, setTab, metrics, loading
                     onClick={() => setTab("absents")}
                     loading={loading}
                     icon={<LuClipboardX />}
-                    value={metrics.totalAbsences}
+                    value={0}
                     title="Faltas cometidas"
                     subtitle="Disminuyeron -"
                     skeletonDescriptionSize="w-10 h-3"

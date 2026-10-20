@@ -1,7 +1,7 @@
 import api from "../../api/client.ts";
 import type {
     Announcement,
-    Area,
+    Area, CoursePeriodTrend,
     CreateAnnouncementPayload,
     Period, Scale,
     Teacher,
@@ -67,6 +67,16 @@ export const deleteAnnouncement = async (announcementId: string): Promise<void> 
 }
 
 // Cumulative
+export const getPeriodTrends = async (courseId: string, periodId: string): Promise<CoursePeriodTrend[]> => {
+    const response = await api.get(`/api/cumulative/${courseId}/trend`, {
+        params: {
+            periodId
+        }
+    });
+    return response.data.trend;
+}
+
+
 export const getCumulativeSummary = async (courseId: string, periodId: string) => {
     const response = await api.get(`/api/cumulative/${courseId}/summary`, {
         params: {

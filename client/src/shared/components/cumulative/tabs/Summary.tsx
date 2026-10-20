@@ -1,16 +1,32 @@
-import type { CumulativeSummary } from "../../../types/types.ts";
+import type { CoursePeriodTrend, CumulativeSummary } from "../../../types/types.ts";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { reverseName } from "../../../../types";
+import { useScales } from "../../../hooks/useScales.ts";
+import { AttendanceDonut } from "../ui/AttendanceDonut.tsx";
+import { CourseTrendChart } from "../ui/CourseTrendChart.tsx";
+import { GradeDonut } from "../ui/GradeDonut.tsx";
 
 interface SummaryProps {
     summary: CumulativeSummary[];
+    trend: CoursePeriodTrend[];
     loading: boolean;
+    loadingTrend?: boolean;
 }
 
-export function Summary({ summary, loading }: SummaryProps) {
-    if (loading) return <LoadingContent title="" />;
-    if (!summary || summary.length === 0) return <NoResults title="No hay datos registrados para este curso en este periodo"/>;
+export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps) {
+    const { scales, loading: loadingScales } = useScales();
+
+    if (loading || loadingScales || loadingTrend) return <LoadingContent title="" />;
+    if (!summary || summary.length === 0) {
+        return (
+            <div className="px-4">
+                <NoResults title="No hay datos registrados para este curso en este periodo" />
+            </div>
+        );
+    }
+
+    const scalesById = new Map(scales?.map(s => [s.id, s]) ?? []);
 
     return (
         <div className="px-4 pb-4 grid grid-cols-5 gap-3">
@@ -45,36 +61,56 @@ export function Summary({ summary, loading }: SummaryProps) {
                             firstName: student.student_first_name,
                             firstLastName: student.student_first_last_name,
                             secondLastName: student.student_second_last_name
-                        })
+                        });
 
-                        const avg = student.period_average ?? 0;
-                        const isFailing = avg > 0 && avg < 3.0;
+                        const scale = student.scale_id
+                            ? scalesById.get(student.scale_id)
+                            : undefined;
+
+                        const avg = student.period_average;
+                        const passing = scale?.passing_value;
+                        const max = scale?.max_value;
+
+                        const isOutOfRange =
+                            avg != null && max != null && avg > max;
+
+                        const isFailing =
+                            avg != null && avg > 0 && passing != null && avg < passing;
 
                         const attRate = student.attendance_rate ?? 0;
-                        const attColor = attRate >= 90
-                            ? 'text-green-700'
-                            : attRate >= 80
-                                ? 'text-yellow-700'
-                                : 'text-red-700';
+                        const attColor =
+                            attRate >= 90 ? "text-green-700"
+                                : attRate >= 80 ? "text-yellow-700"
+                                    : "text-red-700";
 
                         return (
                             <tr
                                 key={student.student_id}
                                 className={`bg-white border-b border-gray-100 hover:bg-gray-50 transition-colors ${index === summary.length - 1 ? 'border-b-0' : ''}`}
                             >
-                                <th scope="row" className="px-2 py-3 font-semibold text-custom-black whitespace-nowrap sticky left-0 bg-inherit shadow-[1px_0_0_0_#e5e7eb] capitalize">
+                                <th scope="row" className="px-2 py-3 font-semibold text-custom-black whitespace-nowrap sticky left-0 bg-inherit capitalize">
                                     {fullName}
                                 </th>
 
                                 <td className="px-2 py-3 text-center">
-                                    {student.period_average ? (
-                                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-bold ${isFailing ? 'bg-red-50 text-red-600' : 'bg-primary/10 text-primary'}`}>
-                                                {student.period_average.toFixed(2)}
-                                            </span>
+                                    {avg != null && avg > 0 ? (
+                                        <span
+                                            className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-bold ${
+                                                isOutOfRange
+                                                    ? "bg-amber-50 text-amber-700"
+                                                    : isFailing
+                                                        ? "bg-red-50 text-red-600"
+                                                        : "bg-primary-shadow text-primary"
+                                            }`}
+                                            title={isOutOfRange ? "Promedio fuera de la escala — datos inconsistentes" : undefined}
+                                        >
+                                            {isOutOfRange ? "⚠ " : ""}{avg.toFixed(2)}
+                                        </span>
                                     ) : (
                                         <span className="text-gray-300">-</span>
                                     )}
                                 </td>
+
 
                                 <td className="px-2 py-3 text-center">
                                         <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${attColor}`}>
@@ -102,9 +138,27 @@ export function Summary({ summary, loading }: SummaryProps) {
                 </table>
             </div>
 
-            <div className="w-full h-auto col-span-2 flex flex-col gap-3">
-                <div className="border rounded-xl border-gray-200 h-full p-2"></div>
-                <div className="border rounded-xl border-gray-200 h-full p-2"></div>
+            <div className="col-span-2">
+                <div className="sticky top-0 max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar flex flex-col gap-3 pr-1">
+                    <div className="border rounded-xl border-gray-200 p-3 h-[230px] flex flex-col shrink-0">
+                        <h3 className="text-sm font-semibold shrink-0">Asistencia del curso</h3>
+                        <div className="flex-1 min-h-0">
+                            <AttendanceDonut summary={summary} />
+                        </div>
+                    </div>
+                    <div className="border rounded-xl border-gray-200 p-3 h-[230px] flex flex-col shrink-0">
+                        <h3 className="text-sm font-semibold shrink-0">Nivel de desempeño del curso</h3>
+                        <div className="flex-1 min-h-0">
+                            <GradeDonut summary={summary} />
+                        </div>
+                    </div>
+                    <div className="border rounded-xl border-gray-200 p-3 h-[300px] flex flex-col shrink-0">
+                        <h3 className="text-sm font-semibold shrink-0 mb-2">Tendencia del curso</h3>
+                        <div className="flex-1 min-h-0">
+                            <CourseTrendChart trend={trend} />
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

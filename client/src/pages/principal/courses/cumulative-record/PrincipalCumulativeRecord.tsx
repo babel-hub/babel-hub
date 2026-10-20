@@ -5,6 +5,7 @@ import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import type { CumulativeMetrics, TabCumulativeTypes } from "../../../../shared/types/types.ts";
 import { useCumulativeSummary } from "../../../../shared/hooks/cumulative/useCumulativeSummary.ts";
+import { useCoursePeriodTrend } from "../../../../shared/hooks/cumulative/useCoursePeriodTrend.ts";
 
 import { CumulativeRecordLayout, Grades, Absents, Summary, Attendance } from "../../../../shared/components/cumulative";
 
@@ -20,10 +21,8 @@ export default function PrincipalCumulativeRecord() {
         setSelectedPeriodId(active.id);
     }, [periods, selectedPeriodId]);
 
-    const { summary, loading } = useCumulativeSummary(
-        courseId ?? "",
-        selectedPeriodId
-    );
+    const { summary, loading } = useCumulativeSummary(courseId ?? "", selectedPeriodId);
+    const { trend, loading: loadingTrend } = useCoursePeriodTrend(courseId ?? "", selectedPeriodId)
 
     const metrics = useMemo<CumulativeMetrics>(() => {
         if (!summary?.length) {
@@ -45,12 +44,19 @@ export default function PrincipalCumulativeRecord() {
 
     return (
         <CumulativeRecordLayout
-            loading={loading}
+            loading={loading || loadingTrend}
             tab={tab}
             setTab={setTab}
             metrics={metrics}
         >
-            {tab === "summary" && <Summary loading={loading} summary={summary} />}
+            {tab === "summary" && (
+                <Summary
+                    loading={loading}
+                    summary={summary}
+                    trend={trend}
+                    loadingTrend={loadingTrend}
+                />
+            )}
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
             {tab === "absents" && <Absents />}
             {tab === "attendance" && <Attendance />}

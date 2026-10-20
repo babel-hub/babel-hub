@@ -1,14 +1,97 @@
 import type { ICumulativeRepository } from "../domain/ICumulativeRepository.js";
 import type {
+    CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
-    CumulativeSummary,
+    CumulativeSummary, GetCourseTrendPayload,
     GetCumulativeRecordPayload
 } from "../domain/Cumulative.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 
 export class PostgresCumulativeRepository implements ICumulativeRepository {
+    async getCoursePeriodTrend(payload: GetCourseTrendPayload, authUser: AuthUser): Promise<CoursePeriodTrend[]> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            const query = `
+                WITH CourseStudents AS (
+                    SELECT s.id AS student_id
+                    FROM student s
+                    JOIN profile p ON s.profile_id = p.id
+                    WHERE s.course_id = $1
+                      AND p.school_id = $3
+                      AND p.is_active = true
+                ),
+                CourseClasses AS (
+                    SELECT c.id AS class_id
+                    FROM class c
+                    JOIN course co ON c.course_id = co.id
+                    WHERE c.course_id = $1
+                      AND co.school_id = $3
+                      AND c.is_active = true
+                ),
+                PeriodsInScope AS (
+                    SELECT p.id, p.name, p.start_date
+                    FROM academic_period p
+                    WHERE p.school_id = $3
+                      AND p.start_date <= (
+                          SELECT end_date FROM academic_period WHERE id = $2 AND school_id = $3
+                      )
+                ),
+                AssessmentAverages AS (
+                    SELECT
+                        a.period_id,
+                        g.student_id,
+                        a.class_id,
+                        asmt.id AS assessment_id,
+                        asmt.weight,
+                        AVG(g.value) AS assessment_avg
+                    FROM grade g
+                    JOIN assignment a ON g.assignment_id = a.id
+                    JOIN assessment_criteria asmt ON a.assessment_criteria_id = asmt.id
+                    WHERE a.class_id IN (SELECT class_id FROM CourseClasses)
+                      AND a.period_id IN (SELECT id FROM PeriodsInScope)
+                      AND g.student_id IN (SELECT student_id FROM CourseStudents)
+                    GROUP BY a.period_id, g.student_id, a.class_id, asmt.id, asmt.weight
+                ),
+                SubjectFinalGrades AS (
+                    SELECT
+                        period_id,
+                        student_id,
+                        class_id,
+                        SUM(assessment_avg * (weight / 100.0)) AS final_grade
+                    FROM AssessmentAverages
+                    GROUP BY period_id, student_id, class_id
+                ),
+                StudentPeriodAverages AS (
+                    SELECT
+                        period_id,
+                        student_id,
+                        AVG(final_grade) AS student_average
+                    FROM SubjectFinalGrades
+                    GROUP BY period_id, student_id
+                )
+                SELECT
+                    p.id            AS period_id,
+                    p.name          AS period_name,
+                    p.start_date    AS period_start,
+                    ROUND(AVG(spa.student_average)::numeric, 2)::float AS course_average,
+                    COUNT(spa.student_id)::int AS graded_students
+                FROM PeriodsInScope p
+                LEFT JOIN StudentPeriodAverages spa ON spa.period_id = p.id
+                GROUP BY p.id, p.name, p.start_date
+                ORDER BY p.start_date;
+            `
+
+            const result = await client.query(query, [payload.courseId, payload.currentPeriodId, userSchoolId]);
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
     async getCumulativeGrades(payload: GetCumulativeRecordPayload, autUser: AuthUser): Promise<CumulativeGrades[]> {
         const { userSchoolId } = autUser;
         const client = await pool.connect();

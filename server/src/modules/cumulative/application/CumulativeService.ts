@@ -1,8 +1,9 @@
 import type { ICumulativeRepository } from "../domain/ICumulativeRepository.js";
 import type {
+    CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
-    CumulativeSummary,
+    CumulativeSummary, GetCourseTrendPayload,
     GetCumulativeRecordPayload
 } from "../domain/Cumulative.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
@@ -16,6 +17,17 @@ export class CumulativeService {
         if (!payload.courseId || !payload.periodId) {
             throw new ValidationError("El id del curso o del periodo son inválidos");
         }
+    }
+
+    async getCoursePeriodTrend(
+        payload: GetCourseTrendPayload,
+        authUser: AuthUser
+    ): Promise<CoursePeriodTrend[]> {
+        const auth = requireAuth(authUser);
+        if (!payload.courseId) throw new ValidationError("El ID del curso es obligatorio");
+        if (!payload.currentPeriodId) throw new ValidationError("El ID del periodo es obligatorio");
+
+        return this.cumulativeRepository.getCoursePeriodTrend(payload, auth);
     }
 
     async getCumulativeSummary(
@@ -46,6 +58,18 @@ export class CumulativeService {
                 ? Math.round((present / total) * 100)
                 : 0;
 
+            const subjects = g.subjects ?? [];
+            const distinctScales = new Set(subjects.map(s => s.scale_id));
+
+            if (distinctScales.size > 1) {
+                console.error(
+                    `[DATA INTEGRITY] Student ${g.student_id} has subjects on mixed scales, this are the scales:`,
+                    [...distinctScales],
+                );
+            }
+
+            const scale_id = subjects[0]?.scale_id ?? null;
+
             return {
                 student_id: g.student_id,
                 student_first_name: g.student_first_name,
@@ -53,6 +77,7 @@ export class CumulativeService {
                 student_first_last_name: g.student_first_last_name,
                 student_second_last_name: g.student_second_last_name,
                 period_average: g.period_average,
+                scale_id,
                 attendance_rate,
                 total_absences: absent,
                 attendance: { present, absent, late, excused },

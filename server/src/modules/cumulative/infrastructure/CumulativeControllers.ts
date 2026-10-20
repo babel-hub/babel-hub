@@ -8,6 +8,22 @@ export class CumulativeControllers {
         private readonly cumulativeService: CumulativeService
     ) {}
 
+    getCoursePeriodTrend = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const auth = getAuthUser(request);
+            const courseId = request.params.courseId as string;
+            const currentPeriodId = request.query.periodId as string;
+
+            const trend = await this.cumulativeService.getCoursePeriodTrend(
+                { courseId, currentPeriodId },
+                auth
+            );
+            response.status(200).json({ trend });
+        } catch (error) {
+            next(error);
+        }
+    };
+
     getCumulativeGrades = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const auth = getAuthUser(request);

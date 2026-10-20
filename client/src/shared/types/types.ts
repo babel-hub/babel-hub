@@ -113,7 +113,16 @@ export interface CumulativeGrades extends BaseStudent {
 
 export interface CumulativeSummary extends BaseStudent {
     period_average: number | null;
+    scale_id: string | null;
     attendance_rate: number;
     total_absences: number;
     attendance: BaseAttendance;
+}
+
+export interface CoursePeriodTrend {
+    period_id: string;
+    period_name: string;
+    period_start: string;
+    course_average: number | null;
+    graded_students: number;
 }

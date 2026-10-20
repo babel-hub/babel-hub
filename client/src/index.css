@@ -135,8 +135,8 @@ select {
 /*------------ toggle button ---------------- */
 
 .container-toggle {
-    width: 51px;
-    height: 31px;
+    width: 35px;
+    height: 20px;
     position: relative;
 }
 
@@ -158,14 +158,13 @@ select {
 }
 
 .slider {
-    width: 27px;
-    height: 27px;
+    width: 17px;
+    height: 17px;
     position: absolute;
-    left: calc(50% - 27px/2 - 10px);
-    top: calc(50% - 27px/2);
+    left: calc(50% - 32px/2);
+    top: calc(50% - 17px/2);
     border-radius: 50%;
     background: #FFFFFF;
-    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
     transition: all 0.2s ease-out;
     cursor: pointer;
 }
@@ -175,6 +174,6 @@ select {
 }
 
 .checkbox:checked + .switch .slider {
-    left: calc(50% - 27px/2 + 10px);
-    top: calc(50% - 27px/2);
+    left: calc(50% - 27px/2 + 12px);
+    top: calc(50% - 17px/2);
 }

@@ -21,6 +21,13 @@ router.get(
 );
 
 router.get(
+    "/:courseId/trend",
+    authMiddleware,
+    authorizedRoles(["principal", "teacher"]),
+    controllers.getCoursePeriodTrend
+);
+
+router.get(
     '/:courseId/grades',
     authMiddleware,
     authorizedRoles(['principal', 'teacher']),
