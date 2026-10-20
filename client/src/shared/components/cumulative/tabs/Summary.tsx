@@ -43,14 +43,14 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
                         <th scope="col" className="p-2 min-w-[140px] text-center">
                             Tasa de Asistencia
                         </th>
-                        <th scope="col" className="p-2 min-w-[100px] text-center">
-                            Faltas
+                        <th scope="col" className="p-2 text-center">
+                            I
                         </th>
-                        <th scope="col" className="p-2 min-w-[100px] text-center">
-                            Retardos
+                        <th scope="col" className="p-2 text-center">
+                            R
                         </th>
-                        <th scope="col" className="p-2 min-w-[100px] text-center">
-                            Excusas
+                        <th scope="col" className="p-2 text-center">
+                            E
                         </th>
                     </tr>
                     </thead>
