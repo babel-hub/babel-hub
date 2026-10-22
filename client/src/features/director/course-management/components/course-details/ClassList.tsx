@@ -28,7 +28,7 @@ export const ClassList = memo(function ClassList({
                 </button>
             </div>
 
-            <ul className="divide-y w-full divide-gray-100 max-h-[300px] overflow-y-auto">
+            <ul className="divide-y w-full divide-gray-100 max-h-[300px] styled-scrollbar overflow-y-auto">
                 {classes.map((cls) => (
                     <CourseDetailsClassRows
                         key={cls.class_id}

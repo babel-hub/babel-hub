@@ -1,21 +1,17 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import type { CumulativeSummary } from "../../../types/types.ts";
 
-interface AttendanceDonutProps {
-    summary: CumulativeSummary[];
+export interface AttendanceTotals {
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
 }
 
-export function AttendanceDonut({ summary }: AttendanceDonutProps) {
-    const totals = summary.reduce(
-        (acc, s) => ({
-            present: acc.present + s.attendance.present,
-            absent:  acc.absent  + s.attendance.absent,
-            late:    acc.late    + s.attendance.late,
-            excused: acc.excused + s.attendance.excused,
-        }),
-        { present: 0, absent: 0, late: 0, excused: 0 }
-    );
+interface AttendanceDonutProps {
+    totals: AttendanceTotals;
+}
 
+export function AttendanceDonut({ totals }: AttendanceDonutProps) {
     const total = totals.present + totals.absent + totals.late + totals.excused;
     const rate = total > 0 ? Math.round((totals.present / total) * 100) : 0;
 
@@ -29,13 +25,14 @@ export function AttendanceDonut({ summary }: AttendanceDonutProps) {
     if (total === 0) {
         return (
             <div className="flex items-center justify-center h-full text-sm text-gray-400">
-                Sin asistencias registradas
+                Sin registros de asistencia
             </div>
         );
     }
 
     return (
         <div className="w-full h-full flex gap-3">
+            {/* Donut */}
             <div className="relative w-1/2 h-full shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -63,26 +60,19 @@ export function AttendanceDonut({ summary }: AttendanceDonutProps) {
                 </div>
             </div>
 
+            {/* Legend */}
             <ul className="flex-1 flex flex-col justify-center gap-2 min-w-0">
                 {data.map((item) => {
                     const pct = Math.round((item.value / total) * 100);
                     return (
-                        <li
-                            key={item.name}
-                            className="flex items-center justify-between gap-2 text-xs"
-                        >
+                        <li key={item.name} className="flex items-center justify-between gap-2 text-xs">
                             <div className="flex items-center gap-2 min-w-0">
-                                <span
-                                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                                    style={{ backgroundColor: item.color }}
-                                />
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                                 <span className="text-gray-600 truncate">{item.name}</span>
                             </div>
                             <span className="font-semibold text-gray-800 tabular-nums shrink-0">
                                 {item.value}
-                                <span className="text-gray-400 font-normal ml-1">
-                                    ({pct}%)
-                                </span>
+                                <span className="text-gray-400 font-normal ml-1">({pct}%)</span>
                             </span>
                         </li>
                     );

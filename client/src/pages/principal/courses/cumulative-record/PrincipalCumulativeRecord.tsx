@@ -59,7 +59,7 @@ export default function PrincipalCumulativeRecord() {
             )}
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
             {tab === "absents" && <Absents />}
-            {tab === "attendance" && <Attendance />}
+            {tab === "attendance" && <Attendance courseId={courseId} periodId={selectedPeriodId} />}
         </CumulativeRecordLayout>
     );
 }

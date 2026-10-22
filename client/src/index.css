@@ -26,11 +26,11 @@
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: #a391fa; /* Color on hover */
+        background: #a391fa;
     }
 
     scrollbar-width: thin;
-    scrollbar-color: #ffffff transparent;
+    scrollbar-color: rgba(161, 143, 250, 0.5) transparent;
 }
 
 

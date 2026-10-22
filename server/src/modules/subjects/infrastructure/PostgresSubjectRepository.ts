@@ -3,7 +3,7 @@ import type {
     AvailableSubjects,
     CreateSubject,
     CreateSubjectPayload, GetAvailableSubjectsPayload,
-    GetSubjectsByAreaPayload,
+    GetSubjectsByAreaPayload, SubjectById,
     SubjectDetails, UpdateSubjectPayload
 } from "../domain/Subjects.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
@@ -12,6 +12,25 @@ import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresSubjectRepository implements ISubjectsRepository {
+    async getSubjectById(subjectId: string, authUser: AuthUser): Promise<SubjectById | null> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const query = `
+                SELECT
+                    s.id,
+                    s.grading_template_id
+                FROM subject s
+                         JOIN area a ON s.area_id = a.id
+                WHERE s.id = $1 AND a.school_id = $2
+            `;
+
+            const result = await client.query(query, [subjectId, userSchoolId]);
+            return result.rows[0] ?? null;
+        } finally {
+            client.release();
+        }
+    }
 
     async getSubjectsByArea(payload: GetSubjectsByAreaPayload, authUser: AuthUser): Promise<SubjectDetails[]> {
         const { subjectAreaId } = payload;

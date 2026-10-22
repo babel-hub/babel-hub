@@ -6,9 +6,11 @@ import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 import { PostgresSubjectRepository } from "./PostgresSubjectRepository.js";
 import { SubjectServices } from "../application/SubjectServices.js";
 import { SubjectControllers } from "./SubjectControllers.js";
+import {PostgresAssignmentRepository} from "../../assignments/infrastructure/PostgersAssigmentRepository.js";
 
-const repository = new PostgresSubjectRepository();
-const service = new SubjectServices(repository);
+const subjectRepository = new PostgresSubjectRepository();
+const assignmentRepository = new PostgresAssignmentRepository();
+const service = new SubjectServices(subjectRepository, assignmentRepository);
 const controller = new SubjectControllers(service);
 
 const router: Router = Router();

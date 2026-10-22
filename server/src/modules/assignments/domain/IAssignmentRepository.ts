@@ -7,6 +7,7 @@ import type {
 
 export interface IAssignmentRepository {
     getAssignmentsOverview(payload: GetAssignmentsOverviewPayload, authUser: AuthUser): Promise<Assignments[]>;
+    hasAssignmentsForSubject(subjectId: string): Promise<boolean>;
     getAssignmentsByTeacherAndDate(teacherProfileId: string, startDate: string, endDate: string, authUser: AuthUser): Promise<AssignmentsByTeacherAndDate[]>;
     getAssignmentOwner(assignmentId: string, authUser: AuthUser): Promise<string | null>;
     createAssignment(payload: CreateAssignmentPayload, authUser: AuthUser): Promise<void>;

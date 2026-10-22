@@ -46,17 +46,16 @@ export function Grades({ courseId, periodId }: GradesProps) {
     const scalesById = new Map(scales.map(s => [s.id, s]));
 
     return (
-        <div className="px-4 py-2 h-full flex flex-col">
+        <div className="px-4 pb-2 h-full flex flex-col">
             <div className="w-full flex gap-2 items-center justify-between mb-3 shrink-0">
                 <div className="w-full max-w-xs">
                     <CustomSelect
                         options={opt}
                         value={viewMode}
-                        onChange={(val) => setViewMode(val as string)} // <-- Wire up onChange
+                        onChange={(val) => setViewMode(val as string)}
                     />
                 </div>
 
-                {/* Hide the color map toggle if we are on the radar chart */}
                 {viewMode === "table" && (
                     <div className="relative">
                         <button
@@ -90,31 +89,29 @@ export function Grades({ courseId, periodId }: GradesProps) {
                 )}
             </div>
 
-            {/* CONDITIONAL RENDERING */}
             {viewMode === "radar" ? (
-                <div className="flex-1 min-h-[400px] border md:rounded-xl border-gray-200 bg-white">
+                <div className="flex-1 max-h-[calc(100dvh-17rem)] md:rounded-xl bg-white">
                     <CourseRadarChart grades={grades} scalesById={scalesById} />
                 </div>
             ) : (
                 <div className="relative min-w-md overflow-x-auto no-scrollbar md:rounded-xl border border-gray-200 flex-1">
                     <table className="w-full text-sm text-left text-gray-600">
-                        {/* ... Keep your exact same table code here ... */}
                         <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
-                        <tr>
-                            <th scope="col" className="p-3 sticky left-0 bg-gray-100 z-20 min-w-3xs">
-                                Estudiante
-                            </th>
-
-                            {subjectHeaders.map((subjectName, index) => (
-                                <th key={index} scope="col" className="py-3 px-2 capitalize text-center">
-                                    {subjectName.slice(0, 3)}
+                            <tr>
+                                <th scope="col" className="p-2 sticky left-0 bg-gray-100 z-20 min-w-3xs">
+                                    Estudiante
                                 </th>
-                            ))}
 
-                            <th scope="col" className="py-3 px-2 text-center bg-primary-darker text-white font-bold sticky right-0 z-20">
-                                Promedio
-                            </th>
-                        </tr>
+                                {subjectHeaders.map((subjectName, index) => (
+                                    <th key={index} scope="col" className="p-2 capitalize text-center">
+                                        {subjectName.slice(0, 3)}
+                                    </th>
+                                ))}
+
+                                <th scope="col" className="p-2 text-center bg-primary-darker text-white font-bold sticky right-0 z-20">
+                                    Promedio
+                                </th>
+                            </tr>
                         </thead>
                         <tbody>
                         {grades.map((student, index) => {

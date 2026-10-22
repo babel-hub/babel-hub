@@ -43,7 +43,6 @@ export function CourseRadarChart({ grades, scalesById }: CourseRadarChartProps) 
     const scale = scalesById.get(firstScaleId);
     const maxDomain = scale ? Number(scale.max_value) : 5; // fallback to 5
 
-    // Clamp the values for the chart so a 10.1 doesn't draw outside the radar grid
     const chartData = data.map(d => ({
         ...d,
         visualAverage: Math.min(d.average, maxDomain)
@@ -86,18 +85,20 @@ export function CourseRadarChart({ grades, scalesById }: CourseRadarChartProps) 
                 </ResponsiveContainer>
             </div>
 
-            <div className="flex-1 h-full overflow-y-auto no-scrollbar pr-2 flex flex-col justify-center">
-                <ul className="flex flex-col gap-1.5">
+            <div className="flex-1 h-full overflow-y-auto styled-scrollbar pr-2 flex flex-col justify-center">
+                <ul className="flex flex-col gap-1">
                     {data.map((item) => {
                         const isOverMax = item.average > maxDomain;
                         return (
                             <li
                                 key={item.subject}
-                                className="flex items-center justify-between text-base border-b border-gray-100 last:border-0 pb-1.5 last:pb-0"
+                                className="flex items-center p-2 rounded-xl justify-between text-base hover:bg-gray-50"
                             >
-                                <span className="text-gray-600 capitalize truncate mr-2">
+                                <div className="flex items-center gap-1">
+                                    <span className="text-gray-600 capitalize truncate mr-2">
                                     {item.subject}
                                 </span>
+                                </div>
                                 <span className={`font-semibold tabular-nums shrink-0 ${isOverMax ? 'text-red-500' : 'text-gray-800'}`}>
                                     {item.average.toFixed(2)}
                                 </span>

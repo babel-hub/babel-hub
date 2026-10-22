@@ -2,7 +2,7 @@ import api from "../../api/client.ts";
 import type {
     Announcement,
     Area, CoursePeriodTrend,
-    CreateAnnouncementPayload,
+    CreateAnnouncementPayload, CumulativeAttendance, CumulativeGrades, CumulativeSummary,
     Period, Scale,
     Teacher,
     UpdateAnnouncementPayload, UserSearch
@@ -77,7 +77,7 @@ export const getPeriodTrends = async (courseId: string, periodId: string): Promi
 }
 
 
-export const getCumulativeSummary = async (courseId: string, periodId: string) => {
+export const getCumulativeSummary = async (courseId: string, periodId: string): Promise<CumulativeSummary[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/summary`, {
         params: {
             periodId
@@ -86,7 +86,7 @@ export const getCumulativeSummary = async (courseId: string, periodId: string) =
     return response.data.summary;
 }
 
-export const getCumulativeGrades = async (courseId: string, periodId: string) => {
+export const getCumulativeGrades = async (courseId: string, periodId: string): Promise<CumulativeGrades[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/grades`, {
         params: {
             periodId
@@ -95,7 +95,7 @@ export const getCumulativeGrades = async (courseId: string, periodId: string) =>
     return response.data.grades;
 }
 
-export const getCumulativeAttendance = async (courseId: string, periodId: string) => {
+export const getCumulativeAttendance = async (courseId: string, periodId: string): Promise<CumulativeAttendance[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/attendance`, {
         params: {
             periodId

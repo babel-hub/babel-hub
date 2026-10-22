@@ -15,7 +15,7 @@ const COLORS = {
 
 export function GradeDonut({ summary }: GradeDonutProps) {
     const { scales } = useScales();
-    const gradedStudents = summary.filter(s => s.period_average != null && s.period_average > 0);
+    const gradedStudents = summary.filter(s => s.period_average != null);
 
     if (gradedStudents.length === 0) {
         return (

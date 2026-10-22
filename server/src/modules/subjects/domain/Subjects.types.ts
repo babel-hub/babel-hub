@@ -11,6 +11,11 @@ export interface CreateSubject {
     id: string;
 }
 
+export interface SubjectById {
+    id: string;
+    grading_template_id: string;
+}
+
 export interface AvailableSubjects {
     id: string;
     name: string;

@@ -26,6 +26,16 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
         );
     }
 
+    const totals = summary.reduce(
+        (acc, s) => ({
+            present: acc.present + s.attendance.present,
+            absent:  acc.absent  + s.attendance.absent,
+            late:    acc.late    + s.attendance.late,
+            excused: acc.excused + s.attendance.excused,
+        }),
+        { present: 0, absent: 0, late: 0, excused: 0 }
+    );
+
     const scalesById = new Map(scales?.map(s => [s.id, s]) ?? []);
 
     return (
@@ -113,21 +123,18 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
 
 
                                 <td className="px-2 py-3 text-center">
-                                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${attColor}`}>
-                                            {attRate}%
-                                        </span>
+                                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${attColor}`}>
+                                        {attRate}%
+                                    </span>
                                 </td>
-
                                 <td className="px-2 py-3 text-center font-medium">
-                                        <span className={student.total_absences > 3 ? "text-red-500" : "text-gray-600"}>
-                                            {student.total_absences}
-                                        </span>
+                                    <span className={student.total_absences > 3 ? "text-red-500" : "text-gray-600"}>
+                                        {student.total_absences}
+                                    </span>
                                 </td>
-
                                 <td className="px-2 py-3 text-center text-gray-500">
                                     {student.attendance?.late || 0}
                                 </td>
-
                                 <td className="px-2 py-3 text-center text-gray-500">
                                     {student.attendance?.excused || 0}
                                 </td>
@@ -139,11 +146,11 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
             </div>
 
             <div className="col-span-2">
-                <div className="sticky top-0 max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar flex flex-col gap-3 pr-1">
+                <div className="flex flex-col gap-3">
                     <div className="border rounded-xl border-gray-200 p-3 h-[230px] flex flex-col shrink-0">
                         <h3 className="text-sm font-semibold shrink-0">Asistencia del curso</h3>
                         <div className="flex-1 min-h-0">
-                            <AttendanceDonut summary={summary} />
+                            <AttendanceDonut totals={totals} />
                         </div>
                     </div>
                     <div className="border rounded-xl border-gray-200 p-3 h-[230px] flex flex-col shrink-0">

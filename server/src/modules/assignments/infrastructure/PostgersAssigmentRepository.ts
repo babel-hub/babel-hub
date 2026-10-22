@@ -14,6 +14,23 @@ import { createAuditLog } from "../../../services/audit.service.js";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresAssignmentRepository implements IAssignmentRepository {
+    async hasAssignmentsForSubject(subjectId: string): Promise<boolean> {
+        const client = await pool.connect();
+        try {
+            const query = `
+                SELECT 1
+                FROM assignment a
+                         JOIN class c ON a.class_id = c.id
+                WHERE c.subject_id = $1
+                    LIMIT 1
+            `;
+
+            const result = await client.query(query, [subjectId]);
+            return (result.rowCount ?? 0) > 0;
+        } finally {
+            client.release();
+        }
+    }
 
     async getAssignmentsOverview(
         payload: GetAssignmentsOverviewPayload,

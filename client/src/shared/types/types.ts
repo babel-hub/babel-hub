@@ -82,14 +82,6 @@ interface BaseStudent {
     student_second_last_name: string | null;
 }
 
-
-export interface CumulativeMetrics {
-    activeStudents: number;
-    overallAverage: number;
-    attendanceRate: number;
-    totalAbsences: number;
-}
-
 interface BaseAttendance {
     present: number;
     absent: number;
@@ -98,6 +90,13 @@ interface BaseAttendance {
 }
 
 export interface CumulativeAttendance extends BaseStudent, BaseAttendance {}
+
+export interface CumulativeMetrics {
+    activeStudents: number;
+    overallAverage: number;
+    attendanceRate: number;
+    totalAbsences: number;
+}
 
 export interface Subjects {
     class_id: string;

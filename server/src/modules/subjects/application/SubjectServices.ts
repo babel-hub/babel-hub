@@ -7,11 +7,15 @@ import type {
     SubjectDetails, UpdateSubjectPayload
 } from "../domain/Subjects.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import {ConflictError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
+import type { IAssignmentRepository } from "../../assignments/domain/IAssignmentRepository.js";
 
 export class SubjectServices {
-    constructor(private readonly subjectRepository: ISubjectsRepository) {}
+    constructor(
+        private readonly subjectRepository: ISubjectsRepository,
+        private assignmentRepository: IAssignmentRepository
+    ) {}
 
     private validate(payload: CreateSubjectPayload): void {
         if (!payload.subjectName?.trim() || !payload.subjectAreaId?.trim() || !payload.gradingTemplateId?.trim()) {
@@ -45,9 +49,21 @@ export class SubjectServices {
         const auth = requireAuth(authUser);
         if (!payload.subjectId) throw new ValidationError("El ID de la asignatura es obligatorio");
         this.validate(payload);
+
+        const currentSubject = await this.subjectRepository.getSubjectById(payload.subjectId, auth);
+        if (!currentSubject) {
+            throw new NotFoundError("La asignatura no existe o no pertenece a este colegio.");
+        }
+
+        if (currentSubject.grading_template_id !== payload.gradingTemplateId) {
+            const hasAssignments = await this.assignmentRepository.hasAssignmentsForSubject(payload.subjectId);
+            if (hasAssignments) {
+                throw new ConflictError("No se puede cambiar la plantilla de evaluación porque hay asignaciones creadas. Elimine las asignaciones primero.");
+            }
+        }
+
         await this.subjectRepository.updateSubject(payload, auth);
     }
-
     async deleteSubject(subjectId: string, authUser: AuthUser): Promise<void> {
         const auth = requireAuth(authUser);
         if (!subjectId) throw new ValidationError("El ID de la asignatura es obligatorio");
