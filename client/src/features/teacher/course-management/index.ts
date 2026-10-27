@@ -1,0 +1,1 @@
+export { TeacherCourseLayout } from "./components/TeacherCourseLayout.tsx"

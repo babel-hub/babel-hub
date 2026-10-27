@@ -2,7 +2,7 @@ import { getCourses } from "../../api";
 import type { CoursesListData } from "../../types";
 import { useQuery } from '@tanstack/react-query';
 
-export const useCourseData = () => {
+export const useCourses = () => {
     const {
         data: courses = [],
         isLoading: loading,

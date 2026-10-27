@@ -16,7 +16,7 @@ import { usePeriods } from "../../../shared/hooks/usePeriods.ts";
 import {NoResults} from "../../../components/ui/blocks/NoResults.tsx";
 
 export default function ClassDetails() {
-    const { id: classId } = useParams();
+    const { classId } = useParams();
     const { periods } = usePeriods();
 
     if (!classId) return null;

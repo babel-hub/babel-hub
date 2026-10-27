@@ -7,7 +7,14 @@ import type { CumulativeMetrics, TabCumulativeTypes } from "../../../../shared/t
 import { useCumulativeSummary } from "../../../../shared/hooks/cumulative/useCumulativeSummary.ts";
 import { useCoursePeriodTrend } from "../../../../shared/hooks/cumulative/useCoursePeriodTrend.ts";
 
-import { CumulativeRecordLayout, Grades, Absents, Summary, Attendance } from "../../../../shared/components/cumulative";
+import {
+    CumulativeRecordLayout,
+    Grades,
+    Absents,
+    Summary,
+    Attendance,
+    Reports
+} from "../../../../shared/components/cumulative";
 
 export default function PrincipalCumulativeRecord() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -60,6 +67,7 @@ export default function PrincipalCumulativeRecord() {
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
             {tab === "absents" && <Absents />}
             {tab === "attendance" && <Attendance courseId={courseId} periodId={selectedPeriodId} />}
+            {tab === "reports" && <Reports courseId={courseId} />}
         </CumulativeRecordLayout>
     );
 }

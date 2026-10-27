@@ -4,6 +4,7 @@ import React from "react";
 import ButtonChevronBack from "../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { MetricButton } from "../ui/MetricButton.tsx";
 import type { CumulativeMetrics, TabCumulativeTypes } from "../../../types/types.ts";
+import { TbReportAnalytics } from "react-icons/tb";
 
 interface CumulativeRecordLayoutProps {
     tab: TabCumulativeTypes;
@@ -72,6 +73,18 @@ export function CumulativeRecordLayout({ children, tab, setTab, metrics, loading
                     value={0}
                     title="Faltas cometidas"
                     subtitle="Disminuyeron -"
+                    skeletonDescriptionSize="w-10 h-3"
+                    skeletonTitleSize="h-7 w-10"
+                />
+
+                <MetricButton
+                    active={tab === "reports"}
+                    onClick={() => setTab("reports")}
+                    loading={loading}
+                    icon={<TbReportAnalytics />}
+                    value={metrics.activeStudents}
+                    title="Reportes"
+                    subtitle="Mira los Reportes"
                     skeletonDescriptionSize="w-10 h-3"
                     skeletonTitleSize="h-7 w-10"
                 />

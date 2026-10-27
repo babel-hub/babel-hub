@@ -35,10 +35,24 @@ router.get(
 );
 
 router.get(
+    "/student/:studentId/report-card/pdf",
+    authMiddleware,
+    authorizedRoles(["admin", "principal", "teacher", "parent"]),
+    controllers.getReportCardPdf
+);
+
+router.get(
     '/:courseId/summary',
     authMiddleware,
     authorizedRoles(['principal', 'teacher']),
     controllers.getCumulativeSummary
+);
+
+router.get(
+    "/:courseId/reports/students",
+    authMiddleware,
+    authorizedRoles(["admin", "principal", "teacher"]),
+    controllers.getStudentsForReports
 );
 
 

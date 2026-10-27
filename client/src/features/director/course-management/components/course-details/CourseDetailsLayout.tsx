@@ -1,17 +1,17 @@
 import { PrimaryButton } from "../../../../../components/ui/buttons/Buttons.tsx";
 import { useParams } from "react-router-dom";
 import { LoadingContent } from "../../../../../components/ui/Loadings.tsx";
-import { useCourseData } from "../../hooks/course-details/useCourseData.ts";
 import { formatterDate, type ModalModeTypes } from "../../../../../types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClassItem } from "../../types";
-import { ClassList } from "./ClassList.tsx";
-import { CourseDetailsStudentsTable } from "../ui/CourseDetailsStudentsTable.tsx";
+import { ClassList } from "../../../../shared/components/ClassList.tsx";
+import { CourseDetailsStudentsTable } from "../../../../shared/components/CourseDetailsStudentsTable.tsx";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
 import { useDeleteClass } from "../../hooks/course-details/useDeleteClass.ts";
 import { CourseDetailsFormModal } from "../ui/CourseDetailsFormModal.tsx";
 import toast from "react-hot-toast";
 import { PrimaryLink } from "../../../../../components/ui/link/PrimaryLink.tsx";
+import { useCourseData } from "../../../../shared/hooks/useCourseData.ts";
 
 export function CourseDetailsLayout() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -87,6 +87,7 @@ export function CourseDetailsLayout() {
                             <ClassList
                                 createClass={() => setModalMode("create")}
                                 classes={course.classes}
+                                isDisabled={false}
                                 onEdit={handleUpdate}
                                 onDelete={handleDelete}
                             />

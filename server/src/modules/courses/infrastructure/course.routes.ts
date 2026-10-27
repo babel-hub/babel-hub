@@ -34,7 +34,7 @@ router.get(
 router.get(
     "/:id",
     authMiddleware,
-    authorizedRoles(["principal", "admin"]),
+    authorizedRoles(["principal", "admin", "teacher"]),
     controller.getCourseDetails
 );
 

@@ -2,7 +2,7 @@ import { PrimaryButton } from "../../../../../components/ui/buttons/Buttons.tsx"
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useCallback, useState } from "react";
 import { CoursesList } from "./CoursesList.tsx";
-import { useCourseData } from "../../hooks/course-list/useCourseData.ts";
+import { useCourses } from "../../hooks/course-list/useCourseData.ts";
 import { useDeleteCourse } from "../../hooks/course-list/useDeleteCourse.ts";
 import { LoadingPage } from "../../../../../components/ui/Loadings.tsx";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
@@ -20,7 +20,7 @@ export function CoursesListLayout() {
     const [teacherToEdit, setTeacherToEdit ] = useState<string | null>(null);
     const [courseToDelete, setCourseToDelete] = useState<CoursesListData | null>(null);
 
-    const { loading, courses, fetchCourses } = useCourseData();
+    const { loading, courses, fetchCourses } = useCourses();
     const { loadingDelete, deleteCourseById } = useDeleteCourse(fetchCourses);
 
     const handleEdit = useCallback((course: CoursesListData) => {

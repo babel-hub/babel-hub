@@ -20,6 +20,7 @@
     "express-rate-limit": "^8.2.1",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.0.1",
+    "pdfmake": "^0.2.10",
     "pg": "^8.17.2",
     "tsx": "^4.21.0"
   },
@@ -28,6 +29,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.1.0",
+    "@types/pdfmake": "^0.2.10",
     "@types/pg": "^8.16.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

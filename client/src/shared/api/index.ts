@@ -3,7 +3,7 @@ import type {
     Announcement,
     Area, CoursePeriodTrend,
     CreateAnnouncementPayload, CumulativeAttendance, CumulativeGrades, CumulativeSummary,
-    Period, Scale,
+    Period, ReportStudentRow, Scale,
     Teacher,
     UpdateAnnouncementPayload, UserSearch
 } from "../types/types.ts";
@@ -102,4 +102,9 @@ export const getCumulativeAttendance = async (courseId: string, periodId: string
         }
     });
     return response.data.attendance;
+}
+
+export const getCumulativeReports = async (courseId: string): Promise<ReportStudentRow[]> => {
+    const response = await api.get(`/api/cumulative/${courseId}/reports/students`);
+    return response.data.students;
 }

@@ -5,7 +5,7 @@ import type {
     CumulativeGrades,
     CumulativeSummary,
     GetCourseTrendPayload,
-    GetCumulativeRecordPayload
+    GetCumulativeRecordPayload, ReportCard, ReportStudentRow
 } from "./Cumulative.types.js";
 
 
@@ -14,4 +14,7 @@ export interface ICumulativeRepository {
     getCumulativeAttendance(payload: GetCumulativeRecordPayload, authUser: AuthUser): Promise<CumulativeAttendance[]>;
     getCumulativeSummary(payload: GetCumulativeRecordPayload, authUser: AuthUser): Promise<CumulativeSummary[]>;
     getCoursePeriodTrend(payload: GetCourseTrendPayload, authUser: AuthUser): Promise<CoursePeriodTrend[]>;
+    getStudentReportCardData(studentId: string, authUser: AuthUser): Promise<any[]>;
+    getStudentInfo(studentId: string, authUser: AuthUser): Promise<any>;
+    getStudentsForReports(courseId: string, authUser: AuthUser): Promise<ReportStudentRow[]>;
 }

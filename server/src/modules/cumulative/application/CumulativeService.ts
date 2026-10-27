@@ -4,11 +4,11 @@ import type {
     CumulativeAttendance,
     CumulativeGrades,
     CumulativeSummary, GetCourseTrendPayload,
-    GetCumulativeRecordPayload
+    GetCumulativeRecordPayload, ReportCard, ReportCardArea, ReportStudentRow
 } from "../domain/Cumulative.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
-import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import {NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
 
 export class CumulativeService {
     constructor(private readonly cumulativeRepository: ICumulativeRepository) {}
@@ -28,6 +28,97 @@ export class CumulativeService {
         if (!payload.currentPeriodId) throw new ValidationError("El ID del periodo es obligatorio");
 
         return this.cumulativeRepository.getCoursePeriodTrend(payload, auth);
+    }
+
+    async getStudentsForReports(courseId: string, authUser: AuthUser): Promise<ReportStudentRow[]> {
+        const auth = requireAuth(authUser);
+        if (!courseId) throw new ValidationError("El ID del curso es obligatorio");
+
+        return this.cumulativeRepository.getStudentsForReports(courseId, auth);
+    }
+
+    async generateStudentReportCard(studentId: string, authUser: AuthUser): Promise<ReportCard> {
+        if (!studentId) throw new ValidationError("El id del estudiante es inválido");
+        const auth = requireAuth(authUser);
+        const rows = await this.cumulativeRepository.getStudentReportCardData(studentId, auth);
+        if (!rows.length) throw new NotFoundError("No hay datos para el boletín");
+
+        const studentInfo = await this.cumulativeRepository.getStudentInfo(studentId, auth);
+
+        const areasMap = new Map<string, ReportCardArea>();
+
+        rows.forEach(row => {
+            if (!areasMap.has(row.area_id)) {
+                areasMap.set(row.area_id, {
+                    area_id: row.area_id,
+                    area_name: row.area_name,
+                    subjects: []
+                });
+            }
+            const area = areasMap.get(row.area_id)!;
+
+            let subject = area.subjects.find(s => s.subject_id === row.subject_id);
+            if (!subject) {
+                subject = {
+                    subject_id: row.subject_id,
+                    subject_name: row.subject_name,
+                    weekly_hours: 0,
+                    periods: [],
+                    total_absences: 0,
+                    final_average: null
+                };
+                area.subjects.push(subject);
+            }
+
+            const absences = Number(row.absences) || 0;
+
+            subject.periods.push({
+                period_id: row.period_id,
+                period_name: row.period_name,
+                order: 0,
+                average: row.period_average,
+                recovery: null,
+                absences: absences
+            });
+
+            subject.total_absences += absences;
+        });
+
+
+        const areas = Array.from(areasMap.values());
+
+        areas.forEach(area => {
+            area.subjects.forEach(sub => {
+                const validPeriods = sub.periods.filter(p => p.average !== null);
+                if (validPeriods.length > 0) {
+                    const sum = validPeriods.reduce((acc, p) => acc + p.average!, 0);
+                    sub.final_average = Number((sum / validPeriods.length).toFixed(2));
+                }
+            });
+        });
+
+        return {
+            school_name: studentInfo.school_name,
+            school_code: studentInfo.school_code,
+            school_logo_url: studentInfo.school_logo_url || null,
+            school_year: studentInfo.school_year,
+            director_name: studentInfo.director_name,
+            student: {
+                student_id: studentInfo.student_id,
+                first_name: studentInfo.first_name,
+                middle_name: studentInfo.middle_name,
+                first_last_name: studentInfo.first_last_name,
+                second_last_name: studentInfo.second_last_name,
+                course_name: studentInfo.course_name,
+                enrollment_code: studentInfo.enrollment_code,
+            },
+            periods: studentInfo.periods,
+            areas: Array.from(areasMap.values()),
+            course_average: studentInfo.course_average,
+            student_average: studentInfo.student_average,
+            rank: studentInfo.rank,
+            generated_at: new Date().toISOString(),
+        };
     }
 
     async getCumulativeSummary(

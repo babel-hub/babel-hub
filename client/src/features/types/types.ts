@@ -1,4 +1,5 @@
 import type { AssessmentCriteria, Grades } from "../../types";
+import type {ClassItem} from "../director/course-management/types";
 
 export type AttendanceStatus = 'absent' | 'late' | 'present' | 'excused' | 'no_data';
 export type modeTypes = 'create' | 'edit';
@@ -60,4 +61,21 @@ export interface AssignmentsOverview {
     assessment_criteria: AssessmentCriteria[];
     grades: Grades[];
     scale: Scale;
+}
+
+export interface CourseDataProps {
+    course: {
+        is_active: boolean;
+        id: string;
+        course_name: string;
+        year: string;
+        created_at: string;
+    };
+    students: Student[];
+    classes: ClassItem[];
+}
+
+export interface CourseDailyAttendance {
+    student_id: string;
+    daily_status: 'absent' | 'late' | 'present' | 'excused' | 'no_data';
 }

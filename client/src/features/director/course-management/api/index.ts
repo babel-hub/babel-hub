@@ -27,16 +27,6 @@ export const deleteCourse = async (id: string) => {
 
 // Course Details Endpoints
 
-export const getCourse = async (id: string, controller: any) => {
-    const response = await api.get(`/courses/${id}`, { signal: controller.signal });
-    return response.data;
-}
-
-export const getAttendance  = async (id: string, date: string, controller: any) => {
-    const response = await api.get(`/attendance/course/${id}/summary?date=${date}`, { signal: controller.signal });
-    return response.data.records;
-}
-
 export const getAvailableSubjects = async (id: string): Promise<AvailableSubjects[]> => {
     const response = await api.get(`/subjects/available?courseId=${id}`);
     return response.data.availableSubjects;

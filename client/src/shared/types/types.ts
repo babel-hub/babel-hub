@@ -72,7 +72,7 @@ export interface UserSearch {
 
 // Cumulative
 
-export type TabCumulativeTypes = 'attendance' | 'grades' | 'absents' | 'summary';
+export type TabCumulativeTypes = 'attendance' | 'grades' | 'absents' | 'summary' | 'reports';
 
 interface BaseStudent {
     student_id: string;
@@ -124,4 +124,14 @@ export interface CoursePeriodTrend {
     period_start: string;
     course_average: number | null;
     graded_students: number;
+}
+
+export interface ReportStudentRow {
+    student_id: string;
+    first_name: string;
+    middle_name: string | null;
+    first_last_name: string;
+    second_last_name: string | null;
+    enrollment_code: string | null;
+    course_name: string;
 }

@@ -76,7 +76,7 @@ export function Attendance({ courseId, periodId }: AttendanceProps) {
                                     </span>
                                 </td>
                                 <td className="py-3 text-center font-medium text-yellow-600">{student.late}</td>
-                                <td className="py-3 text-center font-medium text-orange-500">{student.excused}</td>
+                                <td className="py-3 text-center font-medium text-sky-500">{student.excused}</td>
                                 <td className="py-3 text-center">
                                     <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-xs font-bold ${attColor}`}>
                                         {rate}%

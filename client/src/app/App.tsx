@@ -22,9 +22,9 @@ import Courses from "../pages/principal/courses/Courses.tsx";
 import CourseDetails from "../pages/principal/courses/CourseDetails.tsx";
 import Setup from "../pages/principal/files/Setup.tsx";
 import Details from "../pages/principal/files/areas/Details.tsx";
-import TeacherClasses from "../pages/teacher/courses/Classes.tsx";
+import TeacherClasses from "../pages/teacher/classes/Classes.tsx";
 import ClassesDetails from "../pages/principal/courses/classes/ClassesDetails.tsx";
-import ClassDetails from "../pages/teacher/courses/ClassDetails.tsx";
+import ClassDetails from "../pages/teacher/classes/ClassDetails.tsx";
 import GradingTemplateDetails from "../features/director/school-setup/components/grading-templates/GradingTemplateDetails.tsx";
 import ParentLayout from "../pages/parent/ParentLayout.tsx";
 import ParentDashboard from "../pages/parent/dashboard/ParentDashboard.tsx";
@@ -37,6 +37,8 @@ import PrincipalAnnouncementsLayout from "../pages/principal/announcements/Princ
 import TeacherAnnouncementsLayout from "../pages/teacher/announcements/TeacherAnnouncementsLayout.tsx";
 import ParentAnnouncementsLayout from "../pages/parent/announcements/ParentAnnouncementsLayout.tsx";
 import PrincipalCumulativeRecord from "../pages/principal/courses/cumulative-record/PrincipalCumulativeRecord.tsx";
+import TeacherCourse from "../pages/teacher/course/TeacherCourse.tsx";
+import TeacherCumulativeRecord from "../pages/teacher/course/cumulative-record/TeacherCumulativeRecord.tsx";
 
 const queryClient = new QueryClient();
 
@@ -117,7 +119,9 @@ function App() {
                         <Route path="dashboard" index element={<TeacherDashboard />}/>
 
                         <Route path="clases" element={<TeacherClasses />}>
-                            <Route path=":id" element={<ClassDetails />}/>
+                            <Route path=":classId" element={<ClassDetails />}/>
+                            <Route path="cso/:courseId" element={<TeacherCourse />}/>
+                            <Route path="cso/:courseId/acumulados" element={<TeacherCumulativeRecord />}/>
                         </Route>
 
                         <Route path="calendar" element={<TeacherCalendar />}/>

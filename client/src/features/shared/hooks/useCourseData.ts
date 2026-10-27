@@ -1,24 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Student, ClassItem } from "../../types";
 import axios from "axios";
-import { getAttendance, getCourse } from "../../api";
-
-export interface CourseDataProps {
-    course: {
-        is_active: boolean;
-        id: string;
-        course_name: string;
-        year: string;
-        created_at: string;
-    };
-    students: Student[];
-    classes: ClassItem[];
-}
-
-interface CourseDailyAttendance {
-    student_id: string;
-    daily_status: 'absent' | 'late' | 'present' | 'excused' | 'no_data';
-}
+import type { CourseDailyAttendance, CourseDataProps } from "../../types/types.ts";
+import { getAttendance, getCourse } from "../api";
 
 export const useCourseData = (id: string | undefined, date: string) => {
     const [loading, setLoading] = useState(false);

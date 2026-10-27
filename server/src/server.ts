@@ -52,7 +52,7 @@ app.use("/teacher", teacherRoutes);
 app.use("/student", studentRoutes);
 app.use("/parents", parentRoutes);
 
-//CRUD courses and schools
+//CRUD classes and schools
 app.use("/school", SchoolRoutes);
 app.use("/courses", coursesRoutes);
 app.use("/classes", classesRoutes);
