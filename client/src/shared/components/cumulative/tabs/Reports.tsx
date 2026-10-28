@@ -30,7 +30,7 @@ export function Reports({ courseId }: ReportsProps) {
     return (
         <div className="px-4 pb-4">
             <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">Boletines de Calificaciones</h2>
+                <h2 className="text-base lg:text-lg font-semibold text-gray-800">Boletines de Calificaciones</h2>
                 <p className="text-sm text-gray-500">Visualiza o descarga el boletín de cada estudiante.</p>
             </div>
 

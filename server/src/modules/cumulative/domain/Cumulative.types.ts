@@ -122,3 +122,44 @@ export interface ReportStudentRow {
     enrollment_code: string | null;
     course_name: string;
 }
+
+export interface StudentAcademicReportRow {
+    area_id: string;
+    area_name: string;
+    subject_id: string;
+    subject_name: string;
+    period_id: string;
+    period_name: string;
+    period_start: Date;
+    period_average: number;
+    absences: number;
+}
+
+
+export interface AcademicPeriodSummary {
+    id: string;
+    name: string;
+    order: number;
+}
+
+export interface StudentCourseSummaryRow {
+    student_id: string;
+    enrollment_code: string;
+    first_name: string;
+    middle_name: string | null;
+    first_last_name: string;
+    second_last_name: string | null;
+    course_id: string;
+    course_name: string;
+    school_id: string;
+
+    school_name: string;
+    school_code: string;
+    school_logo_url: string;
+    school_year: string;
+    director_name: string;
+    student_average: number;
+    course_average: number;
+    rank: number;
+    periods: AcademicPeriodSummary[];
+}

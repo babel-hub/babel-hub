@@ -4,18 +4,41 @@ import type {
     CumulativeAttendance,
     CumulativeGrades,
     CumulativeSummary, GetCourseTrendPayload,
-    GetCumulativeRecordPayload, ReportCard, ReportStudentRow
+    GetCumulativeRecordPayload, ReportCard, ReportStudentRow, StudentAcademicReportRow
 } from "../domain/Cumulative.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 
 export class PostgresCumulativeRepository implements ICumulativeRepository {
-    async getStudentReportCardData(studentId: string, authUser: AuthUser): Promise<any[]> {
+    async getStudentReportCardData(studentId: string, authUser: AuthUser): Promise<StudentAcademicReportRow[]> {
         const { userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
             const query = `
+                WITH AssessmentAverage AS (
+                    SELECT
+                        g.student_id,
+                        a.class_id,
+                        a.period_id,
+                        asmt.id AS assessment_id,
+                        asmt.weight,
+                        AVG(g.value) AS assessment_avg
+                    FROM grade g
+                        JOIN assignment a ON g.assignment_id = a.id
+                        JOIN assessment_criteria asmt ON a.assessment_criteria_id = asmt.id
+                    WHERE g.student_id = $1
+                    GROUP BY g.student_id, a.class_id, a.period_id, asmt.id, asmt.weight
+                ),
+                     FinalGrade AS (
+                         SELECT
+                             student_id,
+                             class_id,
+                             period_id,
+                             SUM(assessment_avg * (weight / 100.0)) AS final_grade
+                         FROM AssessmentAverage
+                         GROUP BY student_id, class_id, period_id
+                     )
                 SELECT
                     a.id AS area_id,
                     a.name AS area_name,
@@ -24,16 +47,17 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                     p.id AS period_id,
                     p.name AS period_name,
                     p.start_date AS period_start,
-                    ROUND(AVG(g.value)::numeric, 2)::float AS period_average,
-                    COALESCE(
-                            (SELECT COUNT(*) FROM attendance att
-                                    JOIN class c_att ON att.class_id = c_att.id
-                             WHERE att.student_id = s.id
-                               AND c_att.subject_id = sub.id
-                               AND att.date >= p.start_date
-                               AND att.date <= p.end_date
-                               AND att.status = 'absent'
-                            ), 0
+                    COALESCE(ROUND(fg.final_grade::numeric, 2)::float, 0) AS period_average,
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM attendance att
+                            JOIN class c_att ON att.class_id = c_att.id
+                        WHERE att.student_id = s.id
+                            AND c_att.subject_id = sub.id
+                            AND att.date >= p.start_date
+                            AND att.date <= p.end_date
+                            AND att.status = 'absent'
+                        ), 0
                     )::int AS absences
                 FROM student s
                     JOIN profile prof ON s.profile_id = prof.id
@@ -42,13 +66,8 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                     JOIN subject sub ON cl.subject_id = sub.id
                     JOIN area a ON sub.area_id = a.id
                     JOIN academic_period p ON p.school_id = prof.school_id
-                    LEFT JOIN assignment asg ON cl.id = asg.class_id AND asg.period_id = p.id
-                    LEFT JOIN grade g ON asg.id = g.assignment_id AND g.student_id = s.id
-                WHERE s.id = $1
-                  AND prof.school_id = $2
-                GROUP BY
-                    a.id, a.name, sub.id, sub.name,
-                    p.id, p.name, p.start_date, p.end_date, s.id
+                    LEFT JOIN FinalGrade fg ON fg.student_id = s.id AND fg.class_id = cl.id AND fg.period_id = p.id
+                WHERE s.id = $1 AND prof.school_id = $2
                 ORDER BY a.name, sub.name, p.start_date;
             `;
 
@@ -96,12 +115,12 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                     si.*,
                     sch.name AS school_name,
                     sch.code AS school_code,
-                    EXTRACT(YEAR FROM CURRENT_DATE)::text AS school_year,
-                                        (
-                        SELECT pr.first_name || ' ' || pr.first_last_name
+                    sch.logo_url AS school_logo_url,
+                    EXTRACT(YEAR FROM CURRENT_DATE)::text AS school_year, (
+                        SELECT CONCAT_WS(' ', pr.first_last_name, pr.second_last_name, pr.first_name, pr.middle_name)
                         FROM course c
-                        JOIN teacher t ON c.teacher_id = t.id
-                        JOIN profile pr ON t.profile_id = pr.id
+                            JOIN teacher t ON c.teacher_id = t.id
+                            JOIN profile pr ON t.profile_id = pr.id
                         WHERE c.id = si.course_id
                     ) AS director_name,
                     COALESCE((SELECT avg_grade FROM CourseAverages WHERE student_id = si.student_id), 0)::float AS student_average,
@@ -111,13 +130,15 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
                         FROM CourseAverages ca1
                         WHERE ca1.avg_grade > (SELECT avg_grade FROM CourseAverages ca2 WHERE ca2.student_id = si.student_id)
                     )::int AS rank,
-                    
                     (
-                        SELECT json_agg(json_build_object(
-                            'id', ap.id, 
-                            'name', ap.name, 
-                            'order', EXTRACT(EPOCH FROM ap.start_date)
-                        ) ORDER BY ap.start_date)
+                        SELECT
+                            json_agg(
+                                    json_build_object(
+                                        'id', ap.id, 
+                                        'name', ap.name, 
+                                        'order', EXTRACT(EPOCH FROM ap.start_date)
+                                    ) ORDER BY ap.start_date
+                            )
                         FROM academic_period ap
                         WHERE ap.school_id = si.school_id
                     ) AS periods

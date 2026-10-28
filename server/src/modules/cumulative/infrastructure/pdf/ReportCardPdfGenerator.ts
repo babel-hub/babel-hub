@@ -2,7 +2,6 @@ import PdfPrinter from "pdfmake";
 import type { TDocumentDefinitions, TableCell } from "pdfmake/interfaces.js";
 import type { ReportCard, ReportCardSubject } from "../../domain/Cumulative.types.js";
 
-// Standard fonts object for 0.2.x
 const fonts = {
     Helvetica: {
         normal: "Helvetica",
@@ -21,10 +20,9 @@ export function generateReportCardPdf(report: ReportCard): Promise<Buffer> {
                 if (n === null || n === undefined || n === "") return "";
                 const num = typeof n === "number" ? n : parseFloat(String(n));
                 if (Number.isNaN(num)) return "";
-                return num.toFixed(1).replace(".", ",");
+                return num > 0 ? num.toFixed(2).replace(".", ",") : "0";
             };
 
-            // Helper function to format periods exactly like the LaTeX template
             const formatPeriodHeader = (name: string) => {
                 const n = name.toLowerCase();
                 if (n.includes('primer') || n.includes('1er') || n.includes('1ro')) return '1er\nPER';
@@ -36,7 +34,6 @@ export function generateReportCardPdf(report: ReportCard): Promise<Buffer> {
 
             const body: TableCell[][] = [];
 
-// 1. Build the SINGLE Header Row
             const headerRow: TableCell[] = [
                 { text: "ÁREAS / ASIGNATURAS", bold: true, fillColor: "#D0D5DD", alignment: "center", verticalAlignment: "middle" },
                 { text: "I.H.", bold: true, fillColor: "#D0D5DD", alignment: "center", verticalAlignment: "middle" },
@@ -51,7 +48,6 @@ export function generateReportCardPdf(report: ReportCard): Promise<Buffer> {
             headerRow.push({ text: "FALLAS\nACUM.", bold: true, fillColor: "#D0D5DD", alignment: "center", verticalAlignment: "middle" });
             body.push(headerRow);
 
-// 2. Build Data Rows
             report.areas.forEach((area) => {
                 const totalCols = 2 + report.periods.length * 3 + 1;
                 const areaRow: TableCell[] = [
@@ -68,9 +64,9 @@ export function generateReportCardPdf(report: ReportCard): Promise<Buffer> {
 
                     report.periods.forEach((p) => {
                         const cell = sub.periods.find((sp) => sp.period_id === p.id);
-                        row.push({ text: fmt(cell?.average ?? null), alignment: "center" }); // 1st Col: PER
-                        row.push({ text: fmt(cell?.recovery ?? null), alignment: "center" }); // 2nd Col: REC
-                        row.push({ text: cell ? String(cell.absences) : "", alignment: "center" }); // 3rd Col: FALLAS
+                        row.push({ text: fmt(cell?.average ?? null), alignment: "center" });
+                        row.push({ text: fmt(cell?.recovery ?? null), alignment: "center" });
+                        row.push({ text: cell ? String(cell.absences) : "", alignment: "center" });
                     });
 
                     row.push({ text: String(sub.total_absences), alignment: "center" });
@@ -94,7 +90,6 @@ export function generateReportCardPdf(report: ReportCard): Promise<Buffer> {
                                     { text: (report.school_name || "COLEGIO").toUpperCase(), bold: true, fontSize: 9 },
                                     { text: "REGISTRO ESCOLAR DE VALORACIÓN", bold: true, fontSize: 9, margin: [0, 2, 0, 0] },
                                     {
-                                        // Added fallback for null school_code
                                         text: `CÓDIGO: ${report.school_code || "—"}   GRADO: ${report.student.course_name}   AÑO: ${report.school_year || "—"}`,
                                         margin: [0, 8, 0, 0],
                                     },

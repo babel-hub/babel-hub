@@ -87,6 +87,8 @@ export class CumulativeService {
 
         const areas = Array.from(areasMap.values());
 
+        // console.log(JSON.stringify(areas, null, 2));
+
         areas.forEach(area => {
             area.subjects.forEach(sub => {
                 const validPeriods = sub.periods.filter(p => p.average !== null);
