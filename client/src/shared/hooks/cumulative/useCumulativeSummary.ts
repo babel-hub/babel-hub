@@ -8,26 +8,32 @@ export const useCumulativeSummary = (courseId: string, periodId: string) => {
     const [summary, setSummary] = useState<CumulativeSummary[]>([]);
 
     useEffect(() => {
-        const getSummary = async () => {
-            if (!courseId || !periodId) return;
+        if (!courseId || !periodId) return;
 
+        const controller = new AbortController();
+
+        const getSummary = async () => {
             setLoading(true);
             setError("");
             try {
-                const response = await getCumulativeSummary(courseId, periodId);
+                const response = await getCumulativeSummary(courseId, periodId, controller.signal);
                 setSummary(response);
-            } catch (error : any) {
-                const errorMessage =
-                    error?.response?.data?.message ||
-                    error?.message ||
-                    "Ocurrió un error al cargar el resumen";
-                setError(errorMessage);
+            } catch (err: any) {
+                if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+
+                setError(
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Ocurrió un error al cargar el resumen"
+                );
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
-        }
+        };
+
         getSummary();
+        return () => controller.abort();
     }, [courseId, periodId]);
 
     return { loading, error, summary };
-}
+};

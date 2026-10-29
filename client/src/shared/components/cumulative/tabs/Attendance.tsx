@@ -29,15 +29,14 @@ export function Attendance({ courseId, periodId }: AttendanceProps) {
     );
 
     return (
-        <div className="px-4">
+        <div className="px-4 pb-2">
             <div className="mb-4">
                 <h2 className="text-base lg:text-lg font-semibold text-gray-800">Control de Asistencia</h2>
                 <p className="text-sm text-gray-500">Revisa el detalle de asistencias, retardos, excusas e inasistencias de cada estudiante en el periodo actual.</p>
             </div>
 
             <div className="grid grid-cols-5 items-start gap-3">
-
-                <div className="relative col-span-3 max-w-2xl max-h-[calc(100dvh-14.3rem)] overflow-x-auto no-scrollbar md:rounded-xl border border-gray-200">
+                <div className="relative col-span-3 max-w-2xl max-h-[calc(100dvh-17.8rem)] overflow-x-auto no-scrollbar md:rounded-xl border border-gray-200">
                     <table className="w-full text-sm text-left text-gray-600">
                         <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
                         <tr>

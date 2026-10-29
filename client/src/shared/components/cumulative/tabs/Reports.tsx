@@ -28,13 +28,13 @@ export function Reports({ courseId }: ReportsProps) {
     };
 
     return (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-2">
             <div className="mb-4">
                 <h2 className="text-base lg:text-lg font-semibold text-gray-800">Boletines de Calificaciones</h2>
                 <p className="text-sm text-gray-500">Visualiza o descarga el boletín de cada estudiante.</p>
             </div>
 
-            <div className="relative overflow-x-auto no-scrollbar md:rounded-xl border border-gray-200">
+            <div className="relative overflow-x-auto no-scrollbar md:rounded-xl max-h-[calc(100dvh-17.8rem)] border border-gray-200">
                 <table className="w-full text-sm text-left text-gray-600">
                     <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
                     <tr>

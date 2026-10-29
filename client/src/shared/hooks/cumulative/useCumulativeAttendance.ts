@@ -8,24 +8,36 @@ export const useCumulativeAttendance = (courseId: string, periodId: string) => {
     const [attendance, setAttendance] = useState<CumulativeAttendance[]>([]);
 
     useEffect(() => {
+        if (!courseId || !periodId) return;
+
+        const controller = new AbortController();
+
         const fetchAttendance = async () => {
             setLoading(true);
             setError("");
+
             try {
-                const result = await getCumulativeAttendance(courseId, periodId);
-                setAttendance(result);
-            } catch (error : any) {
+                const result = await getCumulativeAttendance(courseId, periodId, controller.signal);
+                if (!controller.signal.aborted) {
+                    setAttendance(result);
+                }
+            } catch (err: any) {
+                if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+
                 const errorMessage =
-                    error?.response?.data?.message ||
-                    error?.message ||
+                    err?.response?.data?.message ||
+                    err?.message ||
                     "Ocurrió un error al cargar la asistencia";
                 setError(errorMessage);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
-        }
+        };
+
         fetchAttendance();
-    }, []);
+
+        return () => controller.abort();
+    }, [courseId, periodId]);
 
     return { loading, error, attendance };
-}
+};

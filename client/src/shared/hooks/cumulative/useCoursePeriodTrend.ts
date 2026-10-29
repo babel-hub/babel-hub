@@ -8,27 +8,36 @@ export const useCoursePeriodTrend = (courseId: string, periodId: string) => {
     const [trend, setTrend] = useState<CoursePeriodTrend[]>([]);
 
     useEffect(() => {
-        const fetchTrends = async () => {
-            if (!courseId || !periodId) return;
+        if (!courseId || !periodId) return;
 
+        const controller = new AbortController();
+
+        const fetchTrends = async () => {
             setLoading(true);
             setError("");
 
             try {
-                const result = await getPeriodTrends(courseId, periodId);
-                setTrend(result);
-            } catch (error: any) {
+                const result = await getPeriodTrends(courseId, periodId, controller.signal);
+                if (!controller.signal.aborted) {
+                    setTrend(result);
+                }
+            } catch (err: any) {
+                if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+
                 const errorMessage =
-                    error?.response?.data?.message ||
-                    error?.message ||
+                    err?.response?.data?.message ||
+                    err?.message ||
                     "Ocurrió un error al cargar los periodos";
                 setError(errorMessage);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
-        }
+        };
+
         fetchTrends();
+
+        return () => controller.abort();
     }, [courseId, periodId]);
 
     return { loading, error, trend };
-}
+};

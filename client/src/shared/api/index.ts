@@ -67,8 +67,9 @@ export const deleteAnnouncement = async (announcementId: string): Promise<void> 
 }
 
 // Cumulative
-export const getPeriodTrends = async (courseId: string, periodId: string): Promise<CoursePeriodTrend[]> => {
+export const getPeriodTrends = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CoursePeriodTrend[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/trend`, {
+        signal,
         params: {
             periodId
         }
@@ -77,8 +78,9 @@ export const getPeriodTrends = async (courseId: string, periodId: string): Promi
 }
 
 
-export const getCumulativeSummary = async (courseId: string, periodId: string): Promise<CumulativeSummary[]> => {
+export const getCumulativeSummary = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CumulativeSummary[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/summary`, {
+        signal,
         params: {
             periodId
         }
@@ -86,8 +88,9 @@ export const getCumulativeSummary = async (courseId: string, periodId: string): 
     return response.data.summary;
 }
 
-export const getCumulativeGrades = async (courseId: string, periodId: string): Promise<CumulativeGrades[]> => {
+export const getCumulativeGrades = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CumulativeGrades[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/grades`, {
+        signal,
         params: {
             periodId
         }
@@ -95,8 +98,9 @@ export const getCumulativeGrades = async (courseId: string, periodId: string): P
     return response.data.grades;
 }
 
-export const getCumulativeAttendance = async (courseId: string, periodId: string): Promise<CumulativeAttendance[]> => {
+export const getCumulativeAttendance = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CumulativeAttendance[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/attendance`, {
+        signal,
         params: {
             periodId
         }
@@ -104,7 +108,7 @@ export const getCumulativeAttendance = async (courseId: string, periodId: string
     return response.data.attendance;
 }
 
-export const getCumulativeReports = async (courseId: string): Promise<ReportStudentRow[]> => {
-    const response = await api.get(`/api/cumulative/${courseId}/reports/students`);
+export const getCumulativeReports = async (courseId: string, signal?: AbortSignal): Promise<ReportStudentRow[]> => {
+    const response = await api.get(`/api/cumulative/${courseId}/reports/students`, { signal });
     return response.data.students;
 }

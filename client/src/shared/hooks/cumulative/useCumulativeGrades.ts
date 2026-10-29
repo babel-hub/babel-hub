@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCumulativeGrades} from "../../api";
+import { getCumulativeGrades } from "../../api";
 import type { CumulativeGrades } from "../../types/types.ts";
 
 export const useCumulativeGrades = (courseId: string, periodId: string) => {
@@ -8,26 +8,36 @@ export const useCumulativeGrades = (courseId: string, periodId: string) => {
     const [grades, setGrades] = useState<CumulativeGrades[]>([]);
 
     useEffect(() => {
-        const getGrades = async () => {
-            if (!courseId || !periodId) return;
+        if (!courseId || !periodId) return;
 
+        const controller = new AbortController();
+
+        const getGrades = async () => {
             setLoading(true);
             setError("");
+
             try {
-                const records = await getCumulativeGrades(courseId, periodId);
-                setGrades(records);
-            } catch (error : any) {
-                const errorMessage = error.message
-                    || error.data.message
-                    || "Ocurrio un error al cargar las notas";
+                const records = await getCumulativeGrades(courseId, periodId, controller.signal);
+                if (!controller.signal.aborted) {
+                    setGrades(records);
+                }
+            } catch (err: any) {
+                if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
+
+                const errorMessage =
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Ocurrió un error al cargar las notas";
 
                 setError(errorMessage);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
-        }
+        };
         getGrades();
+
+        return () => controller.abort();
     }, [courseId, periodId]);
 
     return { loading, error, grades };
-}
+};
