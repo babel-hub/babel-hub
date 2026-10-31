@@ -1,22 +1,34 @@
 import type { ICumulativeRepository } from "../domain/ICumulativeRepository.js";
 import type {
+    CourseFailStat,
     CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
     CumulativeSummary, GetCourseTrendPayload,
-    GetCumulativeRecordPayload, ReportCard, ReportCardArea, ReportStudentRow
+    GetCumulativeRecordPayload, HonorStudent, ReportCard, ReportCardArea, ReportStudentRow
 } from "../domain/Cumulative.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
 import {NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
+import type {IStudentRepository} from "../../student/domain/IStudentRepository.js";
 
 export class CumulativeService {
-    constructor(private readonly cumulativeRepository: ICumulativeRepository) {}
+    constructor(
+        private readonly cumulativeRepository: ICumulativeRepository,
+        private readonly studentRepository: IStudentRepository
+    ) {}
 
     private validate(payload: GetCumulativeRecordPayload): void {
         if (!payload.courseId || !payload.periodId) {
             throw new ValidationError("El id del curso o del periodo son inválidos");
         }
+    }
+
+    async getCourseFailStats(courseId: string, periodId: string, authUser: AuthUser): Promise<CourseFailStat[]> {
+        const auth = requireAuth(authUser);
+        if (! courseId || !periodId) throw new ValidationError("El ID del curso o el periodo son invalidos");
+
+        return this.cumulativeRepository.getCourseFailStats(courseId, periodId, auth);
     }
 
     async getCoursePeriodTrend(
@@ -34,7 +46,20 @@ export class CumulativeService {
         const auth = requireAuth(authUser);
         if (!courseId) throw new ValidationError("El ID del curso es obligatorio");
 
-        return this.cumulativeRepository.getStudentsForReports(courseId, auth);
+        return this.studentRepository.getCourseStudents({courseId, isActive: true}, auth);
+    }
+
+    async getCourseHonorStudents(
+        courseId: string,
+        periodId: string,
+        authUser: AuthUser
+    ): Promise<HonorStudent[]> {
+        const auth = requireAuth(authUser);
+        if (!courseId || !periodId) {
+            throw new ValidationError("El ID del curso y el periodo son obligatorios");
+        }
+
+        return this.cumulativeRepository.getCourseHonorStudents(courseId, periodId, auth);
     }
 
     async generateStudentReportCard(studentId: string, authUser: AuthUser): Promise<ReportCard> {

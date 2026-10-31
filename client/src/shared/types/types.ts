@@ -126,12 +126,17 @@ export interface CoursePeriodTrend {
     graded_students: number;
 }
 
-export interface ReportStudentRow {
-    student_id: string;
-    first_name: string;
-    middle_name: string | null;
-    first_last_name: string;
-    second_last_name: string | null;
+export interface ReportStudentRow extends BaseStudent {
     enrollment_code: string | null;
     course_name: string;
+}
+
+export interface CourseFailStat {
+    failCount: number;
+    studentCount: number;
+}
+
+export interface HonorStudent extends BaseStudent{
+    rank: number;
+    period_average: number;
 }

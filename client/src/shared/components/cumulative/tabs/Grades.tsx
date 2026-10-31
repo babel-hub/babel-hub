@@ -20,10 +20,15 @@ const opt = [
     { label: "Gráfico de radar", value: "radar" }
 ];
 
-type SortConfig = {
-    subjectIndex: number;
-    direction: "asc" | "desc";
-} | null;
+type SortConfig =
+    | { kind: "average"; direction: "asc" | "desc" }
+    | { kind: "subject"; subjectName: string; direction: "asc" | "desc" }
+    | null;
+
+type OpenFilter =
+    | { kind: "average" }
+    | { kind: "subject"; index: number }
+    | null;
 
 export function Grades({ courseId, periodId }: GradesProps) {
     const { scales } = useScales();
@@ -35,8 +40,7 @@ export function Grades({ courseId, periodId }: GradesProps) {
     const [showTones, setShowTones] = useState<boolean>(false);
     const [showFilters, setShowFilters] = useState<boolean>(false);
     const [viewMode, setViewMode] = useState<string>("table");
-
-    const [openFilterIndex, setOpenFilterIndex] = useState<number | null>(null);
+    const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
     const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
     useEffect(() => {
@@ -46,7 +50,7 @@ export function Grades({ courseId, periodId }: GradesProps) {
                 setShowFilters(false);
             }
             if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-                setOpenFilterIndex(null);
+                setOpenFilter(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -57,20 +61,24 @@ export function Grades({ courseId, periodId }: GradesProps) {
         if (!grades || !sortConfig) return grades;
 
         return [...grades].sort((a, b) => {
-            const subjectName = grades[0]?.subjects?.[sortConfig.subjectIndex]?.subject_name;
-            if (!subjectName) return 0;
+            let valueA: number;
+            let valueB: number;
 
-            const gradeA = a.subjects?.find(s => s.subject_name === subjectName)?.final_grade ?? -1;
-            const gradeB = b.subjects?.find(s => s.subject_name === subjectName)?.final_grade ?? -1;
-
-            if (gradeA === -1 && gradeB !== -1) return 1;
-            if (gradeB === -1 && gradeA !== -1) return -1;
-
-            if (sortConfig.direction === "asc") {
-                return gradeA - gradeB;
+            if (sortConfig.kind === "average") {
+                valueA = a.period_average ?? -1;
+                valueB = b.period_average ?? -1;
             } else {
-                return gradeB - gradeA;
+                valueA = a.subjects?.find(s => s.subject_name === sortConfig.subjectName)?.final_grade ?? -1;
+                valueB = b.subjects?.find(s => s.subject_name === sortConfig.subjectName)?.final_grade ?? -1;
             }
+
+            const aUngraded = valueA === -1;
+            const bUngraded = valueB === -1;
+            if (aUngraded && !bUngraded) return 1;
+            if (!aUngraded && bUngraded) return -1;
+            if (aUngraded && bUngraded) return 0;
+
+            return sortConfig.direction === "asc" ? valueA - valueB : valueB - valueA;
         });
     }, [grades, sortConfig]);
 
@@ -81,9 +89,19 @@ export function Grades({ courseId, periodId }: GradesProps) {
     const subjectHeaders = grades[0]?.subjects?.map(s => s.subject_name) || [];
     const scalesById = new Map(scales.map(s => [s.id, s]));
 
-    const handleSort = (index: number, direction: "asc" | "desc") => {
-        setSortConfig({ subjectIndex: index, direction });
-        setOpenFilterIndex(null);
+    const handleSubjectSort = (subjectName: string, direction: "asc" | "desc") => {
+        setSortConfig({ kind: "subject", subjectName, direction });
+        setOpenFilter(null);
+    };
+
+    const handleAverageSort = (direction: "asc" | "desc") => {
+        setSortConfig({ kind: "average", direction });
+        setOpenFilter(null);
+    };
+
+    const clearSort = () => {
+        setSortConfig(null);
+        setOpenFilter(null);
     };
 
     return (
@@ -154,37 +172,31 @@ export function Grades({ courseId, periodId }: GradesProps) {
                                         {subjectName.slice(0, 3)}
                                         <button
                                             type="button"
-                                            className={`hover:cursor-pointer rounded-md ${openFilterIndex === index ? 'bg-gray-200' : 'hover:bg-gray-200'}`}
-                                            onClick={() => setOpenFilterIndex(openFilterIndex === index ? null : index)}
+                                            className={`hover:cursor-pointer rounded-md ${openFilter?.kind === "subject" && openFilter.index === index ? 'bg-gray-200' : 'hover:bg-gray-200'}`}
+                                            onClick={() =>
+                                                setOpenFilter(
+                                                    openFilter?.kind === "subject" && openFilter.index === index
+                                                        ? null
+                                                        : { kind: "subject", index }
+                                                )
+                                            }
                                         >
                                             <HiChevronUpDown className="size-4" />
                                         </button>
                                     </div>
 
-                                    {openFilterIndex === index && (
+                                    {openFilter?.kind === "subject" && openFilter.index === index && (
                                         <div
                                             ref={dropdownRef}
-                                            className="absolute top-full mt-1 w-36 left-1/2 -translate-x-1/2 rounded-xl bg-white z-20 border border-gray-100 p-1 flex flex-col gap-1 shadow"
+                                            className="absolute top-full mt-1 w-36 left-1/2 -translate-x-1/2 rounded-xl bg-white z-30 border border-gray-100 p-1 flex flex-col gap-1 shadow"
                                         >
-                                            <button
-                                                onClick={() => handleSort(index, "desc")}
-                                                className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors"
-                                            >
+                                            <button onClick={() => handleSubjectSort(subjectName, "desc")} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors">
                                                 Mayor a Menor
                                             </button>
-                                            <button
-                                                onClick={() => handleSort(index, "asc")}
-                                                className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors"
-                                            >
+                                            <button onClick={() => handleSubjectSort(subjectName, "asc")} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors">
                                                 Menor a Mayor
                                             </button>
-                                            <button
-                                                onClick={() => {
-                                                    setSortConfig(null);
-                                                    setOpenFilterIndex(null);
-                                                }}
-                                                className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-red-50 text-red-600 rounded-md transition-colors"
-                                            >
+                                            <button onClick={clearSort} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-red-50 text-red-600 rounded-md transition-colors">
                                                 Limpiar filtro
                                             </button>
                                         </div>
@@ -193,7 +205,35 @@ export function Grades({ courseId, periodId }: GradesProps) {
                             ))}
 
                             <th scope="col" className="p-2 text-center bg-primary-darker text-white font-bold sticky right-0 z-20">
-                                Promedio
+                                <div className="flex items-center justify-center gap-1">
+                                    Promedio
+                                    <button
+                                        type="button"
+                                        className={`hover:cursor-pointer rounded-md p-0.5 ${openFilter?.kind === "average" ? 'bg-white/20' : 'hover:bg-white/20'}`}
+                                        onClick={() =>
+                                            setOpenFilter(openFilter?.kind === "average" ? null : { kind: "average" })
+                                        }
+                                    >
+                                        <HiChevronUpDown className="size-4" />
+                                    </button>
+                                </div>
+
+                                {openFilter?.kind === "average" && (
+                                    <div
+                                        ref={dropdownRef}
+                                        className="absolute top-full right-0 mt-1 w-36 rounded-xl bg-white z-30 border border-gray-100 p-1 flex flex-col gap-1 shadow text-gray-700"
+                                    >
+                                        <button onClick={() => handleAverageSort("desc")} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors">
+                                            Mayor a Menor
+                                        </button>
+                                        <button onClick={() => handleAverageSort("asc")} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-gray-100 rounded-md transition-colors">
+                                            Menor a Mayor
+                                        </button>
+                                        <button onClick={clearSort} className="text-sm font-normal text-left px-3 py-2 w-full hover:bg-red-50 text-red-600 rounded-md transition-colors">
+                                            Limpiar filtro
+                                        </button>
+                                    </div>
+                                )}
                             </th>
                         </tr>
                         </thead>

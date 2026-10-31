@@ -46,6 +46,32 @@ export class CumulativeControllers {
         }
     };
 
+    getCourseHonorStudents = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const auth = getAuthUser(request);
+            const courseId = request.params.courseId as string;
+            const periodId = request.query.periodId as string;
+
+            const honor = await this.cumulativeService.getCourseHonorStudents(courseId, periodId, auth);
+            response.status(200).json({ honor });
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    getCourseFailStats = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const auth = getAuthUser(request);
+            const courseId = request.params.courseId as string;
+            const periodId = request.query.periodId as string;
+
+            const stats = await this.cumulativeService.getCourseFailStats(courseId, periodId, auth);
+            response.status(200).json({ stats });
+        } catch (error) {
+            next(error);
+        }
+    };
+
     getStudentsForReports = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const auth = getAuthUser(request);

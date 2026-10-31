@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { getCumulativeReports } from "../../api";
-import type { ReportStudentRow } from "../../types/types.ts";
+import { getCumulativeFailStats, getCumulativeHonorStudents, getCumulativeReports } from "../../api";
+import type { CourseFailStat, HonorStudent, ReportStudentRow } from "../../types/types.ts";
 
-export const useCumulativeReports = (courseId: string) => {
+export const useCumulativeReports = (courseId: string, periodId: string) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
     const [students, setStudents] = useState<ReportStudentRow[]>([]);
+    const [failStats, setFailStats] = useState<CourseFailStat[]>([]);
+    const [honorStudents, setHonorStudents] = useState<HonorStudent[]>([]);
 
     useEffect(() => {
         if (!courseId) return;
@@ -17,9 +19,16 @@ export const useCumulativeReports = (courseId: string) => {
             setError("");
 
             try {
-                const response = await getCumulativeReports(courseId, controller.signal);
+                const [studentsData, failStatsData, honorStudentsData] = await Promise.all([
+                    getCumulativeReports(courseId, controller.signal),
+                    getCumulativeFailStats(courseId, periodId, controller.signal),
+                    getCumulativeHonorStudents(courseId, periodId, controller.signal)
+                ]);
+
                 if (!controller.signal.aborted) {
-                    setStudents(response);
+                    setStudents(studentsData);
+                    setFailStats(failStatsData);
+                    setHonorStudents(honorStudentsData);
                 }
             } catch (err: any) {
                 if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
@@ -38,7 +47,7 @@ export const useCumulativeReports = (courseId: string) => {
         fetchData();
 
         return () => controller.abort();
-    }, [courseId]);
+    }, [courseId, periodId]);
 
-    return { loading, error, students };
+    return { loading, error, students, failStats, honorStudents };
 };

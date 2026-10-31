@@ -1,5 +1,5 @@
 import type {
-    ClassStudents, GetClassStudentsPayload, GetStudentsByNamePayload, GetStudentsPayload,
+    CourseStudents, GetClassStudentsPayload, GetStudentsByNamePayload, GetStudentsPayload,
     StudentBaseRow,
     StudentByName,
     Students
@@ -12,7 +12,7 @@ import type {
 
 export interface IStudentRepository {
     getStudents(payload: GetStudentsPayload, authUser: AuthUser): Promise<Students[]>;
-    getClassStudents(payload: GetClassStudentsPayload, authUser: AuthUser): Promise<ClassStudents[]>;
+    getCourseStudents(payload: GetClassStudentsPayload, authUser: AuthUser): Promise<CourseStudents[]>;
     getStudentProfile(studentId: string, authUser: AuthUser): Promise<StudentBaseRow | null>;
     getStudentsByName(payload: GetStudentsByNamePayload, authUser: AuthUser): Promise<StudentByName[]>;
     createStudent(studentCredentials: StudentCreateCredentials, authUser: AuthUser): Promise<void>;

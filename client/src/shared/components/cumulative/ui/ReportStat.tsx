@@ -1,6 +1,6 @@
 interface ReportStat {
     total: number;
-    remaining: number;
+    remaining: string;
 }
 
 export function ReportStat ({ total, remaining }: ReportStat) {

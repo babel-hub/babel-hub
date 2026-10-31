@@ -6,6 +6,7 @@ import { useScales } from "../../../hooks/useScales.ts";
 import { AttendanceDonut } from "../ui/AttendanceDonut.tsx";
 import { CourseTrendChart } from "../ui/CourseTrendChart.tsx";
 import { GradeDonut } from "../ui/GradeDonut.tsx";
+import {toneBgandText} from "../../../../utils/utils.ts";
 
 interface SummaryProps {
     summary: CumulativeSummary[];
@@ -39,13 +40,13 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
     const scalesById = new Map(scales?.map(s => [s.id, s]) ?? []);
 
     return (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-2">
             <div className="mb-4">
                 <h2 className="text-base lg:text-lg font-semibold text-gray-800">Resumen General del Curso</h2>
                 <p className="text-sm text-gray-500">Consulta el promedio del curso, la tasa de asistencia y la tendencia de rendimiento a lo largo de los periodos.</p>
             </div>
 
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid max-h-[calc(100dvh-17.8rem)] overflow-auto no-scrollbar grid-cols-5 gap-3">
                 <div className="relative overflow-x-auto no-scrollbar col-span-3 md:rounded-xl border border-gray-200">
                     <table className="w-full text-sm text-left text-gray-600">
                         <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
@@ -84,14 +85,19 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
                                 : undefined;
 
                             const avg = student.period_average;
-                            const passing = scale?.passing_value;
-                            const max = scale?.max_value;
+                            const hasValidAvg = avg != null && avg > 0;
 
-                            const isOutOfRange =
-                                avg != null && max != null && avg > max;
+                            let avgClass = "text-gray-700";
+                            let isOutOfRange = false;
 
-                            const isFailing =
-                                avg != null && avg > 0 && passing != null && avg < passing;
+                            if (hasValidAvg && scale) {
+                                const min = Number(scale.min_value);
+                                const max = Number(scale.max_value);
+                                const passing = Number(scale.passing_value);
+
+                                isOutOfRange = avg > max;
+                                avgClass = toneBgandText(avg, { min, max, passing });
+                            }
 
                             const attRate = student.attendance_rate ?? 0;
                             const attColor =
@@ -109,19 +115,13 @@ export function Summary({ summary, loading, loadingTrend, trend }: SummaryProps)
                                     </th>
 
                                     <td className="px-2 py-3 text-center">
-                                        {avg != null && avg > 0 ? (
+                                        {hasValidAvg ? (
                                             <span
-                                                className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-bold ${
-                                                    isOutOfRange
-                                                        ? "bg-amber-50 text-amber-700"
-                                                        : isFailing
-                                                            ? "bg-red-50 text-red-600"
-                                                            : "bg-primary-shadow text-primary"
-                                                }`}
+                                                className={`inline-flex items-center justify-center px-2.5 py-1 rounded-md text-sm font-bold ${avgClass}`}
                                                 title={isOutOfRange ? "Promedio fuera de la escala — datos inconsistentes" : undefined}
                                             >
-                                            {isOutOfRange ? "⚠ " : ""}{avg.toFixed(2)}
-                                        </span>
+                                                {isOutOfRange ? "⚠ " : ""}{avg.toFixed(2)}
+                                            </span>
                                         ) : (
                                             <span className="text-gray-300">-</span>
                                         )}

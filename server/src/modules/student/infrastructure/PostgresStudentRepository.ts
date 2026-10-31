@@ -2,8 +2,8 @@ import type {
     IStudentRepository
 } from "../domain/IStudentRepository.js";
 import type {
-    ClassStudents,
-    CreateStudent, GetClassStudentsPayload, GetStudentsByNamePayload, GetStudentsPayload,
+    CourseStudents,
+    GetClassStudentsPayload, GetStudentsByNamePayload, GetStudentsPayload,
     StudentBaseRow,
     StudentByName,
     Students
@@ -53,29 +53,34 @@ export class PostgresStudentRepository implements IStudentRepository {
         }
     }
 
-    async getClassStudents(payload: GetClassStudentsPayload, authUser: AuthUser): Promise<ClassStudents[]> {
+    async getCourseStudents(payload: GetClassStudentsPayload, authUser: AuthUser): Promise<CourseStudents[]> {
         const { courseId, isActive } = payload;
         const { userSchoolId } = authUser;
 
         const client = await pool.connect();
         try {
-            const result = await client.query(`
-                SELECT
+            const query = `
+                 SELECT
                     st.id as student_id,
                     p.first_name as student_first_name,
                     p.middle_name as student_middle_name,
                     p.first_last_name as student_first_last_name,
                     p.second_last_name as student_second_last_name,
+                    st.enrollment_code,
                     p.email,
                     p.is_active
                 FROM student st
-                         JOIN profile p ON st.profile_id = p.id
-                         JOIN course c ON st.course_id = c.id
-                WHERE st.course_id = $1 AND p.is_active = $2 AND c.school_id = $3
+                    JOIN profile p ON st.profile_id = p.id
+                    JOIN course c ON st.course_id = c.id
+                WHERE st.course_id = $1
+                AND p.is_active = $2
+                AND c.school_id = $3
                 ORDER BY
                     LOWER(TRIM(p.first_last_name)) ASC,
-                    LOWER(TRIM(p.second_last_name)) ASC NULLS FIRST;
-            `, [courseId, isActive, userSchoolId]);
+                    LOWER(TRIM(p.first_name)) ASC;
+            `;
+
+            const result = await client.query(query, [courseId, isActive, userSchoolId]);
 
             return result.rows;
         } finally {
@@ -129,6 +134,7 @@ export class PostgresStudentRepository implements IStudentRepository {
                     p.middle_name as student_middle_name,
                     p.first_last_name as student_first_last_name,
                     p.second_last_name as student_second_last_name,
+                    s.enrollment_code,
                     p.email
                 FROM student s
                     JOIN profile p ON s.profile_id = p.id

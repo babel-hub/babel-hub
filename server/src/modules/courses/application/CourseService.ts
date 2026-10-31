@@ -52,9 +52,8 @@ export class CourseService {
             throw new NotFoundError("El curso no existe o no tienes acceso a él.");
         }
 
-        // check multi tenant
         const [students, classes] = await Promise.all([
-            this.studentRepository.getClassStudents({courseId, isActive}, auth),
+            this.studentRepository.getCourseStudents({courseId, isActive}, auth),
             this.classRepository.getCourseClasses(courseId, isActive, auth)
         ]);
 

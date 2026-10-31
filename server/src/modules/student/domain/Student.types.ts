@@ -4,17 +4,17 @@ interface BaseStudent {
     student_middle_name: string | null;
     student_first_last_name: string;
     student_second_last_name: string | null;
+    enrollment_code: string | null;
     email: string;
     is_active: boolean;
 }
 
-export interface ClassStudents extends BaseStudent {}
+export interface CourseStudents extends BaseStudent {}
 
 export interface Students extends BaseStudent {
     course_id: string;
     course_name: string;
     is_active: boolean;
-    enrollment_code: string | null;
     created_at: string;
 }
 

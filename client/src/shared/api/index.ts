@@ -1,8 +1,8 @@
 import api from "../../api/client.ts";
 import type {
     Announcement,
-    Area, CoursePeriodTrend,
-    CreateAnnouncementPayload, CumulativeAttendance, CumulativeGrades, CumulativeSummary,
+    Area, CourseFailStat, CoursePeriodTrend,
+    CreateAnnouncementPayload, CumulativeAttendance, CumulativeGrades, CumulativeSummary, HonorStudent,
     Period, ReportStudentRow, Scale,
     Teacher,
     UpdateAnnouncementPayload, UserSearch
@@ -30,8 +30,13 @@ export const getScales = async (): Promise<Scale[]> => {
     const response = await api.get(`/scales`);
     return response.data.scales;
 }
-// Announcements
 
+
+
+
+
+
+// Announcements
 export const getUsers = async (query: string): Promise<UserSearch[]> => {
     const response = await api.get("/user/search", {
         params: {
@@ -65,6 +70,11 @@ export const updateAnnouncement = async (announcementId: string, payload: Omit<U
 export const deleteAnnouncement = async (announcementId: string): Promise<void> => {
     return await api.delete(`/announcements/${announcementId}`);
 }
+
+
+
+
+
 
 // Cumulative
 export const getPeriodTrends = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CoursePeriodTrend[]> => {
@@ -112,3 +122,24 @@ export const getCumulativeReports = async (courseId: string, signal?: AbortSigna
     const response = await api.get(`/api/cumulative/${courseId}/reports/students`, { signal });
     return response.data.students;
 }
+
+export const getCumulativeFailStats = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CourseFailStat[]> => {
+    const response = await api.get(`/api/cumulative/course/${courseId}/fail-stats`, {
+        signal,
+        params: {
+            periodId
+        }
+    });
+    return response.data.stats;
+}
+
+export const getCumulativeHonorStudents = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<HonorStudent[]> => {
+    const response = await api.get(`/api/cumulative/course/${courseId}/honor-students`, {
+        signal,
+        params: {
+            periodId
+        }
+    });
+    return response.data.honor;
+}
+

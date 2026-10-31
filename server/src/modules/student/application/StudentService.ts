@@ -5,7 +5,7 @@ import type {
     StudentByName,
     StudentProfileData,
     Students,
-    ClassStudents, GetStudentsPayload, GetClassStudentsPayload, GetStudentsByNamePayload
+    GetStudentsPayload, GetStudentsByNamePayload
 } from "../domain/Student.types.js";
 import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 import type {

@@ -6,21 +6,16 @@ import { HiDocumentDownload, HiOutlineEye } from "react-icons/hi";
 import { useDownloadPdf } from "../../../hooks/useDownlloadPdf.ts";
 import {ReportStat} from "../ui/ReportStat.tsx";
 import {OtherAwards} from "../ui/OtherAwards.tsx";
-import { Trophy, ClipboardCheck, GraduationCap, CalendarCheck, ShieldCheck, Accessibility } from 'lucide-react';
+import { ClipboardCheck, GraduationCap, CalendarCheck, ShieldCheck, Accessibility } from 'lucide-react';
 
 
 interface ReportsProps {
     courseId: string;
+    periodId: string;
 }
 
-const threeBest = [
-    "Sebastian Gallego",
-    "Laura Alejandra Pineda",
-    "Jean Carlos Urbano Rico"
-]
-
-export function Reports({ courseId }: ReportsProps) {
-    const { students, loading, error } = useCumulativeReports(courseId);
+export function Reports({ courseId, periodId }: ReportsProps) {
+    const { students, loading, error, failStats, honorStudents } = useCumulativeReports(courseId, periodId);
     const { download } = useDownloadPdf();
 
     if (loading) return <LoadingContent title="Cargando estudiantes..." />;
@@ -29,10 +24,15 @@ export function Reports({ courseId }: ReportsProps) {
         return <NoResults title="No hay estudiantes registrados en este curso" />;
     }
 
-    const handleDownload = (studentId: string, fileName: string) => {
+    const handleDownload = (studentId: string, fileName: { name: string, lastName: string }) => {
+        const slug = `${fileName.name}-${fileName.lastName}`
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, '-');
+
         download(
             `/api/cumulative/student/${studentId}/report-card/pdf`,
-            `boletin-${fileName}.pdf`
+            `boletin-${slug}.pdf`
         );
     };
 
@@ -43,7 +43,7 @@ export function Reports({ courseId }: ReportsProps) {
                 <p className="text-sm text-gray-500">Visualiza o descarga el boletín de cada estudiante.</p>
             </div>
 
-            <div className="relative overflow-x-auto no-scrollbar md:rounded-xl max-h-[calc(100dvh-17.8rem)] gap-3 grid grid-cols-6">
+            <div className="relative overflow-x-auto max-h-[calc(100dvh-17.8rem)] no-scrollbar md:rounded-xl gap-3 grid grid-cols-6">
                 <div className="md:rounded-xl border border-gray-200  col-span-3">
                     <table className="w-full text-sm text-left text-gray-600">
                         <thead className="text-sm text-gray-700 bg-gray-100 border-b border-gray-200">
@@ -62,10 +62,10 @@ export function Reports({ courseId }: ReportsProps) {
                         <tbody>
                         {students.map((student, index) => {
                             const fullName = reverseName({
-                                middleName: student.middle_name,
-                                firstName: student.first_name,
-                                firstLastName: student.first_last_name,
-                                secondLastName: student.second_last_name
+                                middleName: student.student_middle_name,
+                                firstName: student.student_first_name,
+                                firstLastName: student.student_first_last_name,
+                                secondLastName: student.student_second_last_name,
                             });
 
                             return (
@@ -93,7 +93,7 @@ export function Reports({ courseId }: ReportsProps) {
 
                                     <td className="p-2 text-center">
                                         <button
-                                            onClick={() => handleDownload(student.student_id, fullName)}
+                                            onClick={() => handleDownload(student.student_id, { name: student.student_first_name, lastName: student.student_first_last_name })}
                                             className="inline-flex items-center justify-center gap-1.5 bg-primary-shadow text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                                             title="Descargar Boletín"
                                         >
@@ -110,10 +110,11 @@ export function Reports({ courseId }: ReportsProps) {
 
                 <div className="flex col-span-3 flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
-                        <ReportStat total={15} remaining={0}/>
-                        <ReportStat total={2} remaining={1}/>
-                        <ReportStat total={2} remaining={2}/>
-                        <ReportStat total={3} remaining={3}/>
+                        {
+                            failStats.map((failStat, i) => (
+                                <ReportStat key={i} total={failStat.studentCount} remaining={i === 3 ? `+${failStat.failCount}` : `${failStat.failCount}`}/>
+                            ))
+                        }
                     </div>
 
                     <div className="border flex flex-col items-start gap-3 rounded-xl p-2 border-gray-200">
@@ -122,20 +123,37 @@ export function Reports({ courseId }: ReportsProps) {
                             <p className="text-xs text-gray-400">Certificados del periodo · 3 estudiantes destacados</p>
                         </div>
 
-                        {/*Here goes the 3 best students*/}
                         <div className="flex flex-col border-t border-gray-100 gap-0.5 w-full">
                             {
-                                threeBest.map((s, i) => (
-                                    <div key={i} className="flex border-b py-2 border-gray-100 last:border-0 items-center gap-2">
-                                        <span className="bg-primary-shadow text-primary font-bold py-0.5 px-2.5 rounded-md">{i + 1}</span>
-                                        <div className="flex w-full items-center justify-between">
-                                            <span className="text-bold">{s}</span>
-                                            <span className="text-xs text-gray-400">
-                                                {i === 0 ? "Mejor promedio" : i === 1 ? "2.º lugar" : "3.º lugar"}
+                                honorStudents.length > 0 ? (
+                                    honorStudents.map((student) => {
+                                        const fullName = reverseName({
+                                            middleName: student.student_middle_name,
+                                            firstName: student.student_first_name,
+                                            firstLastName: student.student_first_last_name,
+                                            secondLastName: student.student_second_last_name,
+                                        });
+
+                                        return (
+                                            <div key={student.student_id} className="flex border-b py-2 border-gray-100 last:border-0 items-center gap-2">
+                                        <span className="bg-primary-shadow text-primary font-bold py-0.5 px-2.5 rounded-md">
+                                            {student.rank}
+                                        </span>
+                                                <div className="flex w-full items-center justify-between">
+                                                    <span className="text-bold capitalize">{fullName}</span>
+                                                    <span className="text-xs text-gray-400">
+                                                {student.rank === 1 ? "Mejor promedio" : student.rank === 2 ? "2.º lugar" : "3.º lugar"}
+                                                        {` (${student.period_average.toFixed(2)})`}
                                             </span>
-                                        </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="w-full px-2 py-5 text-center">
+                                        <p className="text-sm text-gray-400">No hay entudiantes de honor</p>
                                     </div>
-                                ))
+                                )
                             }
                         </div>
 
@@ -158,11 +176,6 @@ export function Reports({ courseId }: ReportsProps) {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 grid-rows-3">
-                            <OtherAwards
-                                title="Mejor Promedio General"
-                                description="Reconocimiento al estudiante con el mejor promedio del curso."
-                                icon={<Trophy className="size-8 text-primary" />}
-                            />
                             <OtherAwards
                                 title="Mejor en las Evaluaciones"
                                 description="Reconocimiento al estudiante con el mejor desempeño en las evaluaciones."

@@ -113,14 +113,10 @@ export interface ReportCard {
     generated_at: string;
 }
 
-export interface ReportStudentRow {
-    student_id: string;
-    first_name: string;
-    middle_name: string | null;
-    first_last_name: string;
-    second_last_name: string | null;
+export interface ReportStudentRow extends BaseStudent {
     enrollment_code: string | null;
-    course_name: string;
+    email: string;
+    is_active: boolean;
 }
 
 export interface StudentAcademicReportRow {
@@ -162,4 +158,14 @@ export interface StudentCourseSummaryRow {
     course_average: number;
     rank: number;
     periods: AcademicPeriodSummary[];
+}
+
+export interface CourseFailStat {
+    failCount: number;
+    studentCount: number;
+}
+
+export interface HonorStudent extends BaseStudent{
+    rank: number;
+    period_average: number;
 }
