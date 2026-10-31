@@ -17,9 +17,9 @@ export function AttendanceDonut({ totals }: AttendanceDonutProps) {
 
     const data = [
         { name: "Presente", value: totals.present, color: "#16a34a" },
-        { name: "Tardanza", value: totals.late,    color: "#ca8a04" },
-        { name: "Excusado", value: totals.excused, color: "#ea580c" },
-        { name: "Ausente",  value: totals.absent,  color: "#dc2626" },
+        { name: "Tardanza", value: totals.late,    color: "#FFDF20" },
+        { name: "Excusado", value: totals.excused, color: "#00BCFF" },
+        { name: "Ausente",  value: totals.absent,  color: "#FB2C36" },
     ].filter(d => d.value > 0);
 
     if (total === 0) {

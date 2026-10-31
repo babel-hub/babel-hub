@@ -7,9 +7,9 @@ interface GradeDonutProps {
 }
 
 const COLORS = {
-    bad: "#ef4444",
-    medium: "#f59e0b",
-    good: "#3b82f6",
+    bad: "#FB2C36",
+    medium: "#FFDF20",
+    good: "#00BCFF",
     excellent: "#10b981",
 };
 
