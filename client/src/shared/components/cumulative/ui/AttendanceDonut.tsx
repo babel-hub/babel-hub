@@ -16,10 +16,10 @@ export function AttendanceDonut({ totals }: AttendanceDonutProps) {
     const rate = total > 0 ? Math.round((totals.present / total) * 100) : 0;
 
     const data = [
-        { name: "Presente", value: totals.present, color: "#16a34a" },
+        { name: "Presente", value: totals.present, color: "#00C950" },
         { name: "Tardanza", value: totals.late,    color: "#FFDF20" },
         { name: "Excusado", value: totals.excused, color: "#00BCFF" },
-        { name: "Ausente",  value: totals.absent,  color: "#FB2C36" },
+        { name: "Inasistencia",  value: totals.absent,  color: "#FB2C36" },
     ].filter(d => d.value > 0);
 
     if (total === 0) {
@@ -60,7 +60,6 @@ export function AttendanceDonut({ totals }: AttendanceDonutProps) {
                 </div>
             </div>
 
-            {/* Legend */}
             <ul className="flex-1 flex flex-col justify-center gap-2 min-w-0">
                 {data.map((item) => {
                     const pct = Math.round((item.value / total) * 100);

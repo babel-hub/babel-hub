@@ -8,9 +8,9 @@ interface GradeDonutProps {
 
 const COLORS = {
     bad: "#FB2C36",
-    medium: "#FFDF20",
-    good: "#00BCFF",
-    excellent: "#10b981",
+    medium: "#FF6900",
+    good: "#FFDF20",
+    excellent: "#00C950",
 };
 
 export function GradeDonut({ summary }: GradeDonutProps) {

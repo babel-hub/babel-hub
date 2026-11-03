@@ -20,7 +20,7 @@ export class ClassService {
             throw new NotFoundError("La clase no existe o no tienes acceso a ella.");
         }
 
-        const students = await this.studentRepository.getClassStudents(
+        const students = await this.studentRepository.getCourseStudents(
             { courseId: classDetails.course_id, isActive },
             auth
         );
