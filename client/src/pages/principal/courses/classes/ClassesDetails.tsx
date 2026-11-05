@@ -53,7 +53,7 @@ export default function ClassesDetails() {
             setDate={setDate}
             showCalendar={tab === "register attendance"}
         >
-            {tab === "students" && (<Students students={data.students} />)}
+            {tab === "students" && (<Students students={data.students} classId={classId} courseId={courseId} />)}
             {tab === "register attendance" && (<RegisterAttendance classData={data} date={date} />)}
             {tab === "see attendance" && (<ViewAttendance periodId={selectedPeriodId} classData={data} courseId={courseId} periods={periods} />)}
             {tab === "assignments" && (<Assignments periodId={selectedPeriodId} classData={data} courseId={courseId} classId={classId} />)}

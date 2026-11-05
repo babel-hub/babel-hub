@@ -1,6 +1,12 @@
 import api from "../../../../api/client.ts";
 import type { ClassDetailsData } from "../types";
-import type { AssignmentsOverview, ClassAttendance } from "../../../types/types.ts";
+import type {
+    AssignmentsOverview,
+    ClassAttendance,
+    InfractionType,
+    StudentInfraction,
+    StudentMonitoring
+} from "../../../types/types.ts";
 
 export const getClass = async (id: string): Promise<ClassDetailsData> => {
     const response = await api.get(`/classes/${id}`);
@@ -30,6 +36,33 @@ export const getDailyAttendance = async (classId: string, date: string, signal?:
     });
     return response.data.records;
 };
+
+export const getStudentInfractions = async (classId: string, studentId: string, signal?: AbortSignal): Promise<StudentInfraction[]> => {
+    const response = await api.get(`/api/coexistence/class/${classId}/student/${studentId}/infractions`, {
+        signal
+    });
+    return response.data.infractions;
+}
+
+export const getStudentMonitoring= async (courseId: string, studentId: string, signal?: AbortSignal): Promise<StudentMonitoring[]> => {
+    const response = await api.get(`/api/coexistence/course/${courseId}/student/${studentId}/monitoring`, {
+        signal
+    });
+    return response.data.monitoring;
+}
+
+export const getInfractionTypes= async (signal?: AbortSignal): Promise<InfractionType[]> => {
+    const response = await api.get(`/api/coexistence/infraction-types`, {
+        signal
+    });
+    return response.data.types;
+}
+
+
+export const createInfraction= async (classId: string, payload: any): Promise<void> => {
+    await api.post(`/api/coexistence/class/${classId}/infractions`, payload);
+}
+
 
 // Assignment Endpoints
 

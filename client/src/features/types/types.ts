@@ -4,6 +4,7 @@ import type {ClassItem} from "../director/course-management/types";
 export type AttendanceStatus = 'absent' | 'late' | 'present' | 'excused' | 'no_data';
 export type modeTypes = 'create' | 'edit';
 export type TabTypes = 'students' | 'register attendance' | 'see attendance' | 'assignments';
+export type Severity = "low" | "medium" | "high";
 
 export interface Scale {
     id: string;
@@ -78,4 +79,37 @@ export interface CourseDataProps {
 export interface CourseDailyAttendance {
     student_id: string;
     daily_status: 'absent' | 'late' | 'present' | 'excused' | 'no_data';
+}
+
+export interface StudentInfraction {
+    id: string;
+    student_id: string;
+    class_id: string;
+    infraction_name: string;
+    severity: Severity;
+    description: string | null;
+    reported_by: string;
+    reported_by_name: string;
+    created_at: string;
+}
+
+export interface StudentMonitoring {
+    id: string;
+    infraction_id: string;
+    student_id: string;
+    course_id: string;
+    course_name: string;
+    notes: string | null;
+    infraction_name: string;
+    severity: Severity;
+    description: string | null;
+    reported_by: string;
+    reported_by_name: string;
+    created_at: string;
+}
+
+export interface InfractionType {
+    id: string;
+    name: string;
+    severity: Severity;
 }

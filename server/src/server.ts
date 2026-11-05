@@ -25,6 +25,7 @@ import parentRoutes from "./modules/parent/infrastructure/parent.routes.js";
 import classScheduleRoutes from "./modules/class-schedule/infrastructure/classSchedule.routes.js";
 import announcementsRoutes from "./modules/announcements/infrastructure/announcements.routes.js";
 import cumulativeRoutes from "./modules/cumulative/infrastructure/cumulative.routes.js";
+import coexistenceRoutes from "./modules/coexistence/infrastructure/coexistence.routes.js";
 
 dotenv.config();
 
@@ -36,7 +37,7 @@ app.use(express.json());
 app.set("trust proxy", 1);
 app.use(defaultLimiter);
 
-app.use("/healthcheck", (req, res, next) => {
+app.use("/healthcheck", (req, res) => {
     res.status(200).json({ message: 'OK' })
 });
 
@@ -67,9 +68,8 @@ app.use("/grades", gradeRoutes);
 app.use("/class-schedule", classScheduleRoutes);
 app.use("/announcements", announcementsRoutes);
 app.use("/api/cumulative", cumulativeRoutes);
+app.use("/api/coexistence", coexistenceRoutes);
 
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Server running on port: ${PORT}`);
-})
+app.listen(PORT, () => console.log(`Server running...`))
