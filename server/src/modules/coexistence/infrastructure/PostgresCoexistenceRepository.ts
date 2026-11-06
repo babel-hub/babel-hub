@@ -21,6 +21,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     i.id,
                     i.student_id,
                     i.class_id,
+                    i.infraction_type_id,
                     it.name AS infraction_name,
                     it.severity,
                     i.description,
@@ -89,11 +90,11 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         const client = await pool.connect();
         try {
             const result = await client.query(`
-            SELECT id, name, severity
-            FROM infraction_type
-            WHERE school_id = $1 AND is_active = true
-            ORDER BY severity DESC, name ASC
-        `, [userSchoolId]);
+                SELECT id, name, severity
+                FROM infraction_type
+                WHERE school_id = $1 AND is_active = true
+                ORDER BY severity DESC, name ASC
+            `, [userSchoolId]);
             return result.rows;
         } finally {
             client.release();
@@ -112,27 +113,27 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             await client.query('BEGIN');
 
             const validation = await client.query(`
-            SELECT
-                (SELECT co.id
-                 FROM class cl
-                 JOIN course co ON cl.course_id = co.id
-                 WHERE cl.id = $1 AND co.school_id = $4) AS course_id,
-                (SELECT 1
-                 FROM student s
-                 JOIN profile p ON s.profile_id = p.id
-                 JOIN class cl ON cl.course_id = s.course_id
-                 WHERE s.id = $2
-                   AND cl.id = $1
-                   AND p.school_id = $4
-                   AND p.is_active = true) AS student_valid,
-                (SELECT 1
-                 FROM infraction_type
-                 WHERE id = $3 AND school_id = $4 AND is_active = true) AS type_valid,
-                (SELECT 1
-                 FROM class cl
-                 JOIN teacher t ON cl.teacher_id = t.id
-                 WHERE cl.id = $1 AND t.profile_id = $6) AS teacher_owns_class
-        `, [classId, payload.studentId, payload.infractionTypeId, userSchoolId, userRole, userId]);
+                SELECT
+                    (SELECT co.id
+                     FROM class cl
+                        JOIN course co ON cl.course_id = co.id
+                     WHERE cl.id = $1 AND co.school_id = $4) AS course_id,
+                    (SELECT 1
+                     FROM student s
+                        JOIN profile p ON s.profile_id = p.id
+                        JOIN class cl ON cl.course_id = s.course_id
+                     WHERE s.id = $2
+                       AND cl.id = $1
+                       AND p.school_id = $4
+                       AND p.is_active = true) AS student_valid,
+                    (SELECT 1
+                     FROM infraction_type
+                     WHERE id = $3 AND school_id = $4 AND is_active = true) AS type_valid,
+                    (SELECT 1
+                     FROM class cl
+                        JOIN teacher t ON cl.teacher_id = t.id
+                     WHERE cl.id = $1 AND t.profile_id = $5) AS teacher_owns_class
+            `, [classId, payload.studentId, payload.infractionTypeId, userSchoolId, userId]);
 
             const v = validation.rows[0];
 
@@ -146,25 +147,18 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             }
 
             const infractionResult = await client.query(`
-            WITH inserted AS (
+                WITH inserted AS (
                 INSERT INTO infraction (student_id, class_id, infraction_type_id, description, reported_by)
                 VALUES ($1, $2, $3, $4, $5)
-                RETURNING *
-            )
-            SELECT
-                i.id,
-                i.student_id,
-                i.class_id,
-                it.name AS infraction_name,
-                it.severity,
-                i.description,
-                i.reported_by,
-                CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
-                i.created_at
-            FROM inserted i
-                JOIN infraction_type it ON it.id = i.infraction_type_id
-                JOIN profile p ON p.id = i.reported_by;
-        `, [
+                    RETURNING id, infraction_type_id
+                    )
+                SELECT
+                    i.id,
+                    it.name AS infraction_name,
+                    it.severity
+                FROM inserted i
+                    JOIN infraction_type it ON it.id = i.infraction_type_id;
+            `, [
                 payload.studentId,
                 classId,
                 payload.infractionTypeId,
@@ -174,33 +168,14 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
 
             const infraction = infractionResult.rows[0];
 
-            let monitoring: StudentMonitoring | null = null;
+            let monitoringId: string | null = null;
+
             if (payload.escalate) {
                 const monitoringResult = await client.query(`
-                WITH inserted AS (
                     INSERT INTO monitoring (infraction_id, student_id, course_id, notes, reported_by)
                     VALUES ($1, $2, $3, $4, $5)
-                    RETURNING *
-                )
-                SELECT
-                    m.id,
-                    m.infraction_id,
-                    m.student_id,
-                    m.course_id,
-                    c.name AS course_name,
-                    m.notes,
-                    it.name AS infraction_name,
-                    it.severity,
-                    i.description,
-                    m.reported_by,
-                    CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
-                    m.created_at
-                FROM inserted m
-                    JOIN course c ON c.id = m.course_id
-                    JOIN infraction i ON i.id = m.infraction_id
-                    JOIN infraction_type it ON it.id = i.infraction_type_id
-                    JOIN profile p ON p.id = m.reported_by;
-            `, [
+                        RETURNING id;
+                `, [
                     infraction.id,
                     payload.studentId,
                     v.course_id,
@@ -208,7 +183,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     userId,
                 ]);
 
-                monitoring = monitoringResult.rows[0];
+                monitoringId = monitoringResult.rows[0].id;
             }
 
             await createAuditLog(client, {
@@ -218,7 +193,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 schoolId: userSchoolId,
                 metadata: {
                     infractionId: infraction.id,
-                    monitoringId: monitoring?.id ?? null,
+                    monitoringId: monitoringId,
                     studentId: payload.studentId,
                     classId,
                     typeName: infraction.infraction_name,
@@ -227,7 +202,6 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             });
 
             await client.query('COMMIT');
-            return;
         } catch (error: any) {
             await client.query('ROLLBACK');
 

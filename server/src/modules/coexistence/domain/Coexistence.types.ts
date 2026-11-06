@@ -14,6 +14,7 @@ export interface StudentInfraction {
     id: string;
     student_id: string;
     class_id: string;
+    infraction_type_id: string;
     infraction_name: string;
     severity: Severity;
     description: string | null;
@@ -44,6 +45,15 @@ export interface InfractionType {
 }
 
 export interface CreateInfractionPayload {
+    studentId: string;
+    infractionTypeId: string;
+    description: string | null;
+    escalate: boolean;
+    monitoringNotes?: string | null;
+}
+
+export interface UpdateInfractionPayload {
+    infractionId: string;
     studentId: string;
     infractionTypeId: string;
     description: string | null;

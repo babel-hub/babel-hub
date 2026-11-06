@@ -10,7 +10,6 @@ export const roleTranslations: Record<string, string> = {
     admin: "Administrador"
 };
 
-
 interface NameInput {
     firstName: string;
     middleName?: string | null | undefined;

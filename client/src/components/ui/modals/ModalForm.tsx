@@ -7,7 +7,7 @@ import { MiniSpinner } from "../Loadings.tsx";
 export interface FormField {
     name: string;
     label: string;
-    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea" | "checkbox";
+    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea" | "checkbox" | "radio";
     required?: boolean;
     placeholder?: string;
     loadingField?: boolean;
@@ -112,6 +112,33 @@ export default function DynamicModalForm({
                                             </option>
                                         ))}
                                     </select>
+                                ) : field.type === "radio" ? (
+                                    <div className="flex flex-col gap-1 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                                        {field.options?.map((opt) => (
+                                            <label
+                                                key={opt.value}
+                                                className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 p-1.5 rounded-lg transition-colors"
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name={field.name}
+                                                    value={opt.value}
+                                                    checked={formData[field.name] === opt.value}
+                                                    onChange={onChange}
+                                                    required={field.required}
+                                                    className="size-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700 font-medium select-none">
+                                                    {opt.label}
+                                                </span>
+                                            </label>
+                                        ))}
+                                        {(!field.options || field.options.length === 0) && (
+                                            <span className="text-sm text-gray-500 py-1 text-center">
+                                                No hay opciones disponibles
+                                            </span>
+                                        )}
+                                    </div>
                                 ) : field.type === "checkbox" ? (
                                     field.loadingField ? (
                                         <MiniSpinner />

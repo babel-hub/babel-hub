@@ -10,7 +10,6 @@ import type {
 
 import type { CoursesListData } from "../../features/director/course-management/types";
 
-
 export const getTeachers = async (): Promise<Teacher[]> => {
     const response = await api.get(`/teacher`);
     return response.data.teachers

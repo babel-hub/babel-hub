@@ -1,1 +1,0 @@
-export { ClassLayout } from "./components/header";

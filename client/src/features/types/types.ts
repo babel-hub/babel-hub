@@ -44,20 +44,6 @@ export interface CourseAttendance {
     status: AttendanceStatus;
 }
 
-interface AttendanceRecord {
-    date: string;
-    status: AttendanceStatus;
-}
-
-export interface StudentPeriodAttendance {
-    student_id: string;
-    firstName: string;
-    middleName: string | null;
-    firstLastName: string;
-    secondLastName: string | null;
-    records: AttendanceRecord[];
-}
-
 export interface AssignmentsOverview {
     assessment_criteria: AssessmentCriteria[];
     grades: Grades[];
@@ -85,6 +71,7 @@ export interface StudentInfraction {
     id: string;
     student_id: string;
     class_id: string;
+    infraction_type_id: string;
     infraction_name: string;
     severity: Severity;
     description: string | null;

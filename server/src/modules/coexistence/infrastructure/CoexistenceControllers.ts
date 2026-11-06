@@ -55,9 +55,9 @@ export class CoexistenceController {
                 {
                     studentId,
                     infractionTypeId,
-                    description: description || null,
+                    description: description,
                     escalate: Boolean(escalate),
-                    monitoringNotes: monitoringNotes || null,
+                    monitoringNotes: monitoringNotes,
                 },
                 authUser
             );

@@ -2,30 +2,80 @@ import type { ICoexistenceRepository } from "../domain/ICoexistenceRepository.js
 import type {
     CreateInfractionPayload,
     GetStudentInfractionsPayload,
-    GetStudentMonitoringPayload, InfractionType,
-    StudentInfraction, StudentMonitoring
+    GetStudentMonitoringPayload,
+    InfractionType,
+    StudentInfraction,
+    StudentMonitoring,
+    UpdateInfractionPayload,
 } from "../domain/Coexistence.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
 import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import { nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class CoexistenceService {
     constructor(
         private readonly coexistenceRepository: ICoexistenceRepository,
     ) {}
 
-    async getStudentInfractions(payload: GetStudentInfractionsPayload, authUser: AuthUser): Promise<StudentInfraction[]> {
-        const auth = requireAuth(authUser);
-        if (!payload.studentId || !payload.classId) throw new ValidationError("El ID del estudiante o la clase son invalidos");
-
-        return this.coexistenceRepository.getStudentInfractions(payload, auth)
+    private normalizeCreate(payload: CreateInfractionPayload): CreateInfractionPayload {
+        return {
+            studentId: payload.studentId,
+            infractionTypeId: payload.infractionTypeId,
+            description: nullifyEmpty(payload.description),
+            escalate: payload.escalate,
+            monitoringNotes: payload.escalate
+                ? nullifyEmpty(payload.monitoringNotes)
+                : null,
+        };
     }
 
-    async getStudentMonitoring(payload: GetStudentMonitoringPayload, authUser: AuthUser): Promise<StudentMonitoring[]> {
-        const auth = requireAuth(authUser);
-        if (!payload.studentId || !payload.courseId) throw new ValidationError("El ID del estudiante o el curso son invalidos");
+    private normalizeUpdate(payload: UpdateInfractionPayload): UpdateInfractionPayload {
+        return {
+            infractionId: payload.infractionId,
+            studentId: payload.studentId,
+            infractionTypeId: payload.infractionTypeId,
+            description: nullifyEmpty(payload.description),
+            escalate: payload.escalate,
+            monitoringNotes: payload.escalate
+                ? nullifyEmpty(payload.monitoringNotes)
+                : null,
+        };
+    }
 
-        return this.coexistenceRepository.getStudentMonitoring(payload, auth)
+    private validateCreate(payload: CreateInfractionPayload): void {
+        if (!payload.studentId) throw new ValidationError("El ID del estudiante es obligatorio");
+        if (!payload.infractionTypeId) throw new ValidationError("El tipo de infracción es obligatorio");
+        if (payload.escalate && !payload.monitoringNotes?.trim()) {
+            throw new ValidationError("Cuando se escala a monitoreo, las notas de seguimiento son obligatorias");
+        }
+    }
+
+    private validateUpdate(payload: UpdateInfractionPayload): void {
+        if (!payload.infractionId) throw new ValidationError("El ID de la infracción es obligatorio");
+        if (!payload.infractionTypeId) throw new ValidationError("El tipo de infracción es obligatorio");
+    }
+
+    async getStudentInfractions(
+        payload: GetStudentInfractionsPayload,
+        authUser: AuthUser,
+    ): Promise<StudentInfraction[]> {
+        const auth = requireAuth(authUser);
+        if (!payload.studentId || !payload.classId) {
+            throw new ValidationError("El ID del estudiante y de la clase son obligatorios");
+        }
+        return this.coexistenceRepository.getStudentInfractions(payload, auth);
+    }
+
+    async getStudentMonitoring(
+        payload: GetStudentMonitoringPayload,
+        authUser: AuthUser,
+    ): Promise<StudentMonitoring[]> {
+        const auth = requireAuth(authUser);
+        if (!payload.studentId || !payload.courseId) {
+            throw new ValidationError("El ID del estudiante y del curso son obligatorios");
+        }
+        return this.coexistenceRepository.getStudentMonitoring(payload, auth);
     }
 
     async getInfractionTypes(authUser: AuthUser): Promise<InfractionType[]> {
@@ -36,17 +86,25 @@ export class CoexistenceService {
     async createInfraction(
         classId: string,
         payload: CreateInfractionPayload,
-        authUser: AuthUser
+        authUser: AuthUser,
     ): Promise<void> {
         const auth = requireAuth(authUser);
-
         if (!classId) throw new ValidationError("El ID de la clase es obligatorio");
-        if (!payload.studentId) throw new ValidationError("El ID del estudiante es obligatorio");
-        if (!payload.infractionTypeId) throw new ValidationError("El tipo de infracción es obligatorio");
-        if (payload.escalate && !payload.monitoringNotes?.trim()) {
-            throw new ValidationError("Cuando se escala a monitoreo, las notas son obligatorias");
-        }
 
-        return this.coexistenceRepository.createInfraction(classId, payload, auth);
+        this.validateCreate(payload);
+
+        const normalized = this.normalizeCreate(payload);
+        await this.coexistenceRepository.createInfraction(classId, normalized, auth);
+    }
+
+    async updateInfraction(
+        payload: UpdateInfractionPayload,
+        authUser: AuthUser,
+    ): Promise<void> {
+        const auth = requireAuth(authUser);
+        this.validateUpdate(payload);
+
+        const normalized = this.normalizeUpdate(payload);
+        // await this.coexistenceRepository.updateInfraction(normalized, auth);
     }
 }
