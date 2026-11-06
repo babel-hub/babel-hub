@@ -1,7 +1,7 @@
 import ButtonChevronBack from "../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { useNavigate } from "react-router-dom";
 import {useMemo, useState, useEffect} from "react";
-import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../../shared/global/hooks/usePeriods.ts";
 import { useAttendanceSummary } from "../hooks/useAttendanceSummary.ts";
 import {AttendanceList} from "./ui/AttendanceList.tsx";
 import {LoadingContent} from "../../../../components/ui/Loadings.tsx";

@@ -3,8 +3,8 @@ import DynamicModalForm, { type FormField } from "../../../../../components/ui/m
 import { useState } from "react";
 import { useUpsertGradingTemplate } from "../../hooks/grading-templates/useUpsertGradingTemplate.ts";
 import type { modeTypes } from "../../../../types/types.ts";
-import { useScales } from "../../../../../shared/hooks/useScales.ts";
-import type { Scale } from "../../../../../shared/types/types.ts";
+import { useScales } from "../../../../../shared/global/hooks/useScales.ts";
+import type { Scale } from "../../../../../shared/global/types/types.ts";
 
 interface GradingTemplateModalModeProps {
     mode: modeTypes;

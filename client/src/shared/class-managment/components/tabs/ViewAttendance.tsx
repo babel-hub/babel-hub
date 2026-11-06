@@ -1,10 +1,10 @@
 import { formatDateParts, formatDatePeriod } from "../../../../features/utils/utils.ts";
 import { formatterDate, reverseName } from "../../../../types";
-import type { Period } from "../../../types/types.ts";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { useAttendanceGrid } from "../../hooks/useAttendanceGrid.ts";
 import type {PrincipalClassData, SharedClassData} from "../../types/types.ts";
+import type { Period } from "../../../global/types/types.ts";
 
 interface ViewAttendanceProps {
     classData: SharedClassData;

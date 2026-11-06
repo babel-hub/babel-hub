@@ -1,4 +1,4 @@
-import { useAreas } from "../../../../../shared/hooks/useAreas.ts";
+import { useAreas } from "../../../../../shared/global/hooks/useAreas.ts";
 import { useDeleteArea } from "../../hooks/areas/useDeleteArea.ts";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
@@ -6,7 +6,7 @@ import type { ModalModeTypes } from "../../../../../types";
 import { AreasFormModal } from "../ui/AreasFormModal.tsx";
 import { HiPlus } from "react-icons/hi";
 import {AreaRows} from "./AreaRows.tsx";
-import type { Area } from "../../../../../shared/types/types.ts";
+import type { Area } from "../../../../../shared/global/types/types.ts";
 
 export function AreasLayout() {
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);

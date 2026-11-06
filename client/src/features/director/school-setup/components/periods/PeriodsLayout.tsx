@@ -1,4 +1,4 @@
-import { usePeriods } from "../../../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../../../shared/global/hooks/usePeriods.ts";
 import { useState } from "react";
 import { type ModalModeTypes } from "../../../../../types";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
@@ -6,7 +6,7 @@ import { useDeletePeriod } from "../../hooks/periods/useDeletePeriod.ts";
 import { PeriodsFormModal } from "../ui/PeriodsFormModal.tsx";
 import { HiPlus } from "react-icons/hi";
 import { PeriodRows } from "./PeriodRows.tsx";
-import type { Period } from "../../../../../shared/types/types.ts";
+import type { Period } from "../../../../../shared/global/types/types.ts";
 
 export function PeriodsLayout() {
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');

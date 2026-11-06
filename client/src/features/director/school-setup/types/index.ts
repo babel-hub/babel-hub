@@ -1,4 +1,4 @@
-import type { Area } from "../../../../shared/types/types.ts";
+import type { Area } from "../../../../shared/global/types/types.ts";
 
 export interface SubjectsProps {
     id: string;

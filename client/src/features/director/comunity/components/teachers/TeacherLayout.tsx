@@ -9,7 +9,7 @@ import { TeacherTable } from "./TeacherTable.tsx";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
 import { TeacherFormModal } from "../ui/TeacherFormModal.tsx";
 import {type ModalModeTypes, reverseName} from "../../../../../types";
-import {useTeachers} from "../../../../../shared/hooks/useTeachers.ts";
+import {useTeachers} from "../../../../../shared/global/hooks/useTeachers.ts";
 
 export function TeacherLayout() {
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');

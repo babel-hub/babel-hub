@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../../shared/global/hooks/usePeriods.ts";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
-import type { CumulativeMetrics, TabCumulativeTypes } from "../../../../shared/types/types.ts";
-import { useCumulativeSummary } from "../../../../shared/hooks/cumulative/useCumulativeSummary.ts";
-import { useCoursePeriodTrend } from "../../../../shared/hooks/cumulative/useCoursePeriodTrend.ts";
+import { useCumulativeSummary } from "../../../../shared/cumulative/hooks/useCumulativeSummary.ts";
+import { useCoursePeriodTrend } from "../../../../shared/cumulative/hooks/useCoursePeriodTrend.ts";
+import type { TabCumulativeTypes, CumulativeMetrics } from "../../../../shared/cumulative/types/types.ts";
 
 import {
     CumulativeRecordLayout,
@@ -13,7 +13,7 @@ import {
     Summary,
     Attendance,
     Reports
-} from "../../../../shared/components/cumulative";
+} from "../../../../shared/cumulative/components";
 
 export default function TeacherCumulativeRecord() {
     const { courseId } = useParams<{ courseId: string }>();

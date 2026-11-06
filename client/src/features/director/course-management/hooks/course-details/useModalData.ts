@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAvailableSubjects } from "../../api";
-import { useTeachers } from "../../../../../shared/hooks/useTeachers.ts";
+import { useTeachers } from "../../../../../shared/global/hooks/useTeachers.ts";
 import type { AvailableSubjects } from "../../types";
 
 export const useModalData = (id: string) => {

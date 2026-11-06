@@ -1,6 +1,6 @@
-import type { Announcement } from "../../../shared/types/types";
-import { getStyles } from "../../../shared/components/announcements/utils/utils.ts";
+import { getStyles } from "../../../shared/announcements/components/utils/utils.ts";
 import { formatterDate } from "../../../types";
+import type { Announcement } from "../../../shared/announcements/types/types.ts";
 
 interface AnnouncementModalProps {
     announcement: Announcement;

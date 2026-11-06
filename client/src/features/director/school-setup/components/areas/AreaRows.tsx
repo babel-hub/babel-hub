@@ -1,7 +1,7 @@
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { ActionMenu, type MenuOption } from "../../../../../components/ui/menu/ActionMenu.tsx";
-import type { Area } from "../../../../../shared/types/types.ts";
 import { Link } from "react-router-dom";
+import type { Area } from "../../../../../shared/global/types/types.ts";
 
 interface AreaRowsProps {
     area: Area;

@@ -5,7 +5,7 @@ import { useStudentData } from "../../../features/parent/shared/hooks/useStudent
 import { LoadingContent } from "../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../components/ui/blocks/NoResults.tsx";
 import { formatterDate } from "../../../types";
-import { usePeriods } from "../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../shared/global/hooks/usePeriods.ts";
 
 export default function AcademicTracking() {
     const [tab, setTab] = useState<CumulativeGPATypes>('attendance');

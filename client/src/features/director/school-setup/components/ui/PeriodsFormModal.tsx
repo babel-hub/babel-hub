@@ -2,7 +2,7 @@ import DynamicModalForm, { type FormField } from "../../../../../components/ui/m
 import React, { useState } from "react";
 import { useUpsertPeriod } from "../../hooks/periods/useUpsertPeriod.ts";
 import type { modeTypes } from "../../../../types/types.ts";
-import type { Period } from "../../../../../shared/types/types.ts";
+import type { Period } from "../../../../../shared/global/types/types.ts";
 
 interface periodFormModalProps {
     mode: modeTypes;

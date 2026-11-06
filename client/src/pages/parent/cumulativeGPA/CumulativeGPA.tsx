@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CumulativeGPALayout, Grades, Attendance, Observations } from "../../../features/parent/cumulativeGPA/components";
 import { LoadingContent } from "../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../components/ui/blocks/NoResults.tsx";
-import { usePeriods } from "../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../shared/global/hooks/usePeriods.ts";
 import { useStudentData } from "../../../features/parent/shared/hooks/useStudentData.ts";
 import type { CumulativeGPATypes } from "../../../features/parent/shared/types/types.ts";
 

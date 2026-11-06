@@ -1,4 +1,4 @@
-import { AnnouncementsFeed } from "../../../../shared/components/announcements/AnnouncementsFeed.tsx";
+import { AnnouncementsFeed } from "../../../../shared/announcements/components/AnnouncementsFeed.tsx";
 import { useAuth } from "../../../../auth/useAuth.ts";
 
 export function Announcements () {

@@ -1,12 +1,12 @@
 import React from "react";
 import { HiOutlineCalendar, HiOutlineClipboardList, HiOutlineDocumentText, HiOutlineUsers } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
-import type { Period } from "../../../types/types";
 import type { TabTypes } from "../../../../features/types/types";
 import ButtonChevronBack from "../../../../components/ui/buttons/ButtonChevrowBack.tsx";
 import { reverseName } from "../../../../types";
 import { CustomSelect } from "../../../../components/ui/selector/CustomSelect.tsx";
 import type {PrincipalClassData, SharedClassData, TeacherClassData} from "../../types/types.ts";
+import type { Period } from "../../../global/types/types.ts";
 
 interface SharedClassLayoutProps {
     children: React.ReactNode;

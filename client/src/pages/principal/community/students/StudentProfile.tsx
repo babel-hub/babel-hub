@@ -10,9 +10,9 @@ import {
 } from "../../../../features/director/comunity";
 import type { StudentProfileTabTypes } from "../../../../types";
 import { useStudentProfile } from "../../../../features/director/comunity/hooks/students/useStudentProfile.ts";
-import { usePeriods } from "../../../../shared/hooks/usePeriods.ts";
+import { usePeriods } from "../../../../shared/global/hooks/usePeriods.ts";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
-import type { Period } from "../../../../shared/types/types.ts";
+import type { Period } from "../../../../shared/global/types/types.ts";
 
 export default function StudentProfile() {
     const { id } = useParams<{ id: string }>();

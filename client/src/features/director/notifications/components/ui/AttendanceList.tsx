@@ -5,7 +5,7 @@ import type { AttendanceSummary } from "../../types";
 import StudentCalendarCardComponent from "./StudentCalendarCard.tsx";
 import { CgDanger } from "react-icons/cg";
 import { GoClock } from "react-icons/go";
-import type { Period } from "../../../../../shared/types/types.ts";
+import type { Period } from "../../../../../shared/global/types/types.ts";
 
 interface AttendanceListProps {
     attendance: AttendanceSummary[];

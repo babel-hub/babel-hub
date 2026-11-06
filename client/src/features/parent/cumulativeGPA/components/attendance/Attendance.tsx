@@ -1,4 +1,4 @@
-import type { Period } from "../../../../../shared/types/types";
+import type { Period } from "../../../../../shared/global/types/types.ts";
 
 interface AttendanceProps {
     studentId: string;

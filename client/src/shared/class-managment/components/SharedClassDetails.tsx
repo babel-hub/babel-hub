@@ -6,7 +6,7 @@ import { Agenda } from "./tabs/Agenda.tsx";
 import { RegisterAttendance } from "./tabs/RegisterAttendance.tsx";
 import { ViewAttendance } from "./tabs/ViewAttendance.tsx";
 import { Assignments } from "./tabs/Assignments.tsx";
-import { usePeriods } from "../../hooks/usePeriods.ts";
+import { usePeriods } from "../../global/hooks/usePeriods.ts";
 import type { TabTypes } from "../../../features/types/types.ts";
 import { formatterDate } from "../../../types";
 import { useClassData } from "../hooks/useClassData.ts";
