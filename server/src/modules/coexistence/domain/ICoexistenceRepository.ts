@@ -1,9 +1,9 @@
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
-    CreateInfractionPayload,
+    CreateInfractionPayload, EscalateInfraction,
     GetStudentInfractionsPayload,
     GetStudentMonitoringPayload, InfractionType,
-    StudentInfraction, StudentMonitoring
+    StudentInfraction, StudentMonitoring, UpdateInfractionPayload
 } from "./Coexistence.types.js";
 
 export interface ICoexistenceRepository {
@@ -11,4 +11,7 @@ export interface ICoexistenceRepository {
     getStudentMonitoring(payload: GetStudentMonitoringPayload, authUser: AuthUser): Promise<StudentMonitoring[]>;
     getInfractionTypes(authUser: AuthUser): Promise<InfractionType[]>;
     createInfraction(classId: string, payload: CreateInfractionPayload, authUser: AuthUser): Promise<void>;
+    updateInfraction(payload: UpdateInfractionPayload, authUser: AuthUser): Promise<void>;
+    deleteInfraction(infractionId: string, authUser: AuthUser): Promise<void>;
+    escalateInfraction(infractionId: string, payload: EscalateInfraction, authUser: AuthUser): Promise<void>;
 }

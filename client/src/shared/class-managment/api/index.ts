@@ -73,8 +73,16 @@ export const createInfraction = async (classId: string, payload: any): Promise<v
 };
 
 export const updateInfraction = async (infractionId: string, payload: any): Promise<void> => {
-    await api.put(`/api/coexistence/infractions/${infractionId}`, payload);
+    await api.put(`/api/coexistence/infraction/${infractionId}`, payload);
 };
+
+export const deleteInfraction = async (infractionId: string): Promise<void> => {
+    await api.delete(`/api/coexistence/infraction/${infractionId}`);
+};
+
+export const escalateInfraction = async (infractionId: string, payload: any): Promise<void> => {
+    await api.post(`/api/coexistence/infraction/${infractionId}/escalate`, payload);
+}
 
 // ==========================================
 // Assignments

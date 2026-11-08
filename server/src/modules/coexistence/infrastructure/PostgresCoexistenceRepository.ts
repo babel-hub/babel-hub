@@ -1,9 +1,9 @@
 import type { ICoexistenceRepository } from "../domain/ICoexistenceRepository.js";
 import type {
-    CreateInfractionPayload,
+    CreateInfractionPayload, EscalateInfraction,
     GetStudentInfractionsPayload,
     GetStudentMonitoringPayload, InfractionType, Severity,
-    StudentInfraction, StudentMonitoring
+    StudentInfraction, StudentMonitoring, UpdateInfractionPayload
 } from "../domain/Coexistence.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
@@ -101,6 +101,57 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         }
     }
 
+    async escalateInfraction(infractionId: string, payload: EscalateInfraction, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            await client.query("BEGIN");
+
+            let monitoringId: string | null = null;
+            const monitoring = await client.query(`
+                    INSERT INTO monitoring (infraction_id, student_id, course_id, notes, reported_by)
+                    VALUES ($1, $2, $3, $4, $5)
+                        RETURNING id;
+                `, [
+                infractionId,
+                payload.studentId,
+                payload.courseId,
+                payload.monitoringNotes,
+                userId,
+            ]);
+            monitoringId = monitoring.rows[0].id;
+
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: "ESCALATE_MONITORING",
+                schoolId: userSchoolId,
+                metadata: {
+                    infractionId: infractionId,
+                    monitoringId: monitoringId,
+                    studentId: payload.studentId,
+                    course: payload.courseId
+                },
+            });
+
+            await client.query("COMMIT");
+        } catch (error : any) {
+            await client.query("ROLLBACK");
+
+            if (error.code === '23505') {
+                throw new ConflictError("Esta infracción ya fue escalada a monitoreo.");
+            }
+            if (error.code === '23503') {
+                throw new ConflictError("Alguna referencia es inválida (estudiante, curso o infracción)");
+            }
+
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
     async createInfraction(
         classId: string,
         payload: CreateInfractionPayload,
@@ -179,7 +230,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     infraction.id,
                     payload.studentId,
                     v.course_id,
-                    payload.monitoringNotes ?? null,
+                    payload.monitoringNotes,
                     userId,
                 ]);
 
@@ -211,6 +262,148 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             if (error.code === '23503') {
                 throw new ConflictError("Alguna referencia es inválida (estudiante, clase o tipo)");
             }
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+
+    async updateInfraction(payload: UpdateInfractionPayload, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            const check = await client.query(`
+                SELECT
+                    i.infraction_type_id AS old_type_id,
+                    i.description AS old_description,
+                    t.profile_id AS teacher_profile_id
+                FROM infraction i
+                    JOIN class cl ON cl.id = i.class_id
+                    JOIN course co ON co.id = cl.course_id
+                    JOIN teacher t ON cl.teacher_id = t.id
+                WHERE i.id = $1
+                  AND co.school_id = $2
+                  AND i.is_deleted = false
+            `, [payload.infractionId, userSchoolId]);
+
+            if (check.rowCount === 0) {
+                throw new NotFoundError("La infracción no existe en este colegio");
+            }
+
+            const { old_type_id, old_description, teacher_profile_id } = check.rows[0];
+
+            const isPrivileged = userRole === 'admin' || userRole === 'principal';
+            const isOwner = teacher_profile_id === userId;
+            if (!isPrivileged && !isOwner) {
+                throw new ForbiddenError("Solo el profesor que reportó la infracción puede editarla");
+            }
+
+            const typeCheck = await client.query(`
+                SELECT 1 FROM infraction_type
+                WHERE id = $1 AND school_id = $2 AND is_active = true
+            `, [payload.infractionTypeId, userSchoolId]);
+
+            if (typeCheck.rowCount === 0) {
+                throw new NotFoundError("El tipo de infracción no existe o está inactiva");
+            }
+
+            await client.query(`
+                UPDATE infraction
+                SET infraction_type_id = $1, description = $2, updated_at = NOW()
+                WHERE id = $3
+            `, [payload.infractionTypeId, payload.description, payload.infractionId]);
+
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: "UPDATE_INFRACTION",
+                schoolId: userSchoolId,
+                metadata: {
+                    infractionId: payload.infractionId,
+                    oldTypeId: old_type_id,
+                    newTypeId: payload.infractionTypeId,
+                    oldDescription: old_description,
+                    newDescription: payload.description,
+                },
+            });
+
+            await client.query('COMMIT');
+        } catch (error: any) {
+            await client.query('ROLLBACK');
+            if (error.code === '23503') {
+                throw new ConflictError("El tipo de infracción no existe");
+            }
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteInfraction(infractionId: string, authUser: AuthUser): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            const check = await client.query(`
+            SELECT
+                i.infraction_type_id,
+                i.description,
+                t.profile_id AS teacher_profile_id,
+                (SELECT m.id FROM monitoring m WHERE m.infraction_id = i.id AND m.is_deleted = false) AS monitoring_id
+            FROM infraction i
+                JOIN class cl ON cl.id = i.class_id
+                JOIN course co ON co.id = cl.course_id
+                JOIN teacher t ON cl.teacher_id = t.id
+            WHERE i.id = $1
+              AND co.school_id = $2
+              AND i.is_deleted = false
+        `, [infractionId, userSchoolId]);
+
+            if (check.rowCount === 0) {
+                throw new NotFoundError("La infracción no existe o ya fue eliminada");
+            }
+
+            const { teacher_profile_id, monitoring_id } = check.rows[0];
+
+            const isPrivileged = userRole === 'admin' || userRole === 'principal';
+            const isOwner = teacher_profile_id === userId;
+            if (!isPrivileged && !isOwner) {
+                throw new ForbiddenError("Solo el profesor que reportó la infracción puede eliminarla");
+            }
+
+            await client.query(`
+                UPDATE infraction SET is_deleted = true, updated_at = NOW()
+                WHERE id = $1
+            `, [infractionId]);
+
+            // Cascade: soft delete the monitoring if it exists
+            if (monitoring_id) {
+                await client.query(`
+                    UPDATE monitoring SET is_deleted = true, updated_at = NOW()
+                    WHERE id = $1
+                `, [monitoring_id]);
+            }
+
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: "DELETE_INFRACTION",
+                schoolId: userSchoolId,
+                metadata: {
+                    infractionId,
+                    cascadedMonitoringId: monitoring_id ?? null,
+                },
+            });
+
+            await client.query('COMMIT');
+        } catch (error: any) {
+            await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();

@@ -27,7 +27,7 @@ export function formatTime(isoStr: string): string {
 
 // 18th August 2026
 export function formatFullDateString(date: string) {
-    return  new Date(date).toLocaleDateString('es-CO', {
+    return new Date(date).toLocaleDateString('es-CO', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'

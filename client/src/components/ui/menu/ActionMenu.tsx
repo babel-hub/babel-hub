@@ -95,7 +95,7 @@ export function ActionMenu({ options, customIcon }: ActionMenuProps) {
                             setIsOpen(false);
                             opt.onClick?.();
                         }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 rounded-lg text-xs md:text-sm transition-colors ${
+                        className={`flex w-full items-center text-left gap-2 px-3 py-2 rounded-lg text-xs md:text-sm transition-colors ${
                             opt.disabled ? "opacity-50 cursor-not-allowed" :
                                 opt.isDanger ? "text-red-600 hover:bg-red-50 cursor-pointer" : "text-gray-700 hover:bg-gray-100 cursor-pointer"
                         }`}

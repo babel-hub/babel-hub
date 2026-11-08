@@ -18,7 +18,7 @@ const severityLabel = (s: Severity) => {
     return s === "high" ? "Grave" : s === "medium" ? "Media" : "Leve";
 };
 
-export function CreateInfractionModal({
+export function UpsertInfractionModal({
                                           mode,
                                           classId,
                                           studentId,
@@ -52,7 +52,7 @@ export function CreateInfractionModal({
             },
             {
                 name: "description",
-                label: "Descripción (opcional)",
+                label: "Descripción",
                 type: "textarea",
                 rows: 3,
                 placeholder: "Describe lo que pasó...",
@@ -118,7 +118,6 @@ export function CreateInfractionModal({
         };
 
         await upsertCoexistence(classId, mode, infraction ? infraction.id : null, payload);
-        console.log(payload);
     };
 
     return (

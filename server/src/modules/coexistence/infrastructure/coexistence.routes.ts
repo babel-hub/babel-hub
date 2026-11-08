@@ -16,7 +16,7 @@ const router: Router = Router();
 router.get(
     "/infraction-types",
     authMiddleware,
-    authorizedRoles(["teacher", "principal", "admin"]),
+    authorizedRoles(["teacher", "principal"]),
     controller.getInfractionTypes
 );
 
@@ -38,8 +38,32 @@ router.post(
     "/class/:classId/infractions",
     strictLimiter,
     authMiddleware,
-    authorizedRoles(["teacher", "principal", "admin"]),
+    authorizedRoles(["teacher", "principal"]),
     controller.createInfraction
+);
+
+router.post(
+    "/infraction/:infractionId/escalate",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.escalateInfraction
+);
+
+router.put(
+    "/infraction/:infractionId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.updateInfraction
+);
+
+router.delete(
+    "/infraction/:infractionId",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.deleteInfraction
 );
 
 export default router;

@@ -67,4 +67,46 @@ export class CoexistenceController {
             next(error);
         }
     };
+
+    updateInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const infractionId = request.params.infractionId as string;
+            const { infractionTypeId, description } = request.body;
+
+            await this.coexistenceService.updateInfraction(
+                { infractionId, infractionTypeId, description: description ?? null },
+                authUser
+            );
+
+            response.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    escalateInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const infractionId = request.params.infractionId as string;
+            const { studentId, courseId, monitoringNotes } = request.body;
+
+            await this.coexistenceService.escalateInfraction(infractionId, { studentId, courseId, monitoringNotes }, authUser);
+            response.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    deleteInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const infractionId = request.params.infractionId as string;
+
+            await this.coexistenceService.deleteInfraction(infractionId, authUser);
+            response.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    };
 }

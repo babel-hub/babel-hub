@@ -2,12 +2,15 @@ import { useState } from "react";
 import { type ModalModeTypes, reverseName } from "../../../../types";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import type { Student, StudentInfraction } from "../../../../features/types/types.ts";
-import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
-import { HiPencil } from "react-icons/hi";
 import { useInfractionsData } from "../../hooks/coexistence/useInfractionsData.ts";
 import { useMonitoringData } from "../../hooks/coexistence/useMonitoringData.ts";
-import { CreateInfractionModal } from "../ui/CreateInfractionModal.tsx";
-
+import { UpsertInfractionModal } from "../ui/UpsertInfractionModal.tsx";
+import type { Tabs } from "../../types/types.ts";
+import { InfractionsMonitoringTabs } from "../ui/InfractionsMonitoringTabs.tsx";
+import { useDeleteInfraction } from "../../hooks/coexistence/useDeleteInfraction.ts";
+import { ConfirmModal } from "../../../../components/ui/modals/ConfirmModal.tsx";
+import {useRepeatInfraction} from "../../hooks/coexistence/useRepeatInfraction.ts";
+import { EscalateInfractionModal } from "../ui/EscalateInfractionModal.tsx";
 
 interface AgendaProps {
     students: Student[];
@@ -15,19 +18,13 @@ interface AgendaProps {
     courseId: string;
 }
 
-type Tabs = "infractions" | "monitoring";
-
-const SEVERITY_STYLES: Record<string, string> = {
-    low: "bg-gray-100 text-gray-700",
-    medium: "bg-yellow-100 text-yellow-700",
-    high: "bg-red-100 text-red-700",
-};
-
 export function Agenda({ students, classId, courseId }: AgendaProps) {
     const [selectedStudentId, setSelectedStudentId] = useState<string>("");
     const [tab, setTab] = useState<Tabs>("infractions");
     const [modalMode, setModalMode] = useState<ModalModeTypes>('none');
     const [infractionToEdit, setInfractionToEdit] = useState<StudentInfraction | null>(null);
+    const [infractionToDelete, setInfractionToDelete] = useState<StudentInfraction | null>(null);
+    const [infractionToEscalate, setInfractionToEscalate] = useState<StudentInfraction | null>(null);
 
     const { infractions, loading: loadingInfractions, error: errorInfractions, refetch } =
         useInfractionsData(classId, selectedStudentId);
@@ -37,6 +34,8 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
             tab === "monitoring" ? courseId : "",
             tab === "monitoring" ? selectedStudentId : ""
         );
+    const { deleteInfractionById, loading: loadingDelete } = useDeleteInfraction(refetch);
+    const { repeatInfraction } = useRepeatInfraction(refetch);
 
     const selectedStudent = students.find(s => s.student_id === selectedStudentId);
 
@@ -50,9 +49,24 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
         setModalMode("edit");
     };
 
+    const onRepeatInfraction = async (infraction: StudentInfraction) => {
+        const payload = {
+            infractionTypeId: infraction.infraction_type_id,
+            studentId: infraction.student_id,
+            description: infraction.description,
+            escalate: false
+        }
+
+        await repeatInfraction(classId, payload);
+    };
+
+    const onEscalateInfraction = (infraction: StudentInfraction) => {
+        setInfractionToEscalate(infraction);
+    }
+
     return (
-        <div className="w-full h-auto grid grid-cols-2 border border-gray-100 rounded-xl overflow-hidden">
-            <div className="bg-white h-full max-h-[calc(100dvh-10.8rem)] overflow-y-auto styled-scrollbar border-r border-gray-100">
+        <div className="w-full h-auto grid grid-cols-2 border border-gray-100">
+            <div className="bg-white h-full max-h-[calc(100dvh-10.9rem)] overflow-y-auto styled-scrollbar border-r border-gray-100">
                 {students.length > 0 ? (
                     <ul className="divide-y divide-gray-50">
                         {students.map((student) => (
@@ -66,7 +80,7 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
                                 }`}
                             >
                                 <div className={`w-10 h-10 rounded-full uppercase flex items-center justify-center text-sm font-bold shrink-0
-                                                 ${selectedStudentId === student.student_id ? "bg-primary-darker text-white" : "bg-primary-shadow text-primary-darker"}`}>
+                                                ${selectedStudentId === student.student_id ? "bg-primary-darker text-white" : "bg-primary-shadow text-primary-darker"}`}>
                                     {`${student.student_first_name.charAt(0)}${student.student_first_last_name.charAt(0)}`}
                                 </div>
                                 <div>
@@ -88,129 +102,87 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
                 )}
             </div>
 
-            <div className="w-full bg-white flex flex-col">
-                <div className="w-full flex border-b border-gray-100">
-                    <button
-                        type="button"
-                        onClick={() => setTab("infractions")}
-                        className={`py-2 px-5 font-medium text-sm transition-colors ${
-                            tab === "infractions"
-                                ? "bg-primary text-white"
-                                : "bg-white text-primary hover:bg-gray-50"
-                        }`}
-                    >
-                        Infracciones
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setTab("monitoring")}
-                        className={`py-2 px-5 font-medium text-sm transition-colors ${
-                            tab === "monitoring"
-                                ? "bg-primary text-white"
-                                : "bg-white text-primary hover:bg-gray-50"
-                        }`}
-                    >
-                        Monitoreo
-                    </button>
+            <div className="w-full bg-white h-full max-h-[calc(100dvh-10.9rem)] overflow-y-auto p-5 flex flex-col">
+                <div className="w-full flex">
+                    <div className="border border-gray-100 rounded-xl">
+                        <button
+                            type="button"
+                            onClick={() => setTab("infractions")}
+                            className={`py-2 px-5 font-medium rounded-l-xl  cursor-pointer text-sm transition-colors ${
+                                tab === "infractions"
+                                    ? selectedStudentId ? "bg-primary-darker text-white" : "bg-primary text-white"
+                                    : "bg-primary-shadow text-primary"
+                            }`}
+                        >
+                            Infracciones
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setTab("monitoring")}
+                            className={`py-2 px-5 font-medium cursor-pointer rounded-r-xl text-sm transition-colors ${
+                                tab === "monitoring"
+                                    ? "bg-primary-darker text-white"
+                                    : "bg-primary-shadow text-primary"
+                            }`}
+                        >
+                            Monitoreo
+                        </button>
+                    </div>
 
                     {selectedStudentId && tab === "infractions" && (
                         <button
                             onClick={() => openCreateModal()}
-                            className="ml-auto mr-2 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-darker transition-colors"
+                            className="ml-auto px-3 py-1.5 text-sm bg-primary-darker cursor-pointer text-white rounded-xl font-medium transition-colors"
                         >
                             + Nueva infracción
                         </button>
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto styled-scrollbar max-h-[calc(100dvh-12.8rem)] p-4">
-                    {!selectedStudentId ? (
-                        <NoResults title="Selecciona un estudiante para ver su historial" />
-                    ) : tab === "infractions" ? (
-                        <>
-                            {loadingInfractions && <LoadingContent title="" />}
-                            {errorInfractions && <NoResults title={errorInfractions} />}
-                            {!loadingInfractions && !errorInfractions && infractions.length === 0 && (
-                                <NoResults title={`${selectedStudent?.student_first_name ?? "Este estudiante"} no tiene infracciones registradas`} />
-                            )}
-                            {!loadingInfractions && infractions.length > 0 && (
-                                <ul className="flex flex-col gap-3">
-                                    {infractions.map((inf) => (
-                                        <li key={inf.id} className="border border-gray-100 rounded-xl p-3">
-                                            <div className="flex items-center justify-between gap-2 mb-2">
-                                                <span className="font-semibold text-sm capitalize text-custom-black">
-                                                    {inf.infraction_name}
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${SEVERITY_STYLES[inf.severity] ?? SEVERITY_STYLES.low}`}>
-                                                        {inf.severity === "high" ? "Grave" : inf.severity === "medium" ? "Media" : "Leve"}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => openEditModal(inf)}
-                                                        className="text-gray-400 hover:text-primary p-1 rounded"
-                                                        title="Editar"
-                                                    >
-                                                        <HiPencil className="size-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            {inf.description && (
-                                                <p className="text-sm text-gray-600 mb-2">{inf.description}</p>
-                                            )}
-                                            <p className="text-xs text-gray-400">
-                                                Reportado por <span className="font-medium capitalize">{inf.reported_by_name}</span>
-                                                {" · "}
-                                                {new Date(inf.created_at).toLocaleDateString("es-CO", {
-                                                    day: "2-digit", month: "short", year: "numeric"
-                                                })}
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            {loadingMonitoring && <LoadingContent title="" />}
-                            {errorMonitoring && <NoResults title={errorMonitoring} />}
-                            {!loadingMonitoring && !errorMonitoring && monitoring.length === 0 && (
-                                <NoResults title={`${selectedStudent?.student_first_name ?? "Este estudiante"} no tiene monitoreos activos`} />
-                            )}
-                            {!loadingMonitoring && monitoring.length > 0 && (
-                                <ul className="flex flex-col gap-3">
-                                    {monitoring.map((m) => (
-                                        <li key={m.id} className="border border-gray-100 rounded-xl p-3">
-                                            <div className="flex items-center justify-between gap-2 mb-2">
-                                                <span className="font-semibold text-sm capitalize text-custom-black">
-                                                    {m.infraction_name}
-                                                </span>
-                                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${SEVERITY_STYLES[m.severity] ?? SEVERITY_STYLES.low}`}>
-                                                    {m.severity === "high" ? "Grave" : m.severity === "medium" ? "Media" : "Leve"}
-                                                </span>
-                                            </div>
-                                            {m.notes && (
-                                                <p className="text-sm text-gray-600 mb-2">{m.notes}</p>
-                                            )}
-                                            <p className="text-xs text-gray-400">
-                                                En <span className="font-medium capitalize">{m.course_name}</span>
-                                                {" · "}
-                                                Reportado por <span className="font-medium capitalize">{m.reported_by_name}</span>
-                                                {" · "}
-                                                {new Date(m.created_at).toLocaleDateString("es-CO", {
-                                                    day: "2-digit", month: "short", year: "numeric"
-                                                })}
-                                            </p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </>
-                    )}
-                </div>
+                <InfractionsMonitoringTabs
+                    selectedStudentId={selectedStudentId}
+                    selectedStudent={selectedStudent}
+                    tab={tab}
+                    infractions={infractions}
+                    monitoring={monitoring}
+                    loadingInfractions={loadingInfractions}
+                    loadingMonitoring={loadingMonitoring}
+                    errorInfractions={errorInfractions}
+                    errorMonitoring={errorMonitoring}
+                    onEdit={(inf) => openEditModal(inf)}
+                    onDelete={(inf) => setInfractionToDelete(inf)}
+                    onRepeat={(inf) => onRepeatInfraction(inf)}
+                    onEscalate={(inf) => onEscalateInfraction(inf)}
+                />
             </div>
 
+            <ConfirmModal
+                isOpen={infractionToDelete !== null}
+                onClose={() => setInfractionToDelete(null)}
+                title="¿Estás seguro?"
+                message={`¿Estas seguro que quieres eliminar esta infracción?`}
+                onConfirm={async () => {
+                    if (infractionToDelete) {
+                        await deleteInfractionById(infractionToDelete.id);
+                        setInfractionToDelete(null);
+                    }
+                }}
+                loadingDelete={loadingDelete}
+            />
+
+        {infractionToEscalate && (
+                <EscalateInfractionModal
+                    courseId={courseId}
+                    studentInfraction={infractionToEscalate}
+                    onClose={() => setInfractionToEscalate(null)}
+                    onSuccess={() => {
+                        setInfractionToEscalate(null);
+                    }}
+                />
+            )}
+
             {modalMode !== "none" && selectedStudent && (
-                <CreateInfractionModal
+                <UpsertInfractionModal
                     classId={classId}
                     studentId={selectedStudent.student_id}
                     onClose={() => setModalMode("none")}

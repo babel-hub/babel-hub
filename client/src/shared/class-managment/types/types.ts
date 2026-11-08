@@ -1,5 +1,8 @@
 import type { AttendanceStatus, Severity, Student } from "../../../features/types/types.ts";
 
+export type Tabs = "infractions" | "monitoring";
+export type SeverityLevel = "low" | "medium" | "high";
+
 interface AttendanceRecord {
     date: string;
     status: AttendanceStatus;

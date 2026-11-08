@@ -54,9 +54,12 @@ export interface CreateInfractionPayload {
 
 export interface UpdateInfractionPayload {
     infractionId: string;
-    studentId: string;
     infractionTypeId: string;
     description: string | null;
-    escalate: boolean;
-    monitoringNotes?: string | null;
+}
+
+export interface EscalateInfraction {
+    studentId: string;
+    courseId: string;
+    monitoringNotes: string | null;
 }
