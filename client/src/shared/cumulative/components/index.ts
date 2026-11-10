@@ -1,6 +1,6 @@
 export { CumulativeRecordLayout } from "./header/CumulativeRecordLayout.tsx";
 
-export { Absents } from "./tabs/Absents.tsx"
+export { Infractions } from "./tabs/Infractions.tsx"
 export { Grades } from "./tabs/Grades.tsx"
 export { Attendance } from "./tabs/Attendance.tsx"
 export { Summary } from "./tabs/Summary.tsx"

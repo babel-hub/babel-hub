@@ -1,11 +1,3 @@
-interface BaseStudent {
-    student_id: string;
-    student_first_name: string;
-    student_first_last_name: string;
-    student_middle_name: string | null;
-    student_second_last_name: string | null;
-}
-
 export interface ClassItem {
     is_active: boolean;
     class_id: string;
@@ -14,11 +6,6 @@ export interface ClassItem {
     middle_name: string | null;
     first_last_name: string;
     second_last_name: string | null;
-}
-
-export interface Student extends BaseStudent {
-    email: string;
-    is_active: boolean;
 }
 
 export interface CoursesListData {

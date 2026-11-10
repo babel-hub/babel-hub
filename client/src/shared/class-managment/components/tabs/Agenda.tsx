@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { type ModalModeTypes, reverseName } from "../../../../types";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
-import type { Student, StudentInfraction } from "../../../../features/types/types.ts";
+import type { Student } from "../../../../features/types/types.ts";
 import { useInfractionsData } from "../../hooks/coexistence/useInfractionsData.ts";
 import { useMonitoringData } from "../../hooks/coexistence/useMonitoringData.ts";
 import { UpsertInfractionModal } from "../ui/UpsertInfractionModal.tsx";
-import type { Tabs } from "../../types/types.ts";
-import { InfractionsMonitoringTabs } from "../ui/InfractionsMonitoringTabs.tsx";
+import type { StudentInfraction, Tabs } from "../../types/types.ts";
+import { InfractionsMonitoringTabs } from "../../../coexisting/components/ui/InfractionsMonitoringTabs.tsx";
 import { useDeleteInfraction } from "../../hooks/coexistence/useDeleteInfraction.ts";
 import { ConfirmModal } from "../../../../components/ui/modals/ConfirmModal.tsx";
 import {useRepeatInfraction} from "../../hooks/coexistence/useRepeatInfraction.ts";
@@ -51,7 +51,7 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
 
     const onRepeatInfraction = async (infraction: StudentInfraction) => {
         const payload = {
-            infractionTypeId: infraction.infraction_type_id,
+            codeId: infraction.infraction_code_id,
             studentId: infraction.student_id,
             description: infraction.description,
             escalate: false
@@ -121,7 +121,7 @@ export function Agenda({ students, classId, courseId }: AgendaProps) {
                             onClick={() => setTab("monitoring")}
                             className={`py-2 px-5 font-medium cursor-pointer rounded-r-xl text-sm transition-colors ${
                                 tab === "monitoring"
-                                    ? "bg-primary-darker text-white"
+                                    ? selectedStudentId ? "bg-primary-darker text-white" : "bg-primary text-white"
                                     : "bg-primary-shadow text-primary"
                             }`}
                         >

@@ -3,10 +3,10 @@ import type {
     AssignmentsOverview,
     ClassAttendance,
     CourseAttendance,
-    InfractionType,
+    InfractionTypeHierarchy, MonitoringMessage,
     StudentInfraction,
     StudentMonitoring
-} from "../../../features/types/types.ts";
+} from "../types/types.ts";
 import type {PrincipalClassData, TeacherClassData} from "../types/types.ts";
 
 // ==========================================
@@ -63,7 +63,7 @@ export const getStudentMonitoring = async (courseId: string, studentId: string, 
     return response.data.monitoring;
 };
 
-export const getInfractionTypes = async (signal?: AbortSignal): Promise<InfractionType[]> => {
+export const getInfractionTypes = async (signal?: AbortSignal): Promise<InfractionTypeHierarchy[]> => {
     const response = await api.get(`/api/coexistence/infraction-types`, { signal });
     return response.data.types;
 };
@@ -82,7 +82,17 @@ export const deleteInfraction = async (infractionId: string): Promise<void> => {
 
 export const escalateInfraction = async (infractionId: string, payload: any): Promise<void> => {
     await api.post(`/api/coexistence/infraction/${infractionId}/escalate`, payload);
-}
+};
+
+export const getMonitoringMessages = async (monitoringId: string, signal?: AbortSignal): Promise<MonitoringMessage[]> => {
+    const response = await api.get(`/api/coexistence/monitoring/${monitoringId}/messages`, { signal });
+    return response.data.messages;
+};
+
+export const createMonitoringMessage = async (monitoringId: string, message: string): Promise<MonitoringMessage> => {
+    const response = await api.post(`/api/coexistence/monitoring/${monitoringId}/messages`, { message });
+    return response.data.message;
+};
 
 // ==========================================
 // Assignments
@@ -117,3 +127,6 @@ export const bulkGrades = async (classId: string, assignmentId: string, payload:
         records: payload
     });
 };
+
+
+

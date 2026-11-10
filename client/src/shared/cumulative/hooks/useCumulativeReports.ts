@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import type { CourseFailStat, HonorStudent, ReportStudentRow } from "../types/types.ts";
-import { getCumulativeFailStats, getCumulativeReports, getCumulativeHonorStudents } from "../api";
+import type { CourseFailStat, HonorStudent } from "../types/types.ts";
+import { getCumulativeFailStats, getCumulativeHonorStudents } from "../api";
 
 export const useCumulativeReports = (courseId: string, periodId: string) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
-    const [students, setStudents] = useState<ReportStudentRow[]>([]);
     const [failStats, setFailStats] = useState<CourseFailStat[]>([]);
     const [honorStudents, setHonorStudents] = useState<HonorStudent[]>([]);
 
@@ -19,14 +18,12 @@ export const useCumulativeReports = (courseId: string, periodId: string) => {
             setError("");
 
             try {
-                const [studentsData, failStatsData, honorStudentsData] = await Promise.all([
-                    getCumulativeReports(courseId, controller.signal),
+                const [failStatsData, honorStudentsData] = await Promise.all([
                     getCumulativeFailStats(courseId, periodId, controller.signal),
                     getCumulativeHonorStudents(courseId, periodId, controller.signal)
                 ]);
 
                 if (!controller.signal.aborted) {
-                    setStudents(studentsData);
                     setFailStats(failStatsData);
                     setHonorStudents(honorStudentsData);
                 }
@@ -49,5 +46,5 @@ export const useCumulativeReports = (courseId: string, periodId: string) => {
         return () => controller.abort();
     }, [courseId, periodId]);
 
-    return { loading, error, students, failStats, honorStudents };
+    return { loading, error, failStats, honorStudents };
 };

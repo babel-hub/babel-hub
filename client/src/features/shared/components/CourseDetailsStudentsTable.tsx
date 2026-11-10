@@ -1,7 +1,7 @@
 import { reverseName } from "../../../types";
-import type { Student } from "../../director/course-management/types";
 import { NoResults } from "../../../components/ui/blocks/NoResults.tsx";
 import {getStatusDotColor} from "../../utils/utils.ts";
+import type { Student } from "../../types/types.ts";
 
 interface StudentsTableProps {
     students: Student[];

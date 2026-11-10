@@ -10,11 +10,12 @@ import type { TabCumulativeTypes, CumulativeMetrics } from "../../../../shared/c
 import {
     CumulativeRecordLayout,
     Grades,
-    Absents,
+    Infractions,
     Summary,
     Attendance,
     Reports
 } from "../../../../shared/cumulative/components";
+import {useCourseStudents} from "../../../../shared/cumulative/hooks/useCourseStudents.ts";
 
 export default function PrincipalCumulativeRecord() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -29,7 +30,8 @@ export default function PrincipalCumulativeRecord() {
     }, [periods, selectedPeriodId]);
 
     const { summary, loading } = useCumulativeSummary(courseId ?? "", selectedPeriodId);
-    const { trend, loading: loadingTrend } = useCoursePeriodTrend(courseId ?? "", selectedPeriodId)
+    const { trend, loading: loadingTrend } = useCoursePeriodTrend(courseId ?? "", selectedPeriodId);
+    const { loading: loadingStudents, students } = useCourseStudents(courseId ?? "");
 
     const metrics = useMemo<CumulativeMetrics>(() => {
         if (!summary?.length) {
@@ -51,7 +53,7 @@ export default function PrincipalCumulativeRecord() {
 
     return (
         <CumulativeRecordLayout
-            loading={loading || loadingTrend}
+            loading={loading || loadingTrend || loadingStudents}
             tab={tab}
             setTab={setTab}
             metrics={metrics}
@@ -65,9 +67,9 @@ export default function PrincipalCumulativeRecord() {
                 />
             )}
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
-            {tab === "absents" && <Absents />}
+            {tab === "absents" && <Infractions students={students} courseId={courseId} />}
             {tab === "attendance" && <Attendance courseId={courseId} periodId={selectedPeriodId} />}
-            {tab === "reports" && <Reports courseId={courseId} periodId={selectedPeriodId} />}
+            {tab === "reports" && <Reports students={students} courseId={courseId} periodId={selectedPeriodId} />}
         </CumulativeRecordLayout>
     );
 }

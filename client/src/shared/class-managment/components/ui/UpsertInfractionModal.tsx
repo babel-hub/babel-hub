@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfractionTypes } from "../../hooks/coexistence/useInfractionTypes.ts";
 import { useUpsertCoexistence } from "../../hooks/coexistence/useUpsertCoexistence.ts";
-import type { modeTypes, Severity } from "../../../../features/types/types.ts";
+import type { modeTypes } from "../../../../features/types/types.ts";
 import type { StudentInfraction } from "../../types/types.ts";
-import DynamicModalForm, {type FormField} from "../../../../components/ui/modals/ModalForm.tsx";
+import DynamicModalForm, { type FormField } from "../../../../components/ui/modals/ModalForm.tsx";
 
 interface CreateInfractionModalProps {
     mode: modeTypes;
@@ -13,10 +13,6 @@ interface CreateInfractionModalProps {
     onSuccess: () => void;
     infraction: StudentInfraction | null;
 }
-
-const severityLabel = (s: Severity) => {
-    return s === "high" ? "Grave" : s === "medium" ? "Media" : "Leve";
-};
 
 export function UpsertInfractionModal({
                                           mode,
@@ -30,34 +26,84 @@ export function UpsertInfractionModal({
     const { upsertCoexistence, loading, error, setError } = useUpsertCoexistence(onSuccess);
 
     const [formData, setFormData] = useState({
-        infractionTypeId: infraction?.infraction_type_id ?? "",
+        typeId: "",
+        articleId: "",
+        codeId: infraction?.infraction_code_id ?? "",
         description: infraction?.description ?? "",
         escalate: "false",
         monitoringNotes: "",
     });
 
+    // 2. Si es modo edición, auto-completamos Type y Article basándonos en el Code
+    useEffect(() => {
+        if (mode === "edit" && infraction && types.length > 0) {
+            for (const type of types) {
+                for (const article of type.articles) {
+                    if (article.codes.some(c => c.id === infraction.infraction_code_id)) {
+                        setFormData(prev => ({
+                            ...prev,
+                            typeId: type.id,
+                            articleId: article.id,
+                            codeId: infraction.infraction_code_id
+                        }));
+                        return;
+                    }
+                }
+            }
+        }
+    }, [mode, infraction, types]);
 
     const fields = useMemo<FormField[]>(() => {
+        const selectedType = types.find(t => t.id === formData.typeId);
+        const selectedArticle = selectedType?.articles.find(a => a.id === formData.articleId);
+
         const base: FormField[] = [
             {
-                name: "infractionTypeId",
+                name: "typeId",
                 label: "Tipo de infracción",
-                type: "select",
+                type: "radio",
                 required: true,
                 loadingField: loadingTypes,
                 options: types.map(t => ({
                     value: t.id,
-                    label: `${t.name} — ${severityLabel(t.severity)}`,
+                    label: t.name,
                 })),
-            },
-            {
-                name: "description",
-                label: "Descripción",
-                type: "textarea",
-                rows: 3,
-                placeholder: "Describe lo que pasó...",
-            },
+            }
         ];
+
+        if (selectedType) {
+            base.push({
+                name: "articleId",
+                label: "Artículo",
+                type: "select",
+                required: true,
+                options: selectedType.articles.map(a => ({
+                    value: a.id,
+                    label: `Art ${a.number} - ${a.name}`
+                })),
+            });
+        }
+
+        if (selectedArticle) {
+            base.push({
+                name: "codeId",
+                label: "Falta Específica (Codigo)",
+                type: "select",
+                required: true,
+                options: selectedArticle.codes.map(c => ({
+                    value: c.id,
+                    label: `Cod ${c.number}: ${c.name}`
+                })),
+            });
+        }
+
+        base.push({
+            name: "description",
+            label: "Descripción del incidente",
+            type: "textarea",
+            rows: 3,
+            placeholder: "Describe detalles específicos de lo que pasó...",
+        });
 
         if (mode === "create") {
             base.push({
@@ -78,16 +124,28 @@ export function UpsertInfractionModal({
                     type: "textarea",
                     required: true,
                     rows: 3,
-                    placeholder: "Explica por qué este caso requiere seguimiento...",
+                    placeholder: "Explica por qué este caso requiere seguimiento a nivel de curso...",
                 });
             }
         }
         return base;
-        }, [types, loadingTypes, formData.escalate, mode]);
+    }, [types, loadingTypes, formData.typeId, formData.articleId, formData.escalate, mode]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        setFormData(prev => {
+            const next = { ...prev, [name]: value };
+
+            if (name === "typeId") {
+                next.articleId = "";
+                next.codeId = "";
+            } else if (name === "articleId") {
+                next.codeId = "";
+            }
+
+            return next;
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,8 +154,8 @@ export function UpsertInfractionModal({
 
         const escalate = formData.escalate === "true";
 
-        if (!formData.infractionTypeId) {
-            setError("Selecciona un tipo de infracción");
+        if (!formData.codeId) {
+            setError("Debes seleccionar el Numeral específico de la falta");
             return;
         }
         if (escalate && !formData.monitoringNotes.trim()) {
@@ -106,13 +164,13 @@ export function UpsertInfractionModal({
         }
 
         const payload = mode === "create" ? {
-            infractionTypeId: formData.infractionTypeId,
+            codeId: formData.codeId,
             description: formData.description.trim() || null,
-            escalate: formData.escalate === "true",
-            monitoringNotes: formData.escalate === "true" ? formData.monitoringNotes.trim() : null,
+            escalate,
+            monitoringNotes: escalate ? formData.monitoringNotes.trim() : null,
             studentId,
         } : {
-            infractionTypeId: formData.infractionTypeId,
+            codeId: formData.codeId,
             description: formData.description.trim() || null,
             studentId,
         };
@@ -123,7 +181,7 @@ export function UpsertInfractionModal({
     return (
         <DynamicModalForm
             isOpen={true}
-            title={mode === "create" ? "Crear Infracción" : "Editar infracción"}
+            title={mode === "create" ? "Reportar Infracción" : "Editar Infracción"}
             fields={fields}
             formData={formData}
             formError={error}

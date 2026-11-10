@@ -3,10 +3,11 @@ import type {
     CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
-    CumulativeSummary, HonorStudent,
-    ReportStudentRow
+    CumulativeSummary, HonorStudent
 } from "../types/types.ts";
 import api from "../../../api/client.ts";
+import type { StudentInfraction } from "../../class-managment/types/types.ts";
+import type { Student } from "../../../features/types/types.ts";
 
 export const getPeriodTrends = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CoursePeriodTrend[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/trend`, {
@@ -49,7 +50,7 @@ export const getCumulativeAttendance = async (courseId: string, periodId: string
     return response.data.attendance;
 }
 
-export const getCumulativeReports = async (courseId: string, signal?: AbortSignal): Promise<ReportStudentRow[]> => {
+export const getCourseStudents = async (courseId: string, signal?: AbortSignal): Promise<Student[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/reports/students`, { signal });
     return response.data.students;
 }
@@ -73,3 +74,11 @@ export const getCumulativeHonorStudents = async (courseId: string, periodId: str
     });
     return response.data.honor;
 }
+
+export const getStudentInfractions = async (courseId: string, studentId: string, signal?: AbortSignal): Promise<StudentInfraction[]> => {
+    const response = await api.get(`/api/coexistence/course/${courseId}/student/${studentId}/infractions`, {
+        signal
+    });
+    return response.data.infractions;
+}
+

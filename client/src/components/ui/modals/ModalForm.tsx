@@ -74,7 +74,7 @@ export default function DynamicModalForm({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl styled-scrollbar overflow-hidden flex flex-col max-h-[90dvh]">
                 <div className="flex justify-between items-center p-3 border-b border-gray-100">
                     <h3 className="text-xl pl-2 font-bold text-custom-black">{title}</h3>
                     <button

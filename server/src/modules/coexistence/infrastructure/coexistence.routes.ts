@@ -34,6 +34,28 @@ router.get(
     controller.getStudentMonitoring
 );
 
+router.get(
+    "/course/:courseId/student/:studentId/infractions",
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.getStudentInfractionsByCourse
+);
+
+router.get(
+    "/monitoring/:monitoringId/messages",
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.getMonitoringMessages
+);
+
+router.post(
+    "/monitoring/:monitoringId/messages",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal"]),
+    controller.createMonitoringMessage
+);
+
 router.post(
     "/class/:classId/infractions",
     strictLimiter,

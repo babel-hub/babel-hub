@@ -19,6 +19,7 @@ export function MetricButton({
     return (
         <button
             onClick={onClick}
+            disabled={loading}
             className={`border flex gap-5 items-start rounded-xl p-2 transition-colors ${
                 active
                     ? "bg-primary text-white border-primary"

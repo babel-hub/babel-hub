@@ -1,10 +1,12 @@
 import type { Student } from "../../../../features/types/types.ts";
-import type { StudentInfraction, StudentMonitoring, Tabs } from "../../types/types.ts";
-import { InfractionRow } from "./InfractionRow.tsx";
-import { MonitoringRow } from "./MonitoringRow.tsx";
+import type { StudentInfraction, StudentMonitoring, Tabs } from "../../../class-managment/types/types.ts";
+import { InfractionRow } from "../../../class-managment/components/ui/InfractionRow.tsx";
+import { MonitoringRow } from "../../../class-managment/components/ui/MonitoringRow.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { Ghost, FaceGrinning } from 'lucide-react';
+import {useState} from "react";
+import {MonitoringMessagesModal} from "../../../class-managment/components/ui/MonitoringMessageModal.tsx";
 
 interface InfractionsMonitoringTabsProps {
     selectedStudentId: string;
@@ -16,10 +18,10 @@ interface InfractionsMonitoringTabsProps {
     loadingMonitoring: boolean;
     errorInfractions: string;
     errorMonitoring: string;
-    onEdit: (infraction: StudentInfraction) => void;
-    onDelete: (infraction: StudentInfraction) => void;
-    onRepeat: (infraction: StudentInfraction) => void;
-    onEscalate: (infraction: StudentInfraction) => void;
+    onEdit?: (infraction: StudentInfraction) => void;
+    onDelete?: (infraction: StudentInfraction) => void;
+    onRepeat?: (infraction: StudentInfraction) => void;
+    onEscalate?: (infraction: StudentInfraction) => void;
 }
 
 export function InfractionsMonitoringTabs({
@@ -37,13 +39,16 @@ export function InfractionsMonitoringTabs({
                                               onEdit,
                                               onDelete,
                                           }: InfractionsMonitoringTabsProps) {
+    const [messagesFor, setMessagesFor] = useState<StudentMonitoring | null>(null);
     const studentFirstName = selectedStudent?.student_first_name ?? "Este estudiante";
+
+    console.log(infractions);
 
     if (!selectedStudentId) {
         return (
             <div className="h-full border rounded-xl border-gray-200 flex items-center justify-center mt-5 max-h-[calc(100dvh-12.8rem)]">
                 <div className="w-full flex flex-col items-center justify-center max-w-3xs">
-                    <Ghost />
+                    <Ghost className="text-gray-400" />
                     <p className="text-gray-400 mt-3 text-sm text-center">Selecciona algun estudiante para visualizar sus infracciones o monitoreos</p>
                 </div>
             </div>
@@ -95,7 +100,7 @@ export function InfractionsMonitoringTabs({
         return (
             <ul className="flex flex-col gap-3">
                 {monitoring.map((m) => (
-                    <MonitoringRow key={m.id} monitoring={m} />
+                    <MonitoringRow key={m.id} monitoring={m} onOpenMessages={(mon) => setMessagesFor(mon)} />
                 ))}
             </ul>
         );
@@ -104,6 +109,14 @@ export function InfractionsMonitoringTabs({
     return (
         <div className="flex-1 overflow-y-auto styled-scrollbar max-h-[calc(100dvh-12.8rem)] mt-5">
             {body}
+
+            {messagesFor && (
+                <MonitoringMessagesModal
+                    monitoringId={messagesFor.id}
+                    monitoringTitle={messagesFor.infraction_code_name}
+                    onClose={() => setMessagesFor(null)}
+                />
+            )}
         </div>
     );
 }

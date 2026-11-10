@@ -4,18 +4,20 @@ import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { reverseName } from "../../../../types";
 import { HiDocumentDownload, HiOutlineEye } from "react-icons/hi";
 import { useDownloadPdf } from "../../../global/hooks/useDownlloadPdf.ts";
-import {ReportStat} from "../ui/ReportStat.tsx";
-import {OtherAwards} from "../ui/OtherAwards.tsx";
+import { ReportStat } from "../ui/ReportStat.tsx";
+import { OtherAwards } from "../ui/OtherAwards.tsx";
 import { ClipboardCheck, GraduationCap, CalendarCheck, ShieldCheck, Accessibility } from 'lucide-react';
+import type { Student } from "../../../../features/types/types.ts";
 
 
 interface ReportsProps {
     courseId: string;
     periodId: string;
+    students: Student[];
 }
 
-export function Reports({ courseId, periodId }: ReportsProps) {
-    const { students, loading, error, failStats, honorStudents } = useCumulativeReports(courseId, periodId);
+export function Reports({ students, courseId, periodId }: ReportsProps) {
+    const { loading, error, failStats, honorStudents } = useCumulativeReports(courseId, periodId);
     const { download } = useDownloadPdf();
 
     if (loading) return <LoadingContent title="Cargando estudiantes..." />;
@@ -76,7 +78,7 @@ export function Reports({ courseId, periodId }: ReportsProps) {
                                     <th scope="row" className="p-2 font-semibold text-custom-black whitespace-nowrap sticky left-0 bg-inherit capitalize">
                                         {fullName}
                                         <span className="block text-xs font-normal text-gray-500 mt-0.5">
-                                        Matrícula: <span className="uppercase">{student.enrollment_code ? `${student.enrollment_code}` : 'Sin matrícula'}</span>
+                                        <span className="uppercase">{student.email ? `${student.email}` : 'Sin matrícula'}</span>
                                     </span>
                                     </th>
 
