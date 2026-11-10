@@ -12,8 +12,9 @@ import {
     Grades,
     Summary,
     Attendance,
-    Reports
+    Reports, Infractions
 } from "../../../../shared/cumulative/components";
+import { useCourseStudents } from "../../../../shared/cumulative/hooks/useCourseStudents.ts";
 
 export default function TeacherCumulativeRecord() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -29,6 +30,7 @@ export default function TeacherCumulativeRecord() {
 
     const { summary, loading } = useCumulativeSummary(courseId ?? "", selectedPeriodId);
     const { trend, loading: loadingTrend } = useCoursePeriodTrend(courseId ?? "", selectedPeriodId);
+    const { loading: loadingStudents, students } = useCourseStudents(courseId ?? "");
 
     const metrics = useMemo<CumulativeMetrics>(() => {
         if (!summary?.length) {
@@ -52,7 +54,7 @@ export default function TeacherCumulativeRecord() {
 
     return (
         <CumulativeRecordLayout
-            loading={loading || loadingTrend}
+            loading={loading || loadingTrend || loadingStudents}
             tab={tab}
             setTab={setTab}
             metrics={metrics}
@@ -67,7 +69,8 @@ export default function TeacherCumulativeRecord() {
             )}
             {tab === "grades" && <Grades courseId={courseId} periodId={selectedPeriodId} />}
             {tab === "attendance" && <Attendance courseId={courseId} periodId={selectedPeriodId} />}
-            {tab === "reports" && <Reports courseId={courseId} periodId={selectedPeriodId} />}
+            {tab === "reports" && <Reports courseId={courseId} periodId={selectedPeriodId} students={students} />}
+            {tab === "absents" && <Infractions courseId={courseId} students={students} />}
         </CumulativeRecordLayout>
     );
 }

@@ -42,8 +42,6 @@ export function InfractionsMonitoringTabs({
     const [messagesFor, setMessagesFor] = useState<StudentMonitoring | null>(null);
     const studentFirstName = selectedStudent?.student_first_name ?? "Este estudiante";
 
-    console.log(infractions);
-
     if (!selectedStudentId) {
         return (
             <div className="h-full border rounded-xl border-gray-200 flex items-center justify-center mt-5 max-h-[calc(100dvh-12.8rem)]">

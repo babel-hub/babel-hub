@@ -3,7 +3,6 @@ import type { AssessmentCriteria, Grades } from "../../../types";
 import type { Scale } from "../../global/types/types.ts";
 
 export type Tabs = "infractions" | "monitoring";
-export type SeverityLevel = "Tipo 1" | "Tipo 2" | "Tipo 3";
 
 interface AttendanceRecord {
     date: string;
@@ -72,8 +71,6 @@ export interface TeacherClassData {
 }
 
 export type SharedClassData = PrincipalClassData | TeacherClassData;
-
-
 
 // Infractions - Monitoring
 
