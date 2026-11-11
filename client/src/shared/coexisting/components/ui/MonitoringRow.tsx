@@ -1,7 +1,7 @@
 import type { StudentMonitoring } from "../../types/types.ts";
 import { getTypeStyle } from "../../utils/utils.ts";
 import { formatFullDateString } from "../../../../features/utils/utils.ts";
-import {HiOutlineChat} from "react-icons/hi";
+import { HiOutlineChat } from "react-icons/hi";
 
 interface MonitoringRowProps {
     monitoring: StudentMonitoring;

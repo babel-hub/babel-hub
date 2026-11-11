@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteInfraction } from "../../api";
+import { deleteInfraction } from "../api";
 import toast from "react-hot-toast";
 
 export const useDeleteInfraction = (onSuccess: () => void) => {

@@ -1,6 +1,11 @@
 import type { IClassScheduleRepository } from "../domain/IClassScheduleRepository.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import type { UpdateSchedule, UpsertSchedule, CheckOverlapPayload } from "../domain/ClassSchedule.types.js";
+import type {
+    UpdateSchedule,
+    UpsertSchedule,
+    CheckOverlapPayload,
+    CourseSchedule
+} from "../domain/ClassSchedule.types.js";
 import { ValidationError } from "../../errors/domain/CustomErrors.js";
 import { normalizeOptionalText } from "../../shared/domain/normalize.js";
 import { validateTimeRange } from "../domain/ClassSchedule.rules.js";

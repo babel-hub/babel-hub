@@ -1,12 +1,12 @@
 import type { Student } from "../../../../features/types/types.ts";
-import type { StudentInfraction, StudentMonitoring, Tabs } from "../../../class-managment/types/types.ts";
-import { InfractionRow } from "../../../class-managment/components/ui/InfractionRow.tsx";
-import { MonitoringRow } from "../../../class-managment/components/ui/MonitoringRow.tsx";
+import type { StudentInfraction, StudentMonitoring, Tabs } from "../../types/types.ts";
+import { InfractionRow } from "./InfractionRow.tsx";
+import { MonitoringRow } from "./MonitoringRow.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { Ghost, FaceGrinning } from 'lucide-react';
-import {useState} from "react";
-import {MonitoringMessagesModal} from "../../../class-managment/components/ui/MonitoringMessageModal.tsx";
+import { useState } from "react";
+import { MonitoringMessagesModal } from "./MonitoringMessageModal.tsx";
 
 interface InfractionsMonitoringTabsProps {
     selectedStudentId: string;

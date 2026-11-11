@@ -2,7 +2,7 @@ import { HiPencil, HiTrash, HiOutlineDuplicate, HiOutlineShieldExclamation } fro
 import type { StudentInfraction } from "../../types/types.ts";
 import { ActionMenu, type MenuOption } from "../../../../components/ui/menu/ActionMenu.tsx";
 import { formatFullDateString } from "../../../../features/utils/utils.ts";
-import {getTypeStyle} from "../../utils/utils.ts";
+import { getTypeStyle } from "../../utils/utils.ts";
 
 interface InfractionRowProps {
     infraction: StudentInfraction;

@@ -39,6 +39,8 @@ import ParentAnnouncementsLayout from "../pages/parent/announcements/ParentAnnou
 import PrincipalCumulativeRecord from "../pages/principal/courses/cumulative-record/PrincipalCumulativeRecord.tsx";
 import TeacherCourse from "../pages/teacher/course/TeacherCourse.tsx";
 import TeacherCumulativeRecord from "../pages/teacher/course/cumulative-record/TeacherCumulativeRecord.tsx";
+import PrincipalCourseSchedule from "../pages/principal/courses/course-schedule/PrincipalCourseSchedule.tsx";
+import TeacherCourseSchedule from "../pages/teacher/course/shedule/TeacherCourseSchedule.tsx";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +90,7 @@ function App() {
                             <Route path=":courseId" element={<CourseDetails />} />
                             <Route path=":courseId/clase/:classId" element={<ClassesDetails />} />
                             <Route path=":courseId/acumulados" element={<PrincipalCumulativeRecord />} />
+                            <Route path=":courseId/horario" element={<PrincipalCourseSchedule />} />
                         </Route>
 
                         <Route path="comunidad" element={<Community />} />
@@ -122,6 +125,7 @@ function App() {
                             <Route path=":classId" element={<ClassDetails />}/>
                             <Route path="cso/:courseId" element={<TeacherCourse />}/>
                             <Route path="cso/:courseId/acumulados" element={<TeacherCumulativeRecord />}/>
+                            <Route path="cso/:courseId/horario" element={<TeacherCourseSchedule />}/>
                         </Route>
 
                         <Route path="calendar" element={<TeacherCalendar />}/>

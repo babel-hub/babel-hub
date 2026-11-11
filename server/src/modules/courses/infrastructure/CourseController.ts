@@ -22,6 +22,18 @@ export class CourseController {
         }
     };
 
+    getCourseSchedule = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const courseId = request.params.courseId as string;
+
+            const schedule = await this.courseService.getCourseSchedule(courseId, authUser);
+            response.status(200).json({ schedule });
+        } catch (error) {
+            next(error);
+        }
+    };
+
     getCourseDetails = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const authUser = getAuthUser(request);

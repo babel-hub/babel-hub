@@ -1,6 +1,6 @@
 import { useState } from "react";
 import DynamicModalForm, { type FormField } from "../../../../components/ui/modals/ModalForm.tsx";
-import { useEscalateInfraction } from "../../hooks/coexistence/useEscalateInfraction.ts";
+import { useEscalateInfraction } from "../../hooks/useEscalateInfraction.ts";
 import type { StudentInfraction } from "../../types/types.ts";
 
 interface EscalateInfractionModalProps {

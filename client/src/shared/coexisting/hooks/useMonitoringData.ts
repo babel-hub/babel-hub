@@ -1,6 +1,6 @@
-import {useState, useEffect, useCallback} from "react";
-import { getStudentMonitoring } from "../../api";
-import type { StudentMonitoring } from "../../types/types.ts";
+import { useState, useEffect, useCallback } from "react";
+import { getStudentMonitoring } from "../api";
+import type { StudentMonitoring } from "../types/types.ts";
 
 export const useMonitoringData = (courseId: string, studentId: string) => {
     const [loading, setLoading] = useState(false);

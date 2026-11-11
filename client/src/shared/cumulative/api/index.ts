@@ -6,8 +6,8 @@ import type {
     CumulativeSummary, HonorStudent
 } from "../types/types.ts";
 import api from "../../../api/client.ts";
-import type { StudentInfraction } from "../../class-managment/types/types.ts";
 import type { Student } from "../../../features/types/types.ts";
+import type { StudentInfraction } from "../../coexisting/types/types.ts";
 
 export const getPeriodTrends = async (courseId: string, periodId: string, signal?: AbortSignal): Promise<CoursePeriodTrend[]> => {
     const response = await api.get(`/api/cumulative/${courseId}/trend`, {

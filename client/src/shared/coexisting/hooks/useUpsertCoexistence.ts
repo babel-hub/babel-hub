@@ -1,8 +1,8 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { createInfraction, updateInfraction } from "../../api";
-import type { modeTypes } from "../../../../features/types/types.ts";
-import type { UpsertInfractionPayload } from "../../types/types.ts";
+import { createInfraction, updateInfraction } from "../api";
+import type { modeTypes } from "../../../features/types/types.ts";
+import type { UpsertInfractionPayload } from "../types/types.ts";
 
 export const useUpsertCoexistence = (onSuccess: () => void) => {
     const [loading, setLoading] = useState<boolean>(false);

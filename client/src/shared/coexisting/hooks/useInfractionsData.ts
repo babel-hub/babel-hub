@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback} from "react";
-import { getStudentInfractions } from "../../api";
-import type { StudentInfraction } from "../../types/types.ts";
+import { getStudentInfractions } from "../api";
+import type { StudentInfraction } from "../types/types.ts";
 
 export const useInfractionsData = (classId: string, studentId: string) => {
     const [loading, setLoading] = useState(false);

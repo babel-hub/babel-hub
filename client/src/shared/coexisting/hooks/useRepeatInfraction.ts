@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { UpsertInfractionPayload } from "../../types/types.ts";
+import type { UpsertInfractionPayload } from "../types/types.ts";
 import toast from "react-hot-toast";
-import { createInfraction } from "../../api";
+import { createInfraction } from "../api";
 
 export const useRepeatInfraction = (onSuccess: () => void) => {
     const [loading, setLoading] = useState(false);

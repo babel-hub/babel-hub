@@ -2,7 +2,13 @@ import type {
     IClassScheduleRepository
 } from "../domain/IClassScheduleRepository.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import type { TeacherSchedule, UpdateSchedule, UpsertSchedule, CheckOverlapPayload } from "../domain/ClassSchedule.types.js";
+import type {
+    TeacherSchedule,
+    UpdateSchedule,
+    UpsertSchedule,
+    CheckOverlapPayload,
+    CourseSchedule
+} from "../domain/ClassSchedule.types.js";
 import { pool } from "../../../db/index.js";
 import { ForbiddenError, NotFoundError } from "../../errors/domain/CustomErrors.js";
 import { createAuditLog } from "../../../services/audit.service.js";
@@ -159,6 +165,45 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getCourseSchedule(courseId: string, authUser: AuthUser): Promise<CourseSchedule[]> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            const query = `
+                SELECT
+                    cs.id,
+                    co.id AS course_id,
+                    co.name AS course_name,
+                    cl.id AS class_id,
+                    s.name AS class_name,
+                    t.id AS teacher_id,
+                    CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS teacher_name,
+                    a.name AS area_name,
+                    cs.day_of_week,
+                    cs.start_time,
+                    cs.end_time,
+                    cs.room
+                FROM class_schedule cs
+                    JOIN class   cl ON cl.id = cs.class_id
+                    JOIN course  co ON co.id = cl.course_id
+                    JOIN subject s  ON s.id  = cl.subject_id
+                    JOIN area    a  ON a.id  = s.area_id
+                    JOIN teacher t  ON t.id  = cl.teacher_id
+                    JOIN profile p  ON p.id  = t.profile_id
+                WHERE co.id = $1
+                  AND co.school_id = $2
+                  AND cl.is_active = true
+                ORDER BY cs.day_of_week ASC, cs.start_time ASC;
+            `;
+
+            const result = await client.query(query, [courseId, userSchoolId]);
+            return result.rows;
         } finally {
             client.release();
         }

@@ -1,5 +1,11 @@
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import type {CheckOverlapPayload, TeacherSchedule, UpdateSchedule, UpsertSchedule} from "./ClassSchedule.types.js";
+import type {
+    CheckOverlapPayload,
+    CourseSchedule,
+    TeacherSchedule,
+    UpdateSchedule,
+    UpsertSchedule
+} from "./ClassSchedule.types.js";
 
 export interface IClassScheduleRepository {
     getTeacherSchedule(teacherProfileId: string, authUser: AuthUser): Promise<TeacherSchedule[]>;
@@ -8,4 +14,5 @@ export interface IClassScheduleRepository {
     checkCourseOverlap(payload: CheckOverlapPayload, authUser: AuthUser): Promise<boolean>;
     updateClassSchedule(scheduleId: string, schedule: UpdateSchedule, authUser: AuthUser): Promise<void>;
     deleteClassSchedule(scheduleId: string, authUser: AuthUser): Promise<void>;
+    getCourseSchedule(courseId: string, authUser: AuthUser): Promise<CourseSchedule[]>;
 }

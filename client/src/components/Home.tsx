@@ -85,7 +85,7 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
                 ${isExpanded ? "md:w-64" : "md:w-16"}
             `}>
 
-                <div className={`flex items-center p-3 mb-2 ${isExpanded ? 'justify-between' : 'justify-between md:justify-center'}`}>
+                <div className={`flex items-center p-2 mb-2 ${isExpanded ? 'justify-between' : 'justify-between md:justify-center'}`}>
                     <div className={`flex items-center gap-1 overflow-hidden transition-opacity duration-200 ${isExpanded ? "opacity-100" : "md:opacity-0 md:hidden"}`}>
                         <button className="cursor-pointer shrink-0" onClick={() => navigate(`/${user?.role}/dashboard`)}>
                             <img className="w-7 h-7 object-contain" src={logo} alt="Logo" />
@@ -97,9 +97,20 @@ const DashboardLayout = ({ user, grid }: LayoutProps) => {
 
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="hidden md:flex text-gray-500 hover:text-custom-black hover:bg-gray-100 p-1.5 rounded-lg transition-colors shrink-0"
+                        className="hidden md:flex items-center justify-center w-9 h-9 text-gray-500 hover:text-custom-black hover:bg-gray-100 rounded-lg transition-colors shrink-0"
                     >
-                        {isExpanded ? <LuPanelLeftClose className="size-5" /> : <LuPanelLeftOpen className="size-5" />}
+                        {isExpanded ? (
+                            <LuPanelLeftClose className="w-5 h-5" />
+                        ) : (
+                            <div className="group flex items-center justify-center w-full h-full">
+                                <img
+                                    className="w-8 h-8 block group-hover:hidden object-contain"
+                                    src={logo}
+                                    alt="Logo"
+                                />
+                                <LuPanelLeftOpen className="w-5 h-5 hidden group-hover:block" />
+                            </div>
+                        )}
                     </button>
 
                     <button

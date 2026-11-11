@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getInfractionTypes } from "../../api";
-import type { InfractionTypeHierarchy } from "../../types/types.ts";
+import { getInfractionTypes } from "../api";
+import type { InfractionTypeHierarchy } from "../types/types.ts";
 
 export const useInfractionTypes = () => {
     const [types, setTypes] = useState<InfractionTypeHierarchy[]>([]);

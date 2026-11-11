@@ -2,10 +2,10 @@ import { useState } from "react";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { useStudentInfractions } from "../../hooks/useStudentInfractions.ts";
 import { reverseName } from "../../../../types";
-import type { Tabs } from "../../../class-managment/types/types.ts";
-import { useMonitoringData } from "../../../class-managment/hooks/coexistence/useMonitoringData.ts";
+import { useMonitoringData } from "../../../coexisting/hooks/useMonitoringData.ts";
 import { InfractionsMonitoringTabs } from "../../../coexisting/components/ui/InfractionsMonitoringTabs.tsx";
 import type { Student } from "../../../../features/types/types.ts";
+import type { Tabs } from "../../../coexisting/types/types.ts";
 
 interface InfractionsProps {
     courseId: string;

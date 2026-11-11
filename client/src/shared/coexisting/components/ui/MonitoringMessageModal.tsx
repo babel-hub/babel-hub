@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useMonitoringMessages } from "../../hooks/coexistence/useMonitoringMessages.ts";
+import { useMonitoringMessages } from "../../hooks/useMonitoringMessages.ts";
 import { LoadingContent } from "../../../../components/ui/Loadings.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import { formatFullDateString } from "../../../../features/utils/utils.ts";

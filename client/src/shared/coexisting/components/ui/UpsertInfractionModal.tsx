@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useInfractionTypes } from "../../hooks/coexistence/useInfractionTypes.ts";
-import { useUpsertCoexistence } from "../../hooks/coexistence/useUpsertCoexistence.ts";
+import { useInfractionTypes } from "../../hooks/useInfractionTypes.ts";
+import { useUpsertCoexistence } from "../../hooks/useUpsertCoexistence.ts";
 import type { modeTypes } from "../../../../features/types/types.ts";
 import type { StudentInfraction } from "../../types/types.ts";
 import DynamicModalForm, { type FormField } from "../../../../components/ui/modals/ModalForm.tsx";

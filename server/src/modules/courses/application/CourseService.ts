@@ -13,12 +13,15 @@ import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors
 import type { IStudentRepository } from "../../student/domain/IStudentRepository.js";
 import type { IClassRepository } from "../../classes/domain/IClassRepository.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
+import type { IClassScheduleRepository } from "../../class-schedule/domain/IClassScheduleRepository.js";
+import type { CourseSchedule } from "../../class-schedule/domain/ClassSchedule.types.js";
 
 export class CourseService {
     constructor(
         private readonly courseRepository: ICourseRepository,
         private readonly studentRepository: IStudentRepository,
         private readonly classRepository: IClassRepository,
+        private readonly classScheduleRepository: IClassScheduleRepository,
     ) {}
 
     private validate(payload: Pick<CreateCoursePayload, "courseName" | "courseYear" | "courseTeacherId">): void {
@@ -65,6 +68,13 @@ export class CourseService {
         this.validate(payload);
 
         await this.courseRepository.createCourse(payload, auth);
+    }
+
+    async getCourseSchedule(courseId: string, authUser: AuthUser): Promise<CourseSchedule[]> {
+        const auth = requireAuth(authUser);
+        if (!courseId) throw new ValidationError("El ID del curso es obligatorio");
+
+        return this.classScheduleRepository.getCourseSchedule(courseId, auth);
     }
 
     async updateCourse(payload: UpdateCoursePayload, authUser: AuthUser): Promise<void> {

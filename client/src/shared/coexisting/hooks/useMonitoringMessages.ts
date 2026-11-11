@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { getMonitoringMessages, createMonitoringMessage } from "../../api";
-import type { MonitoringMessage } from "../../types/types.ts";
+import { getMonitoringMessages, createMonitoringMessage } from "../api";
+import type { MonitoringMessage } from "../types/types.ts";
 
 export const useMonitoringMessages = (monitoringId: string | null) => {
     const [messages, setMessages] = useState<MonitoringMessage[]>([]);

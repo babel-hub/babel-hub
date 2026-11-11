@@ -2,15 +2,15 @@ import { useState } from "react";
 import { type ModalModeTypes, reverseName } from "../../../../types";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import type { Student } from "../../../../features/types/types.ts";
-import { useInfractionsData } from "../../hooks/coexistence/useInfractionsData.ts";
-import { useMonitoringData } from "../../hooks/coexistence/useMonitoringData.ts";
-import { UpsertInfractionModal } from "../ui/UpsertInfractionModal.tsx";
-import type { StudentInfraction, Tabs } from "../../types/types.ts";
+import { useInfractionsData } from "../../../coexisting/hooks/useInfractionsData.ts";
+import { useMonitoringData } from "../../../coexisting/hooks/useMonitoringData.ts";
+import { UpsertInfractionModal } from "../../../coexisting/components/ui/UpsertInfractionModal.tsx";
 import { InfractionsMonitoringTabs } from "../../../coexisting/components/ui/InfractionsMonitoringTabs.tsx";
-import { useDeleteInfraction } from "../../hooks/coexistence/useDeleteInfraction.ts";
+import { useDeleteInfraction } from "../../../coexisting/hooks/useDeleteInfraction.ts";
 import { ConfirmModal } from "../../../../components/ui/modals/ConfirmModal.tsx";
-import {useRepeatInfraction} from "../../hooks/coexistence/useRepeatInfraction.ts";
-import { EscalateInfractionModal } from "../ui/EscalateInfractionModal.tsx";
+import { useRepeatInfraction } from "../../../coexisting/hooks/useRepeatInfraction.ts";
+import { EscalateInfractionModal } from "../../../coexisting/components/ui/EscalateInfractionModal.tsx";
+import type { StudentInfraction, Tabs } from "../../../coexisting/types/types.ts";
 
 interface AgendaProps {
     students: Student[];

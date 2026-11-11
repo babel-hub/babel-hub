@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { escalateInfraction } from "../../api";
+import { escalateInfraction } from "../api";
 import toast from "react-hot-toast";
 
 export const useEscalateInfraction = (onSuccess: () => void) => {

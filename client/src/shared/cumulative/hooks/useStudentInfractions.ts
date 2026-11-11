@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback} from "react";
-import type { StudentInfraction } from "../../class-managment/types/types.ts";
 import { getStudentInfractions } from "../api";
+import type { StudentInfraction } from "../../coexisting/types/types";
 
 export const useStudentInfractions = (courseId: string, studentId: string) => {
     const [loading, setLoading] = useState<boolean>(false);
