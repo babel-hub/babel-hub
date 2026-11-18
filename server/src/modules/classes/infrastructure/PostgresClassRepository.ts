@@ -134,7 +134,7 @@ export class PostgresClassRepository implements IClassRepository {
         }
     }
 
-    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void> {
+    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<string> {
         const { courseId, subjectId, teacherId } = payload;
         const { userId, userRole, userSchoolId } = authUser;
 
@@ -179,6 +179,7 @@ export class PostgresClassRepository implements IClassRepository {
             });
 
             await client.query('COMMIT');
+            return newClassId;
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;

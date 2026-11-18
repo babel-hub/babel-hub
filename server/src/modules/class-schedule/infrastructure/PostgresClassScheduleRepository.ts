@@ -54,7 +54,7 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
                     c.course_id,
                     co.name AS course_name,
                     cs.class_id,
-                    s.name AS subject_name,
+                    s.name AS class_name,
                     a.name AS area_name,
                     cs.day_of_week,
                     cs.start_time,
@@ -139,26 +139,38 @@ export class PostgresClassScheduleRepository implements IClassScheduleRepository
         }
     }
 
-    async createClassSchedule(classId: string, schedule: UpsertSchedule, authUser: AuthUser): Promise<void> {
-        const { userId, userRole, userSchoolId } = authUser;
+    async createClassSchedule(
+        classId: string,
+        schedules: UpsertSchedule[],
+        authUser: AuthUser
+    ): Promise<void> {
+        if (schedules.length === 0) return;
 
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+
         try {
             await client.query('BEGIN');
 
             await this.verifyClassAccess(client, classId, authUser);
 
+            // Bulk insert con unnest — una query para N filas
+            const days = schedules.map(s => s.day);
+            const startTimes = schedules.map(s => s.startTime);
+            const endTimes = schedules.map(s => s.endTime);
+            const rooms = schedules.map(s => s.room || null);
+
             await client.query(`
-                INSERT INTO class_schedule (day_of_week, start_time, end_time, room, class_id)
-                VALUES ($1, $2, $3, $4, $5)
-            `, [schedule.day, schedule.startTime, schedule.endTime, schedule.room, classId]);
+                INSERT INTO class_schedule (class_id, day_of_week, start_time, end_time, room)
+                SELECT $1, unnest($2::int[]), unnest($3::time[]), unnest($4::time[]), unnest($5::text[])
+            `, [classId, days, startTimes, endTimes, rooms]);
 
             await createAuditLog(client, {
                 actorUserId: userId,
                 actorRole: userRole,
                 action: "CREATE_CLASS_SCHEDULE",
                 schoolId: userSchoolId,
-                metadata: { classId, room: schedule.room }
+                metadata: { classId, slotsCount: schedules.length },
             });
 
             await client.query('COMMIT');

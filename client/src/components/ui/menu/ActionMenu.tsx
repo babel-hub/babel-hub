@@ -79,7 +79,7 @@ export function ActionMenu({ options, customIcon }: ActionMenuProps) {
                 left: `${coords.left}px`,
                 transform: coords.position === "top" ? "translate(-100%, -100%)" : "translateX(-100%)",
             }}
-            className="action-menu-portal z-50 w-36 overflow-hidden p-1 rounded-xl border border-gray-200 bg-white text-left shadow-lg"
+            className="action-menu-portal z-50 w-42 overflow-hidden p-1 rounded-xl border border-gray-200 bg-white text-left shadow-lg"
         >
             {options.map((opt, idx) => {
                 if (opt.isSeparator) {
@@ -95,7 +95,7 @@ export function ActionMenu({ options, customIcon }: ActionMenuProps) {
                             setIsOpen(false);
                             opt.onClick?.();
                         }}
-                        className={`flex w-full items-center text-left gap-2 px-3 py-2 rounded-lg text-xs md:text-sm transition-colors ${
+                        className={`flex w-full items-center text-left gap-2 p-2 rounded-lg text-xs md:text-sm transition-colors ${
                             opt.disabled ? "opacity-50 cursor-not-allowed" :
                                 opt.isDanger ? "text-red-600 hover:bg-red-50 cursor-pointer" : "text-gray-700 hover:bg-gray-100 cursor-pointer"
                         }`}

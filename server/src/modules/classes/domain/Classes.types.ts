@@ -8,10 +8,21 @@ interface Student {
     is_active: boolean;
 }
 
-export interface CreateClassPayload {
+export interface CreateScheduleSlot {
+    day: number,
+    startTime: string,
+    endTime: string,
+    room: string | null
+}
+
+export interface ClassInsertData {
     courseId: string;
     subjectId: string;
     teacherId: string;
+}
+
+export interface CreateClassPayload extends ClassInsertData {
+    schedules?: CreateScheduleSlot[];
 }
 
 export interface StudentClassRow {
@@ -73,4 +84,8 @@ export interface TeacherClassDetails {
     subject_name: string;
     total_students: number;
     students: Student[];
+}
+
+export interface BulkCreateSchedulePayload {
+    schedules: CreateScheduleSlot[];
 }

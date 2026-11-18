@@ -14,7 +14,7 @@ export interface IClassRepository {
     getTeacherClassesProfile(teacherId: string, authUser: AuthUser): Promise<ClassRow[]>;
     getStudentProfileClasses(courseId: string, authUser: AuthUser): Promise<StudentClassRow[]>;
     getCourseClasses(courseId: string, isActive: boolean, authUser: AuthUser): Promise<CourseClass[]>;
-    createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void>;
+    createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<string>;
     updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void>;
     deleteClass(classId: string, authUser: AuthUser): Promise<void>;
     getTeacherClasses(teacherId: string, isActive: boolean, authUser: AuthUser): Promise<TeacherClasses[]>;

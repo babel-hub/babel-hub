@@ -25,10 +25,16 @@ export class ClassControllers {
             const authUser = getAuthUser(request);
             const { courseId, subjectId, teacherId } = request.body;
 
-            const payload: CreateClassPayload = { courseId, subjectId, teacherId };
-            await this.classServices.createClass(payload, authUser);
+            const classId = await this.classServices.createClass(
+                {
+                    courseId,
+                    subjectId,
+                    teacherId
+                },
+                authUser
+            );
 
-            response.status(201).send();
+            response.status(201).json({ classId });
         } catch (error) {
             next(error);
         }

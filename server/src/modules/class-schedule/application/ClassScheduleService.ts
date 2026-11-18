@@ -39,18 +39,53 @@ export class ClassScheduleService {
         }
     }
 
-    async createClassSchedule(classId: string, schedule: UpsertSchedule, authUser: AuthUser): Promise<void> {
+    async createClassSchedule(
+        classId: string,
+        schedulesInput: UpsertSchedule | UpsertSchedule[],
+        authUser: AuthUser
+    ): Promise<void> {
         const auth = requireAuth(authUser);
+        if (!classId) throw new ValidationError("El ID de la clase es obligatorio");
 
-        if (!classId || schedule.day === undefined || !schedule.startTime || !schedule.endTime) throw new ValidationError("Faltan campos obligatorios");
-        validateTimeRange(schedule.startTime, schedule.endTime);
+        const schedules = Array.isArray(schedulesInput) ? schedulesInput : [schedulesInput];
 
-        await this.assertNoOverlap(classId, schedule, undefined, auth);
+        if (schedules.length === 0) {
+            throw new ValidationError("Debes enviar al menos un horario");
+        }
+        if (schedules.length > 10) {
+            throw new ValidationError("No puedes agregar más de 15 horarios a la vez");
+        }
 
-        const normalized: UpsertSchedule = {
-            ...schedule,
-            room: normalizeOptionalText(schedule.room)
-        };
+        const normalized: UpsertSchedule[] = schedules.map((s, i) => {
+            if (s.day === undefined || !s.startTime || !s.endTime) {
+                throw new ValidationError(`Faltan campos obligatorios en el horario ${i + 1}`);
+            }
+            validateTimeRange(s.startTime, s.endTime);
+            return {
+                ...s,
+                room: normalizeOptionalText(s.room),
+            };
+        });
+
+        for (const slot of normalized) {
+            await this.assertNoOverlap(classId, slot, undefined, auth);
+        }
+
+        for (let i = 0; i < normalized.length; i++) {
+            for (let j = i + 1; j < normalized.length; j++) {
+                const a = normalized[i]!;
+                const b = normalized[j]!;
+                if (
+                    a.day === b.day &&
+                    a.startTime < b.endTime &&
+                    b.startTime < a.endTime
+                ) {
+                    throw new ValidationError(
+                        `Los horarios ${i + 1} y ${j + 1} se cruzan entre sí`
+                    );
+                }
+            }
+        }
 
         await this.classScheduleRepository.createClassSchedule(classId, normalized, auth);
     }

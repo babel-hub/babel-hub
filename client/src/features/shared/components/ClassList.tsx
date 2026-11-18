@@ -9,14 +9,16 @@ interface ClassListProps {
     createClass?: () => void;
     onEdit?: (cls: ClassItem) => void;
     onDelete?: (cls: ClassItem) => void;
+    onClassSchedule?: (cls: ClassItem) => void;
 }
 
 export const ClassList = memo(function ClassList({
                                                      classes,
                                                      createClass,
                                                      isDisabled,
+                                                     onClassSchedule,
                                                      onEdit,
-                                                     onDelete
+                                                     onDelete,
                                                  }: ClassListProps) {
     return (
         <div className="absolute right-5 top-full w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden">
@@ -41,6 +43,7 @@ export const ClassList = memo(function ClassList({
                         cls={cls}
                         onEdit={onEdit}
                         onDelete={onDelete}
+                        onClassSchedule={onClassSchedule}
                     />
                 ))}
                 {classes.length === 0 && (

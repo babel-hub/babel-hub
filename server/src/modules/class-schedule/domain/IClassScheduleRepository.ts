@@ -9,7 +9,7 @@ import type {
 
 export interface IClassScheduleRepository {
     getTeacherSchedule(teacherProfileId: string, authUser: AuthUser): Promise<TeacherSchedule[]>;
-    createClassSchedule(classId: string, schedule: UpsertSchedule, authUser: AuthUser): Promise<void>;
+    createClassSchedule(classId: string, schedule: UpsertSchedule[], authUser: AuthUser): Promise<void>;
     checkTeacherOverlap(payload: CheckOverlapPayload, authUser: AuthUser): Promise<boolean>;
     checkCourseOverlap(payload: CheckOverlapPayload, authUser: AuthUser): Promise<boolean>;
     updateClassSchedule(scheduleId: string, schedule: UpdateSchedule, authUser: AuthUser): Promise<void>;

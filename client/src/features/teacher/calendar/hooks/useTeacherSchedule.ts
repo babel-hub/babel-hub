@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback} from "react";
-import type { TeacherSchedule } from "../types/types.ts";
 import { getTeacherSchedule } from "../api";
+import type { TeacherSchedule } from "../../../../components/ui/calendars/calendar.types";
 
 export const useTeacherSchedule = (teacherId: string) => {
     const [loading, setLoading] = useState<boolean>(false);

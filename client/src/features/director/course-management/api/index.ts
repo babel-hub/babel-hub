@@ -1,5 +1,12 @@
 import api from "../../../../api/client.ts";
-import type {AvailableSubjects, CoursesListData, CreateClass, Teacher, UpdateClass, UpsertCourse} from "../types";
+import type {
+    AvailableSubjects,
+    CoursesListData,
+    CreateClass,
+    Teacher,
+    UpdateClass,
+    UpsertCourse, UpsertSchedule
+} from "../types";
 
 // Course List Endpoint
 
@@ -32,8 +39,13 @@ export const getAvailableSubjects = async (id: string): Promise<AvailableSubject
     return response.data.availableSubjects;
 }
 
-export const createClass = async (payload: CreateClass) => {
-    await api.post("/classes", payload);
+export const createClass = async (payload: CreateClass): Promise<string> => {
+    const result = await api.post("/classes", payload);
+    return result.data.classId;
+}
+
+export const createClassSchedule = async (classId: string, payload: UpsertSchedule[]) => {
+    await api.post("/class-schedule", { payload, classId });
 }
 
 export const updateClass = async (id: string, payload: UpdateClass) => {

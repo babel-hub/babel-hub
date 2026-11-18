@@ -8,10 +8,10 @@ import { Calendar } from "../../../../components/ui/calendars/Calendar.tsx";
 import { NoResults } from "../../../../components/ui/blocks/NoResults.tsx";
 import {formatterDate } from "../../../../types";
 import { LuBookOpen } from "react-icons/lu";
-import type { TeacherSchedule } from "../types/types.ts";
 import {ConfirmModal} from "../../../../components/ui/modals/ConfirmModal.tsx";
 import {useDeleteSchedule} from "../hooks/useDeleteSchedule.ts";
 import {TeacherModalForm} from "./TeacherModalForm.tsx";
+import type { TeacherSchedule } from "../../../../components/ui/calendars/calendar.types.ts";
 
 export function TeacherClassesSchedule() {
     const { user } = useAuth();
@@ -49,6 +49,7 @@ export function TeacherClassesSchedule() {
                     schedule={schedule}
                     onEdit={handleEditClass}
                     onDelete={handleDeleteClass}
+                    showTeacher={false}
                 />
             </div>
 

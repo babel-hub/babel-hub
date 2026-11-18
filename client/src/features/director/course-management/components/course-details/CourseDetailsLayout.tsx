@@ -8,7 +8,7 @@ import { ClassList } from "../../../../shared/components/ClassList.tsx";
 import { CourseDetailsStudentsTable } from "../../../../shared/components/CourseDetailsStudentsTable.tsx";
 import { ConfirmModal } from "../../../../../components/ui/modals/ConfirmModal.tsx";
 import { useDeleteClass } from "../../hooks/course-details/useDeleteClass.ts";
-import { CourseDetailsFormModal } from "../ui/CourseDetailsFormModal.tsx";
+import { CreateClassFormModal } from "../ui/CreateClassFormModal.tsx";
 import toast from "react-hot-toast";
 import { PrimaryLink } from "../../../../../components/ui/link/PrimaryLink.tsx";
 import { useCourseData } from "../../../../shared/hooks/useCourseData.ts";
@@ -54,6 +54,10 @@ export function CourseDetailsLayout() {
         setShowClasses(false);
     }, []);
 
+    const handleCreateSchedule = useCallback((cls: ClassItem) => {
+        console.log(cls);
+    }, []);
+
     if (!courseId) {
         toast.error("No se encontró el ID del curso en la URL");
         return null;
@@ -90,6 +94,7 @@ export function CourseDetailsLayout() {
                                 isDisabled={false}
                                 onEdit={handleUpdate}
                                 onDelete={handleDelete}
+                                onClassSchedule={handleCreateSchedule}
                             />
                         )}
                     </div>
@@ -116,7 +121,7 @@ export function CourseDetailsLayout() {
             />
 
             {modalMode !== 'none' && (
-                <CourseDetailsFormModal
+                <CreateClassFormModal
                     id={courseId}
                     courseName={course.course.course_name}
                     mode={modalMode}

@@ -40,6 +40,13 @@ export interface UpsertCourse {
     teacherId: string;
 }
 
+export interface UpsertSchedule {
+    day: number,
+    startTime: string,
+    endTime: string,
+    room: string | null
+}
+
 export interface CreateClass {
     courseId: string;
     subjectId: string;

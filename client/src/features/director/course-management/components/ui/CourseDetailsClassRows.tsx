@@ -4,18 +4,21 @@ import type { ClassItem } from "../../types";
 import { reverseName } from "../../../../../types";
 import { ActionMenu, type MenuOption } from "../../../../../components/ui/menu/ActionMenu.tsx";
 import { Link } from "react-router-dom";
+import { TbCalendarPlus } from "react-icons/tb";
 
 interface ClassRowProps {
     cls: ClassItem;
     isDisabled?: boolean;
     onEdit?: (cls: ClassItem) => void;
     onDelete?: (cls: ClassItem) => void;
+    onClassSchedule?: (cls: ClassItem) => void;
 }
 
 export const CourseDetailsClassRows = memo(function ClassRowItem({
                                                                      cls,
                                                                      onEdit,
                                                                      onDelete,
+                                                                     onClassSchedule,
                                                                      isDisabled
                                                                  }: ClassRowProps) {
 
@@ -48,6 +51,14 @@ export const CourseDetailsClassRows = memo(function ClassRowItem({
             label: "Editar",
             icon: <HiPencil className="size-4" />,
             onClick: () => onEdit(cls),
+        });
+    }
+
+    if (onClassSchedule) {
+        menuOptions.push({
+            label: "Añadir Horario",
+            icon: <TbCalendarPlus className="size-4" />,
+            onClick: () => onClassSchedule(cls),
         });
     }
 

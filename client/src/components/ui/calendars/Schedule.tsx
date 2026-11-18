@@ -1,16 +1,24 @@
 import React from "react";
 import { calculateOverlaps, getAreaColor, HOUR_HEIGHT, timeToPosition } from "./calendar.utils.ts";
-import type { TeacherSchedule } from "./calendar.types.ts";
+import type { ScheduleEntry } from "./calendar.types.ts";
 import { ActionMenu, type MenuOption } from "../menu/ActionMenu.tsx";
 import { HiPencil, HiTrash } from "react-icons/hi";
 
-interface CalendarGridProps {
-    schedule: TeacherSchedule[];
-    onEdit: (schedule: TeacherSchedule) => void;
-    onDelete: (classId: string) => void;
+interface ScheduleProps {
+    schedule: ScheduleEntry[];
+    showTeacher?: boolean;
+    showCourse?: boolean;
+    onEdit?: (entry: ScheduleEntry) => void;
+    onDelete?: (classId: string) => void;
 }
 
-export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
+export function Schedule({
+                             schedule,
+                             showTeacher = true,
+                             showCourse = true,
+                             onEdit,
+                             onDelete,
+                         }: ScheduleProps) {
     const hours = Array.from({ length: 13 }, (_, i) => i + 6);
     const days = [
         { num: 1, label: 'Lunes' },
@@ -50,7 +58,7 @@ export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
                                     <div className="w-full border-b border-gray-300 absolute left-0" style={{ top: `${topOffset}px` }}></div>
                                     <div className="w-full border-b border-gray-200 border-dashed absolute left-0 opacity-50" style={{ top: `${topOffset + (HOUR_HEIGHT / 2)}px` }}></div>
                                 </React.Fragment>
-                            )
+                            );
                         })}
 
                         {calculateOverlaps(schedule.filter(s => s.day_of_week === day.num))
@@ -63,37 +71,41 @@ export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
                                 const width = `calc(${100 / cls.maxCol}% - 4px)`;
                                 const left = `calc(${(100 / cls.maxCol) * cls.col}% + 2px)`;
 
-                                const menuOptions: MenuOption[] = [
-                                    {
-                                        label: "Editar",
-                                        icon: <HiPencil className="size-4" />,
-                                        onClick: () => onEdit(cls),
-                                    },
-                                    {
-                                        isSeparator: true,
-                                        label: "separator"
-                                    },
-                                    {
+                                const menuOptions: MenuOption[] = [];
+                                if (onEdit) menuOptions.push({
+                                    label: "Editar",
+                                    icon: <HiPencil className="size-4" />,
+                                    onClick: () => onEdit(cls),
+                                });
+                                if (onDelete) {
+                                    if (menuOptions.length > 0) menuOptions.push({ isSeparator: true, label: "separator" });
+                                    menuOptions.push({
                                         label: "Eliminar",
                                         icon: <HiTrash className="size-4" />,
                                         onClick: () => onDelete(cls.id),
                                         isDanger: true,
-                                    }
-                                ];
+                                    });
+                                }
+
+                                const subtitleParts: string[] = [];
+                                if (showCourse && cls.course_name) subtitleParts.push(cls.course_name);
+                                if (showTeacher && cls.teacher_name) subtitleParts.push(cls.teacher_name);
+                                if (cls.room) subtitleParts.push(cls.room);
+                                const subtitle = subtitleParts.join(" • ");
 
                                 return (
                                     <div
                                         key={cls.id}
-                                        className={`absolute rounded-xl p-2 group border hover:z-20 hover:shadow-md transition-all z-10 ${colors.bg} ${colors.border}`}
+                                        className={`absolute rounded-xl p-2 group overflow-auto no-scrollbar border hover:z-20 hover:shadow-md transition-all z-10 ${colors.bg} ${colors.border}`}
                                         style={{ top: `${topPx}px`, height: `${heightPx}px`, width, left }}
                                     >
                                         <div className="text-left pr-4">
-                                            <p className={`text-xs capitalize font-bold leading-tight ${colors.text}`}>{cls.subject_name}</p>
+                                            <p className={`text-xs capitalize font-bold leading-tight ${colors.text}`}>{cls.class_name}</p>
                                             {
                                                 heightPx > 55 ? (
                                                     <div>
                                                         <p className={`text-[10px] mt-1 capitalize opacity-90 ${colors.text}`}>
-                                                            {cls.course_name}{cls.room ? ` • ${cls.room}` : ''}
+                                                            {subtitle}
                                                         </p>
                                                         <p className={`text-[10px] opacity-75 mt-0.5 ${colors.text}`}>
                                                             {cls.start_time.substring(0,5)} - {cls.end_time.substring(0,5)}
@@ -102,18 +114,20 @@ export function Schedule({ schedule, onEdit, onDelete }: CalendarGridProps) {
                                                 ) : (
                                                     <div>
                                                         <p className={`text-[10px] mt-1 capitalize opacity-90 ${colors.text}`}>
-                                                            {cls.course_name} {cls.room ? ` • ${cls.room}` : ''} {cls.start_time.substring(0,5)} - {cls.end_time.substring(0,5)}
+                                                            {subtitle} {cls.start_time.substring(0,5)} - {cls.end_time.substring(0,5)}
                                                         </p>
                                                     </div>
                                                 )
                                             }
                                         </div>
 
-                                        <div className="group-hover:inline hidden absolute top-1.5 right-1">
-                                            <ActionMenu options={menuOptions} />
-                                        </div>
+                                        {menuOptions.length > 0 && (
+                                            <div className="group-hover:inline hidden absolute top-1.5 right-1">
+                                                <ActionMenu options={menuOptions} />
+                                            </div>
+                                        )}
                                     </div>
-                                )
+                                );
                             })}
                     </div>
                 ))}

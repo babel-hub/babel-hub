@@ -7,15 +7,13 @@ import { getAuthUser } from "../../shared/auth/getAuthUser.js";
 export class ClassScheduleControllers {
     constructor(private readonly classScheduleService: ClassScheduleService) {}
 
-    createClassSchedule = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+    createClassSchedule = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         try {
-            const authUser = getAuthUser(request);
-            const { classId, day, startTime, endTime, room } = request.body;
+            const authUser = getAuthUser(req);
+            const { classId, payload } = req.body;
 
-            const schedule: UpsertSchedule = { day, startTime, endTime, room };
-
-            await this.classScheduleService.createClassSchedule(classId, schedule, authUser);
-            response.status(201).send();
+            await this.classScheduleService.createClassSchedule(classId, payload, authUser);
+            res.status(201).send();
         } catch (error) {
             next(error);
         }

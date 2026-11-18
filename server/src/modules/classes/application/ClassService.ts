@@ -1,14 +1,14 @@
-import type { IClassRepository } from "../domain/IClassRepository.js";
-import type { ClassDetails, CreateClass, CreateClassPayload } from "../domain/Classes.types.js";
-import type { AuthUser } from "../../shared/domain/Shared.types.js";
-import { NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
-import type { IStudentRepository } from "../../student/domain/IStudentRepository.js";
-import { requireAuth } from "../../shared/auth/requireAuth.js";
+import type {IClassRepository} from "../domain/IClassRepository.js";
+import type {ClassDetails, CreateClassPayload} from "../domain/Classes.types.js";
+import type {AuthUser} from "../../shared/domain/Shared.types.js";
+import {NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
+import type {IStudentRepository} from "../../student/domain/IStudentRepository.js";
+import {requireAuth} from "../../shared/auth/requireAuth.js";
 
 export class ClassService {
     constructor(
         private readonly classRepository: IClassRepository,
-        private readonly studentRepository: IStudentRepository,
+        private readonly studentRepository: IStudentRepository
     ) {}
 
     async getClassDetails(classId: string, isActive: boolean, authUser: AuthUser): Promise<ClassDetails> {
@@ -31,14 +31,11 @@ export class ClassService {
         };
     }
 
-    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<void> {
+    async createClass(payload: CreateClassPayload, authUser: AuthUser): Promise<string> {
         const auth = requireAuth(authUser);
+        if (!payload.courseId || !payload.subjectId || !payload.teacherId) throw new ValidationError("Faltan parámetros obligatorios (Curso, Asignatura o Profesor).");
 
-        if (!payload.courseId || !payload.subjectId || !payload.teacherId) {
-            throw new ValidationError("Faltan parámetros obligatorios (Curso, Asignatura o Profesor).");
-        }
-
-        await this.classRepository.createClass(payload, auth);
+        return await this.classRepository.createClass(payload, auth);
     }
 
     async updateClass(classId: string, teacherId: string, authUser: AuthUser): Promise<void> {
