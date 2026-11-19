@@ -33,6 +33,10 @@ export function CoursesListLayout() {
         setCourseToDelete(course);
     }, []);
 
+    const handleCreateBreak = useCallback((course: CoursesListData) => {
+        console.log(course);
+    }, []);
+
     if (loading) return <LoadingPage title="Cargando cursos..." />
 
     return (
@@ -55,6 +59,7 @@ export function CoursesListLayout() {
                     activeCourseId={activeCourseId}
                     onEditCourse={handleEdit}
                     onDeleteCourse={handleDelete}
+                    onCreateBreak={handleCreateBreak}
                     loadingDelete={loadingDelete}
                 />
             </div>

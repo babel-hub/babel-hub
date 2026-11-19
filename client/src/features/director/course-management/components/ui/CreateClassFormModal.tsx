@@ -61,7 +61,6 @@ export const CreateClassFormModal = ({ id, courseName, mode, classToEdit, onSucc
             ? { ...formData, schedules: withSchedule ? schedules : [] }
             : { newTeacher: formData.teacherId };
 
-        // TODO Backend: Cuando el endpoint /classes acepte 'schedules', esto funcionará solo.
         await upsertClass(mode, classToEdit?.class_id, payload);
     };
 

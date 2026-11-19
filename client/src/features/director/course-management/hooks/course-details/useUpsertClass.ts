@@ -53,7 +53,6 @@ export const useUpsertClass = (onSuccess: () => void) => {
             const msg =
                 error?.response?.data?.message ||
                 `Error al ${mode === "create" ? "crear" : "editar"} la clase.`;
-            console.error(msg);
             setError(msg);
         } finally {
             setLoading(false);

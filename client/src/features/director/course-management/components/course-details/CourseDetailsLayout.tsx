@@ -12,6 +12,7 @@ import { CreateClassFormModal } from "../ui/CreateClassFormModal.tsx";
 import toast from "react-hot-toast";
 import { PrimaryLink } from "../../../../../components/ui/link/PrimaryLink.tsx";
 import { useCourseData } from "../../../../shared/hooks/useCourseData.ts";
+import {AddScheduleModal} from "../ui/AddScheduleModal.tsx";
 
 export function CourseDetailsLayout() {
     const { courseId } = useParams<{ courseId: string }>();
@@ -25,6 +26,7 @@ export function CourseDetailsLayout() {
     const [showClasses, setShowClasses] = useState<boolean>(false);
     const [classToDelete, setClassToDelete] = useState<ClassItem | null>(null);
     const [classToEdit, setClassToEdit] = useState<ClassItem | null>(null);
+    const [classForSchedule, setClassForSchedule] = useState<ClassItem | null>(null);
 
     useEffect(() => {
         const handleClassesDropDown = (e: MouseEvent) => {
@@ -55,7 +57,8 @@ export function CourseDetailsLayout() {
     }, []);
 
     const handleCreateSchedule = useCallback((cls: ClassItem) => {
-        console.log(cls);
+        setClassForSchedule(cls);
+        setShowClasses(false);
     }, []);
 
     if (!courseId) {
@@ -119,6 +122,17 @@ export function CourseDetailsLayout() {
                 }}
                 loadingDelete={loadingDelete}
             />
+
+            {classForSchedule && (
+                <AddScheduleModal
+                    classId={classForSchedule.class_id}
+                    onClose={() => setClassForSchedule(null)}
+                    onSuccess={() => {
+                        setClassForSchedule(null);
+                        refetch();
+                    }}
+                />
+            )}
 
             {modalMode !== 'none' && (
                 <CreateClassFormModal

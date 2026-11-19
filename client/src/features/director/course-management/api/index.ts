@@ -20,15 +20,15 @@ export const getTeachers = async (url: string, controller: any): Promise<Teacher
     return response.data.teachers;
 }
 
-export const createCourse = async (payload: UpsertCourse) => {
+export const createCourse = async (payload: UpsertCourse): Promise<void> => {
     await api.post('/courses', payload);
 }
 
-export const updateCourse = async (id: string, payload: UpsertCourse) => {
+export const updateCourse = async (id: string, payload: UpsertCourse): Promise<void> => {
     await api.put(`/courses/${id}`, payload);
 }
 
-export const deleteCourse = async (id: string) => {
+export const deleteCourse = async (id: string): Promise<void> => {
     await api.delete(`/courses/${id}`);
 }
 
@@ -52,6 +52,6 @@ export const updateClass = async (id: string, payload: UpdateClass) => {
     await api.put(`/classes/${id}`, payload);
 }
 
-export const deleteCLass = async (id: string) => {
+export const deleteCLass = async (id: string): Promise<void> => {
     await api.delete(`/classes/${id}`)
 }

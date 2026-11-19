@@ -3,11 +3,13 @@ import { InteractiveHomeList } from "../../../../../components/ui/lists/Interact
 import { reverseName } from "../../../../../types";
 import { memo } from "react";
 import { HiOutlinePencil, HiTrash } from "react-icons/hi";
+import { LuCalendarClock } from "react-icons/lu";
 
 interface CoursesListProps {
     courses: CoursesListData[];
     activeCourseId: string | undefined;
     onEditCourse: (course: CoursesListData) => void;
+    onCreateBreak: (course: CoursesListData) => void;
     onDeleteCourse: (course: CoursesListData) => void;
     loadingDelete: boolean;
 }
@@ -15,6 +17,7 @@ interface CoursesListProps {
 export const CoursesList = memo(function CoursesList({
                                                          courses,
                                                          activeCourseId,
+                                                         onCreateBreak,
                                                          onEditCourse,
                                                          onDeleteCourse,
                                                          loadingDelete,
@@ -39,6 +42,11 @@ export const CoursesList = memo(function CoursesList({
                             label: "Editar",
                             icon: <HiOutlinePencil className="size-4" />,
                             onClick: () => onEditCourse(course)
+                        },
+                        {
+                            label: "Descansos",
+                            icon: <LuCalendarClock className="size-4" />,
+                            onClick: () => onCreateBreak(course)
                         },
                         { isSeparator: true, label: "separator" },
                         {
