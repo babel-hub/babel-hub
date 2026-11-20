@@ -10,6 +10,8 @@ import { CourseListFormModal } from "../ui/CourseListFormModal.tsx";
 import type { ModalModeTypes } from "../../../../../types";
 import { NoOutletInfo } from "../../../../../components/ui/blocks/NoOutletInfo.tsx";
 import type { CoursesListData } from "../../types";
+import { useCourseBreaks } from "../../hooks/course-list/useCourseBreaks.ts";
+import {ManageBreaksModal} from "../ui/ManageBreaksModal.tsx";
 
 export function CoursesListLayout() {
     const navigate = useNavigate();
@@ -19,9 +21,17 @@ export function CoursesListLayout() {
     const [courseToEdit, setCourseToEdit] = useState<CoursesListData | null>(null);
     const [teacherToEdit, setTeacherToEdit ] = useState<string | null>(null);
     const [courseToDelete, setCourseToDelete] = useState<CoursesListData | null>(null);
+    const [courseToBreak, setCourseToBreak] = useState<CoursesListData | null>(null);
+
+    const {
+        breaks,
+        loading: loadingBreaks,
+        refetch: refetchBreaks
+    } = useCourseBreaks(courseToBreak?.id ?? "");
 
     const { loading, courses, fetchCourses } = useCourses();
     const { loadingDelete, deleteCourseById } = useDeleteCourse(fetchCourses);
+
 
     const handleEdit = useCallback((course: CoursesListData) => {
         setCourseToEdit(course);
@@ -34,10 +44,12 @@ export function CoursesListLayout() {
     }, []);
 
     const handleCreateBreak = useCallback((course: CoursesListData) => {
-        console.log(course);
+        setCourseToBreak(course);
     }, []);
 
     if (loading) return <LoadingPage title="Cargando cursos..." />
+
+    console.log(breaks);
 
     return (
         <div className="flex flex-col lg:flex-row gap-3 h-[calc(100dvh-3rem)] md:h-[calc(100dvh-1.8rem)]">
@@ -86,6 +98,17 @@ export function CoursesListLayout() {
                 message={`¿Quieres eliminar el curso ${courseToDelete?.course_name}? Esta acción no se puede deshacer.`}
                 loadingDelete={loadingDelete}
             />
+
+            {courseToBreak && (
+                <ManageBreaksModal
+                    courseId={courseToBreak.id}
+                    courseName={courseToBreak.course_name}
+                    breaks={breaks}
+                    loading={loadingBreaks}
+                    onClose={() => setCourseToBreak(null)}
+                    onSuccess={() => refetchBreaks()}
+                />
+            )}
 
             {modalMode !== "none" && (
                 <CourseListFormModal

@@ -1,9 +1,10 @@
 import api from "../../../../api/client.ts";
 import type {
-    AvailableSubjects,
+    AvailableSubjects, CourseBreak,
     CoursesListData,
+    CreateBreakGroupPayload,
     CreateClass,
-    Teacher,
+    Teacher, UpdateBreakGroupPayload,
     UpdateClass,
     UpsertCourse, UpsertSchedule
 } from "../types";
@@ -54,4 +55,22 @@ export const updateClass = async (id: string, payload: UpdateClass) => {
 
 export const deleteCLass = async (id: string): Promise<void> => {
     await api.delete(`/classes/${id}`)
+}
+
+// Course breaks Endpoints
+
+export const getCourseBreaks = async (courseId: string): Promise<CourseBreak[]> => {
+    const response = await api.get(`/api/course-break/course/${courseId}`);
+    return response.data.breaks;
+}
+
+export const createCourseBreaks = async (courseId: string, payload: CreateBreakGroupPayload): Promise<void> => {
+    await api.post(`/api/course-break/course/${courseId}`, payload);
+}
+export const updateCourseBreakGroup = async (courseId: string, payload: UpdateBreakGroupPayload): Promise<void> => {
+    await api.put(`/api/course-break/course/${courseId}/group`, payload);
+}
+
+export const deleteCourseBreakGroup = async (courseId: string, ids: string[]): Promise<void> => {
+    await api.delete(`/api/course-break/course/${courseId}/group`, { data: { ids } });
 }

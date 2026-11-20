@@ -26,6 +26,7 @@ import classScheduleRoutes from "./modules/class-schedule/infrastructure/classSc
 import announcementsRoutes from "./modules/announcements/infrastructure/announcements.routes.js";
 import cumulativeRoutes from "./modules/cumulative/infrastructure/cumulative.routes.js";
 import coexistenceRoutes from "./modules/coexistence/infrastructure/coexistence.routes.js";
+import courseBreakRoutes from "./modules/course-break/infrastructure/courseBreak.routes.js";
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.use("/class-schedule", classScheduleRoutes);
 app.use("/announcements", announcementsRoutes);
 app.use("/api/cumulative", cumulativeRoutes);
 app.use("/api/coexistence", coexistenceRoutes);
+app.use("/api/course-break", courseBreakRoutes);
 
 app.use(globalErrorHandler);
 
