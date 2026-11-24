@@ -7,7 +7,7 @@ import { MiniSpinner } from "../Loadings.tsx";
 export interface FormField {
     name: string;
     label: string;
-    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea" | "checkbox" | "radio";
+    type: "text" | "email" | "password" | "number" | "select" | "date" | "time" | "textarea" | "checkbox" | "radio" | "datetime-local";
     required?: boolean;
     placeholder?: string;
     loadingField?: boolean;
@@ -178,7 +178,7 @@ export default function DynamicModalForm({
                                         rows={field.rows || 4}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-y"
                                     />
-                                ) : (field.type === "date" || field.type === "time") ? (
+                                ) : (field.type === "date" || field.type === "time" || field.type === "datetime-local") ? (
                                     <input
                                         id={`${field.name}_`}
                                         type={field.type}

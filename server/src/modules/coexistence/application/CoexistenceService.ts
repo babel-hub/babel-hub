@@ -1,8 +1,14 @@
 import type { ICoexistenceRepository } from "../domain/ICoexistenceRepository.js";
 import type {
-    CreateInfractionPayload, CreateMonitoringMessagePayload, EscalateInfraction, GetStudentInfractionsByCoursePayload,
+    CreateInfractionPayload,
+    CreateMonitoringMessagePayload,
+    EscalateInfraction,
+    GetStudentInfractionsByCoursePayload,
     GetStudentInfractionsPayload,
-    GetStudentMonitoringPayload, InfractionTypeHierarchy, MonitoringMessage,
+    GetStudentMonitoringPayload,
+    InfractionTypeHierarchy,
+    MonitoringMessage,
+    RawInfraction,
     StudentInfraction,
     StudentMonitoring,
     UpdateInfractionPayload,
@@ -20,8 +26,12 @@ export class CoexistenceService {
     private normalizeCreate(payload: CreateInfractionPayload): CreateInfractionPayload {
         return {
             studentId: payload.studentId,
+            courseId: payload.courseId,
+            classId: payload.classId ?? null,
             codeId: payload.codeId,
             description: nullifyEmpty(payload.description),
+            locationContext: nullifyEmpty(payload.locationContext),
+            occurredAt: payload.occurredAt,
             escalate: payload.escalate,
             monitoringNotes: payload.escalate
                 ? nullifyEmpty(payload.monitoringNotes)
@@ -33,21 +43,34 @@ export class CoexistenceService {
         return {
             infractionId: payload.infractionId,
             codeId: payload.codeId,
-            description: nullifyEmpty(payload.description)
+            description: nullifyEmpty(payload.description),
+            locationContext:
+                payload.locationContext !== undefined
+                    ? nullifyEmpty(payload.locationContext)
+                    : null,
         };
     }
 
     private validateCreate(payload: CreateInfractionPayload): void {
         if (!payload.studentId) throw new ValidationError("El ID del estudiante es obligatorio");
-        if (!payload.codeId) throw new ValidationError("El tipo de infracción es obligatorio");
+        if (!payload.courseId) throw new ValidationError("El ID del curso es obligatorio");
+        if (!payload.codeId) throw new ValidationError("El código de infracción es obligatorio");
+
         if (payload.escalate && !payload.monitoringNotes?.trim()) {
             throw new ValidationError("Cuando se escala a monitoreo, las notas de seguimiento son obligatorias");
+        }
+
+        if (payload.occurredAt) {
+            const d = new Date(payload.occurredAt);
+            if (isNaN(d.getTime())) {
+                throw new ValidationError("La fecha del incidente es inválida");
+            }
         }
     }
 
     private validateUpdate(payload: UpdateInfractionPayload): void {
         if (!payload.infractionId) throw new ValidationError("El ID de la infracción es obligatorio");
-        if (!payload.codeId) throw new ValidationError("El tipo de infracción es obligatorio");
+        if (!payload.codeId) throw new ValidationError("El código de infracción es obligatorio");
     }
 
     async getStudentInfractions(
@@ -61,26 +84,14 @@ export class CoexistenceService {
         return this.coexistenceRepository.getStudentInfractions(payload, auth);
     }
 
-    async escalateInfraction(infractionId: string, payload: EscalateInfraction, authUser: AuthUser): Promise<void> {
-        const auth = requireAuth(authUser);
-        if (!payload.studentId || !payload.courseId || !infractionId) {
-            throw new ValidationError("El ID del estudiante, la clase y la infracción son invalidos");
-        }
-        const normalized = {
-            ...payload,
-            monitoringNotes: nullifyEmpty(payload.monitoringNotes)
-        }
-
-        return this.coexistenceRepository.escalateInfraction(infractionId, normalized, auth);
-    }
-
     async getStudentInfractionsByCourse(
         payload: GetStudentInfractionsByCoursePayload,
-        authUser: AuthUser
+        authUser: AuthUser,
     ): Promise<StudentInfraction[]> {
         const auth = requireAuth(authUser);
-        if (!payload.studentId || !payload.courseId) throw new ValidationError("El ID del estudiante o del curso son invalidos");
-
+        if (!payload.studentId || !payload.courseId) {
+            throw new ValidationError("El ID del estudiante o del curso son invalidos");
+        }
         return this.coexistenceRepository.getStudentInfractionsByCourse(payload, auth);
     }
 
@@ -97,18 +108,17 @@ export class CoexistenceService {
 
     async getInfractionTypes(authUser: AuthUser): Promise<InfractionTypeHierarchy[]> {
         const auth = requireAuth(authUser);
-
-        const rawRows = await this.coexistenceRepository.getInfractionTypes(auth);
+        const rawRows: RawInfraction[] = await this.coexistenceRepository.getInfractionTypes(auth);
 
         const typesMap = new Map<string, InfractionTypeHierarchy>();
 
-        for (const row of rawRows as any[]) {
+        for (const row of rawRows) {
             if (!typesMap.has(row.type_id)) {
                 typesMap.set(row.type_id, {
                     id: row.type_id,
                     name: row.type_name,
                     order_index: row.order_index,
-                    articles: []
+                    articles: [],
                 });
             }
             const currentType = typesMap.get(row.type_id)!;
@@ -121,19 +131,17 @@ export class CoexistenceService {
                         id: row.article_id,
                         number: row.article_number,
                         name: row.article_name,
-                        codes: []
+                        codes: [],
                     };
                     currentType.articles.push(currentArticle);
                 }
 
-                if (row.code_id) {
-                    if (!currentArticle.codes.some(c => c.id === row.code_id)) {
-                        currentArticle.codes.push({
-                            id: row.code_id,
-                            number: row.code_number,
-                            name: row.code_name
-                        });
-                    }
+                if (row.code_id && !currentArticle.codes.some(c => c.id === row.code_id)) {
+                    currentArticle.codes.push({
+                        id: row.code_id,
+                        number: row.code_number,
+                        name: row.code_name,
+                    });
                 }
             }
         }
@@ -143,7 +151,7 @@ export class CoexistenceService {
 
     async getMonitoringMessages(
         monitoringId: string,
-        authUser: AuthUser
+        authUser: AuthUser,
     ): Promise<MonitoringMessage[]> {
         const auth = requireAuth(authUser);
         if (!monitoringId) throw new ValidationError("El ID del monitoreo es invalido");
@@ -153,7 +161,7 @@ export class CoexistenceService {
     async createMonitoringMessage(
         monitoringId: string,
         payload: CreateMonitoringMessagePayload,
-        authUser: AuthUser
+        authUser: AuthUser,
     ): Promise<MonitoringMessage> {
         const auth = requireAuth(authUser);
         if (!monitoringId) throw new ValidationError("El ID del monitoreo es invalido");
@@ -165,22 +173,19 @@ export class CoexistenceService {
         return this.coexistenceRepository.createMonitoringMessage(
             monitoringId,
             { message },
-            auth
+            auth,
         );
     }
 
     async createInfraction(
-        classId: string,
         payload: CreateInfractionPayload,
         authUser: AuthUser,
     ): Promise<void> {
         const auth = requireAuth(authUser);
-        if (!classId) throw new ValidationError("El ID de la clase es obligatorio");
-
         this.validateCreate(payload);
 
         const normalized = this.normalizeCreate(payload);
-        await this.coexistenceRepository.createInfraction(classId, normalized, auth);
+        await this.coexistenceRepository.createInfraction(normalized, auth);
     }
 
     async updateInfraction(
@@ -197,7 +202,22 @@ export class CoexistenceService {
     async deleteInfraction(infractionId: string, authUser: AuthUser): Promise<void> {
         const auth = requireAuth(authUser);
         if (!infractionId) throw new ValidationError("El ID de la infracción es invalida");
-
         await this.coexistenceRepository.deleteInfraction(infractionId, auth);
+    }
+
+    async escalateInfraction(
+        infractionId: string,
+        payload: EscalateInfraction,
+        authUser: AuthUser,
+    ): Promise<void> {
+        const auth = requireAuth(authUser);
+        if (!payload.studentId || !payload.courseId || !infractionId) {
+            throw new ValidationError("El ID del estudiante, el curso y la infracción son invalidos");
+        }
+        const normalized: EscalateInfraction = {
+            ...payload,
+            monitoringNotes: nullifyEmpty(payload.monitoringNotes),
+        };
+        return this.coexistenceRepository.escalateInfraction(infractionId, normalized, auth);
     }
 }

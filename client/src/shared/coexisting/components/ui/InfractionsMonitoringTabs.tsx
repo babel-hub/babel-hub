@@ -12,6 +12,7 @@ interface InfractionsMonitoringTabsProps {
     selectedStudentId: string;
     selectedStudent: Student | undefined;
     tab: Tabs;
+    classId?: string | null;
     infractions: StudentInfraction[];
     monitoring: StudentMonitoring[];
     loadingInfractions: boolean;
@@ -22,18 +23,21 @@ interface InfractionsMonitoringTabsProps {
     onDelete?: (infraction: StudentInfraction) => void;
     onRepeat?: (infraction: StudentInfraction) => void;
     onEscalate?: (infraction: StudentInfraction) => void;
+    onView?: (infraction: StudentInfraction) => void;
 }
 
 export function InfractionsMonitoringTabs({
                                               selectedStudentId,
                                               selectedStudent,
                                               tab,
+                                              classId,
                                               infractions,
                                               monitoring,
                                               loadingInfractions,
                                               loadingMonitoring,
                                               onEscalate,
                                               onRepeat,
+                                              onView,
                                               errorInfractions,
                                               errorMonitoring,
                                               onEdit,
@@ -72,6 +76,8 @@ export function InfractionsMonitoringTabs({
                     {infractions.map((inf) => (
                         <InfractionRow
                             key={inf.id}
+                            classId={classId}
+                            onView={onView}
                             infraction={inf}
                             onEdit={onEdit}
                             onDelete={onDelete}

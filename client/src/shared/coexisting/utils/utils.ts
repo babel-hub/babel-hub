@@ -3,3 +3,8 @@ export const getTypeStyle = (typeName: number) => {
     if (typeName === 2) return "bg-yellow-100 text-yellow-700";
     return "bg-gray-100 text-gray-700";
 };
+
+export function toLocalDatetimeString(date: Date): string {
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
+}

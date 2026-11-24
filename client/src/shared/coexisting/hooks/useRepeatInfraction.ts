@@ -6,12 +6,12 @@ import { createInfraction } from "../api";
 export const useRepeatInfraction = (onSuccess: () => void) => {
     const [loading, setLoading] = useState(false);
 
-    const repeatInfraction = async (classId: string, payload: UpsertInfractionPayload) => {
+    const repeatInfraction = async (payload: UpsertInfractionPayload) => {
         setLoading(true);
         try {
-            await createInfraction(classId, payload);
+            await createInfraction(payload);
 
-            toast.success("La reincidencia de creao correctament");
+            toast.success("La reincidencia se creo correctament");
             onSuccess();
         } catch (error: any) {
             const message = error?.response?.data?.message ||

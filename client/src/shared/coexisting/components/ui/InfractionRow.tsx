@@ -1,4 +1,4 @@
-import { HiPencil, HiTrash, HiOutlineDuplicate, HiOutlineShieldExclamation } from "react-icons/hi";
+import {HiPencil, HiTrash, HiOutlineDuplicate, HiOutlineShieldExclamation, HiOutlineEye} from "react-icons/hi";
 import type { StudentInfraction } from "../../types/types.ts";
 import { ActionMenu, type MenuOption } from "../../../../components/ui/menu/ActionMenu.tsx";
 import { formatFullDateString } from "../../../../features/utils/utils.ts";
@@ -9,22 +9,27 @@ interface InfractionRowProps {
     onEdit?: (infraction: StudentInfraction) => void;
     onDelete?: (infraction: StudentInfraction) => void;
     onRepeat?: (infraction: StudentInfraction) => void;
+    onView?: (infraction: StudentInfraction) => void;
     onEscalate?: (infraction: StudentInfraction) => void;
     showClassName?: boolean;
+    classId?: string | null;
 }
 
 export function InfractionRow({
                                   infraction,
                                   onEdit,
+                                  classId,
                                   onDelete,
                                   onRepeat,
+                                  onView,
                                   onEscalate,
                                   showClassName = true,
                               }: InfractionRowProps) {
     const menuOptions: MenuOption[] = [];
     if (onEdit) menuOptions.push({ label: "Editar", icon: <HiPencil />, onClick: () => onEdit(infraction) });
     if (onRepeat) menuOptions.push({ label: "Reincidir", icon: <HiOutlineDuplicate />, onClick: () => onRepeat(infraction) });
-    if (onEscalate) menuOptions.push({ label: "Escalar", icon: <HiOutlineShieldExclamation className="text-orange-500" />, onClick: () => onEscalate(infraction) });
+    if (onEscalate) menuOptions.push({ label: "Escalar", icon: <HiOutlineShieldExclamation />, onClick: () => onEscalate(infraction) });
+    if (onView) menuOptions.push({ label: "Mostrar", icon: <HiOutlineEye />, onClick: () => onView(infraction) });
     if (onDelete) {
         if (menuOptions.length > 0) menuOptions.push({ isSeparator: true, label: "separator" });
         menuOptions.push({ label: "Eliminar", icon: <HiTrash />, onClick: () => onDelete(infraction), isDanger: true });
@@ -65,15 +70,23 @@ export function InfractionRow({
             )}
 
             <p className="text-xs text-gray-400 mt-1">
-                {showClassName && (
-                    <>
-                        En <span className="font-medium capitalize">{infraction.class_name || "clase"}</span>
-                        {" · "}
-                    </>
-                )}
+                {showClassName && (() => {
+                    if (infraction.class_id !== classId) {
+                        if (infraction.class_name) {
+                            return <>En <span className="font-medium capitalize">{infraction.class_name}</span> · </>;
+                        }
+                        if (infraction.location_context) {
+                            return <>En <span className="font-medium capitalize">{infraction.location_context}</span> · </>;
+                        }
+                        if (infraction.course_name) {
+                            return <>En <span className="font-medium capitalize">{infraction.course_name}</span> · </>;
+                        }
+                        return <>Sin ubicación · </>;
+                    }
+                })()}
                 Reportado por <span className="font-medium capitalize">{infraction.reported_by_name}</span>
                 {" · "}
-                {formatFullDateString(infraction.created_at)}
+                Ocurrió el {formatFullDateString(infraction.occurred_at)}
             </p>
         </li>
     );

@@ -4,10 +4,12 @@ import { useUpsertCoexistence } from "../../hooks/useUpsertCoexistence.ts";
 import type { modeTypes } from "../../../../features/types/types.ts";
 import type { StudentInfraction } from "../../types/types.ts";
 import DynamicModalForm, { type FormField } from "../../../../components/ui/modals/ModalForm.tsx";
+import { toLocalDatetimeString } from "../../utils/utils.ts";
 
 interface CreateInfractionModalProps {
     mode: modeTypes;
-    classId: string;
+    classId: string | null;
+    courseId: string;
     studentId: string;
     onClose: () => void;
     onSuccess: () => void;
@@ -17,6 +19,7 @@ interface CreateInfractionModalProps {
 export function UpsertInfractionModal({
                                           mode,
                                           classId,
+                                          courseId,
                                           studentId,
                                           onClose,
                                           onSuccess,
@@ -30,11 +33,12 @@ export function UpsertInfractionModal({
         articleId: "",
         codeId: infraction?.infraction_code_id ?? "",
         description: infraction?.description ?? "",
+        occurredAt: toLocalDatetimeString(new Date()),
+        locationContext: infraction?.location_context ?? "",
         escalate: "false",
         monitoringNotes: "",
     });
 
-    // 2. Si es modo edición, auto-completamos Type y Article basándonos en el Code
     useEffect(() => {
         if (mode === "edit" && infraction && types.length > 0) {
             for (const type of types) {
@@ -50,6 +54,11 @@ export function UpsertInfractionModal({
                     }
                 }
             }
+
+            setFormData(prev => ({
+                ...prev,
+                occurredAt: toLocalDatetimeString(new Date(infraction.occurred_at)),
+            }));
         }
     }, [mode, infraction, types]);
 
@@ -107,6 +116,23 @@ export function UpsertInfractionModal({
 
         if (mode === "create") {
             base.push({
+                name: "occurredAt",
+                label: "¿Cuándo ocurrió?",
+                type: "datetime-local",
+                required: true,
+            });
+
+            if (!classId) {
+                base.push({
+                    name: "locationContext",
+                    label: "Lugar del incidente (opcional)",
+                    type: "text",
+                    required: false,
+                    placeholder: "Ej: Patio, cafetería, fuera del colegio... Déjalo vacío si fue en el salón",
+                });
+            }
+
+            base.push({
                 name: "escalate",
                 label: "¿Requiere monitoreo del curso?",
                 type: "radio",
@@ -163,10 +189,19 @@ export function UpsertInfractionModal({
             return;
         }
 
+        if (mode === "create" && new Date(formData.occurredAt) > new Date()) {
+            setError("La fecha del incidente no puede ser futura");
+            return;
+        }
+
         const payload = mode === "create" ? {
             codeId: formData.codeId,
             description: formData.description.trim() || null,
             escalate,
+            classId,
+            locationContext: formData.locationContext.trim() || null,
+            courseId,
+            occurredAt: new Date(formData.occurredAt).toISOString(),
             monitoringNotes: escalate ? formData.monitoringNotes.trim() : null,
             studentId,
         } : {
@@ -175,7 +210,7 @@ export function UpsertInfractionModal({
             studentId,
         };
 
-        await upsertCoexistence(classId, mode, infraction ? infraction.id : null, payload);
+        await upsertCoexistence(mode, infraction ? infraction.id : null, payload);
     };
 
     return (

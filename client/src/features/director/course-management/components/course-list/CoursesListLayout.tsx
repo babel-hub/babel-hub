@@ -49,8 +49,6 @@ export function CoursesListLayout() {
 
     if (loading) return <LoadingPage title="Cargando cursos..." />
 
-    console.log(breaks);
-
     return (
         <div className="flex flex-col lg:flex-row gap-3 h-[calc(100dvh-3rem)] md:h-[calc(100dvh-1.8rem)]">
             <div className={`bg-white md:rounded-xl shadow-sm border border-gray-100 h-full flex flex-col ${activeCourseId ? 'hidden lg:flex' : 'flex'} lg:w-1/3 xl:w-1/5`}>

@@ -2,12 +2,12 @@ import type { ICoexistenceRepository } from "../domain/ICoexistenceRepository.js
 import type {
     CreateInfractionPayload, CreateMonitoringMessagePayload, EscalateInfraction, GetStudentInfractionsByCoursePayload,
     GetStudentInfractionsPayload,
-    GetStudentMonitoringPayload, InfractionTypeHierarchy, MonitoringMessage, RawInfraction,
+    GetStudentMonitoringPayload, MonitoringMessage, RawInfraction,
     StudentInfraction, StudentMonitoring, UpdateInfractionPayload
 } from "../domain/Coexistence.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
-import {createAuditLog} from "../../../services/audit.service.js";
+import { createAuditLog } from "../../../services/audit.service.js";
 import {ConflictError, ForbiddenError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
 
 export class PostgresCoexistenceRepository implements ICoexistenceRepository {
@@ -17,23 +17,22 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
 
         try {
             const query = `
-            SELECT 
-                mm.id,
-                mm.monitoring_id,
-                mm.profile_id,
-                CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS profile_name,
-                mm.message,
-                mm.is_deleted,
-                mm.created_at
-            FROM monitoring_message mm
-                JOIN profile p ON p.id = mm.profile_id
-                JOIN monitoring m ON m.id = mm.monitoring_id
-                JOIN course c ON c.id = m.course_id
-            WHERE mm.monitoring_id = $1 
-              AND mm.is_deleted = false
-              AND c.school_id = $2
-            ORDER BY mm.created_at ASC;
-        `;
+                SELECT
+                    mm.id,
+                    mm.monitoring_id,
+                    mm.profile_id,
+                    CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS profile_name,
+                    mm.message,
+                    mm.is_deleted,
+                    mm.created_at
+                FROM monitoring_message mm
+                    JOIN profile p ON p.id = mm.profile_id
+                    JOIN monitoring m ON m.id = mm.monitoring_id
+                WHERE mm.monitoring_id = $1
+                  AND mm.is_deleted = false
+                  AND m.school_id = $2
+                ORDER BY mm.created_at ASC;
+            `;
 
             const result = await client.query(query, [monitoringId, userSchoolId]);
             return result.rows;
@@ -42,7 +41,11 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         }
     }
 
-    async createMonitoringMessage(monitoringId: string, payload: CreateMonitoringMessagePayload, authUser: AuthUser): Promise<MonitoringMessage> {
+    async createMonitoringMessage(
+        monitoringId: string,
+        payload: CreateMonitoringMessagePayload,
+        authUser: AuthUser
+    ): Promise<MonitoringMessage> {
         const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
 
@@ -52,8 +55,9 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             const check = await client.query(`
                 SELECT m.id
                 FROM monitoring m
-                    JOIN course c ON c.id = m.course_id
-                WHERE m.id = $1 AND c.school_id = $2 AND m.is_deleted = false
+                WHERE m.id = $1
+                  AND m.school_id = $2
+                  AND m.is_deleted = false
             `, [monitoringId, userSchoolId]);
 
             if (check.rowCount === 0) {
@@ -62,15 +66,15 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
 
             const insertQuery = `
                 WITH inserted AS (
-                    INSERT INTO monitoring_message (monitoring_id, profile_id, message)
-                    VALUES ($1, $2, $3)
-                        RETURNING id, monitoring_id, profile_id, message, created_at, is_deleted
-                )
+                INSERT INTO monitoring_message (monitoring_id, profile_id, message)
+                VALUES ($1, $2, $3)
+                    RETURNING id, monitoring_id, profile_id, message, created_at, is_deleted
+                    )
                 SELECT
                     i.*,
                     CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS profile_name
                 FROM inserted i
-                    JOIN profile p ON p.id = i.profile_id;
+                         JOIN profile p ON p.id = i.profile_id;
             `;
 
             const result = await client.query(insertQuery, [monitoringId, userId, payload.message.trim()]);
@@ -81,8 +85,8 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 action: "CREATE_MONITORING_MESSAGE",
                 schoolId: userSchoolId,
                 metadata: {
-                    monitoringId: monitoringId,
-                    messageId: result.rows[0].id
+                    monitoringId,
+                    messageId: result.rows[0].id,
                 },
             });
 
@@ -97,7 +101,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
     }
 
     async getStudentInfractions(payload: GetStudentInfractionsPayload, authUser: AuthUser): Promise<StudentInfraction[]> {
-        const {userSchoolId} = authUser;
+        const { userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
@@ -105,30 +109,36 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 SELECT
                     i.id,
                     i.student_id,
+                    i.course_id,
                     i.class_id,
                     it.name AS infraction_type_name,
                     it.order_index AS infraction_type_order,
                     ia.name AS infraction_article_name,
-                    i.infraction_code_id AS infraction_code_id,
+                    i.infraction_code_id,
                     ic.name AS infraction_code_name,
-                    ic.number  AS infraction_code_number,
+                    ic.number AS infraction_code_number,
+                    sub.name AS class_name,
+                    co.name AS course_name,
                     i.description,
+                    i.location_context,
+                    i.occurred_at,
                     i.reported_by,
-                    CONCAT_WS(' ', p.second_last_name, p.first_last_name, p.first_name, p.middle_name) AS reported_by_name,
+                    CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
                     i.created_at
                 FROM infraction i
-                         JOIN infraction_code ic ON ic.id = i.infraction_code_id
-                         JOIN infraction_article ia ON ia.id = ic.article_id
-                         JOIN infraction_type it ON it.id = ia.type_id
-                         JOIN profile p ON p.id = i.reported_by
-                         JOIN class cl ON cl.id = i.class_id
-                         JOIN course co ON co.id = cl.course_id
+                    JOIN infraction_code ic ON ic.id = i.infraction_code_id
+                    JOIN infraction_article ia ON ia.id = ic.article_id
+                    JOIN infraction_type it ON it.id = ia.type_id
+                    JOIN profile p ON p.id = i.reported_by
+                    LEFT JOIN class cl ON i.class_id = cl.id
+                    LEFT JOIN subject sub ON cl.subject_id = sub.id
+                    LEFT JOIN course co ON i.course_id = co.id
                 WHERE i.student_id = $1
                   AND i.class_id = $2
+                  AND i.school_id = $3
                   AND i.is_deleted = false
-                  AND co.school_id = $3
-                ORDER BY i.created_at DESC;
-            `
+                ORDER BY i.occurred_at DESC;
+            `;
 
             const result = await client.query(query, [payload.studentId, payload.classId, userSchoolId]);
             return result.rows;
@@ -138,12 +148,12 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
     }
 
     async getStudentMonitoring(payload: GetStudentMonitoringPayload, authUser: AuthUser): Promise<StudentMonitoring[]> {
-        const {userSchoolId} = authUser;
+        const { userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
             const query = `
-                SELECT 
+                SELECT
                     m.id,
                     m.infraction_id,
                     m.student_id,
@@ -153,12 +163,13 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     it.name AS infraction_type_name,
                     it.order_index AS infraction_type_order,
                     ia.name AS infraction_article_name,
-                    i.infraction_code_id AS infraction_code_id,
+                    i.infraction_code_id,
                     ic.name AS infraction_code_name,
                     ic.number AS infraction_code_number,
                     i.description,
+                    i.occurred_at,
                     m.reported_by,
-                    CONCAT_WS(' ', p.second_last_name, p.first_last_name, p.first_name,p.middle_name) AS reported_by_name,
+                    CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
                     (
                         SELECT COUNT(*)::int
                         FROM monitoring_message mm
@@ -166,7 +177,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     ) AS message_count,
                     m.created_at
                 FROM monitoring m
-                    JOIN course c ON c.id = m.course_id
+                    LEFT JOIN course c ON c.id = m.course_id
                     JOIN infraction i ON i.id = m.infraction_id
                     JOIN infraction_code ic ON ic.id = i.infraction_code_id
                     JOIN infraction_article ia ON ia.id = ic.article_id
@@ -174,10 +185,10 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     JOIN profile p ON p.id = m.reported_by
                 WHERE m.student_id = $1
                   AND m.course_id = $2
+                  AND m.school_id = $3
                   AND m.is_deleted = false
-                  AND c.school_id = $3
-                ORDER BY m.created_at DESC;
-            `
+                ORDER BY i.occurred_at DESC;
+            `;
 
             const result = await client.query(query, [payload.studentId, payload.courseId, userSchoolId]);
             return result.rows;
@@ -198,15 +209,19 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 SELECT
                     i.id,
                     i.student_id,
+                    i.course_id,
                     i.class_id,
                     sub.name AS class_name,
+                    co.name AS course_name,
+                    it.name AS infraction_type_name,
+                    it.order_index AS infraction_type_order,
+                    ia.name AS infraction_article_name,
                     i.infraction_code_id,
                     ic.name AS infraction_code_name,
-                    ic.number AS infraction_code_order,
-                    ia.name AS infraction_article_name,
-                    it.name AS infraction_name,
-                    it.order_index AS infraction_type_order,
+                    ic.number AS infraction_code_number,
                     i.description,
+                    i.location_context,
+                    i.occurred_at,
                     i.reported_by,
                     CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
                     i.created_at
@@ -215,14 +230,14 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     JOIN infraction_article ia ON ia.id = ic.article_id
                     JOIN infraction_type it ON it.id = ia.type_id
                     JOIN profile p ON p.id = i.reported_by
-                    JOIN class cl ON cl.id = i.class_id
-                    JOIN subject sub ON cl.subject_id = sub.id
-                    JOIN course co ON co.id = cl.course_id
+                    LEFT JOIN class cl ON cl.id = i.class_id
+                    LEFT JOIN subject sub ON sub.id = cl.subject_id
+                    LEFT JOIN course co ON co.id = i.course_id
                 WHERE i.student_id = $1
-                  AND co.id = $2
-                  AND co.school_id = $3
+                  AND i.course_id = $2
+                  AND i.school_id = $3
                   AND i.is_deleted = false
-                ORDER BY i.created_at DESC;
+                ORDER BY i.occurred_at DESC;
             `;
 
             const result = await client.query(query, [
@@ -266,20 +281,25 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         }
     }
 
-    async escalateInfraction(infractionId: string, payload: EscalateInfraction, authUser: AuthUser): Promise<void> {
-        const {userId, userRole, userSchoolId} = authUser;
+    async escalateInfraction(
+        infractionId: string,
+        payload: EscalateInfraction,
+        authUser: AuthUser
+    ): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
-            await client.query("BEGIN");
+            await client.query('BEGIN');
 
             const check = await client.query(`
-                SELECT i.reported_by
+                SELECT
+                    i.reported_by,
+                    i.student_id,
+                    i.course_id
                 FROM infraction i
-                    JOIN class cl ON cl.id = i.class_id
-                    JOIN course co ON co.id = cl.course_id
                 WHERE i.id = $1
-                  AND co.school_id = $2
+                  AND i.school_id = $2
                   AND i.is_deleted = false
             `, [infractionId, userSchoolId]);
 
@@ -287,23 +307,36 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 throw new NotFoundError("La infracción no existe o fue eliminada.");
             }
 
+            const { reported_by, student_id, course_id } = check.rows[0];
+
             const isPrivileged = userRole === 'admin' || userRole === 'principal';
-            if (!isPrivileged && check.rows[0].reported_by !== userId) {
+            if (!isPrivileged && reported_by !== userId) {
                 throw new ForbiddenError("No estás autorizado para escalar esta infracción.");
             }
 
-            let monitoringId: string | null = null;
-            const monitoring = await client.query(`
-                INSERT INTO monitoring (infraction_id, student_id, course_id, notes, reported_by)
-                VALUES ($1, $2, $3, $4, $5) RETURNING id;
-            `, [
+            if (payload.studentId !== student_id) {
+                throw new ValidationError("El estudiante no coincide con la infracción");
+            }
+            if (payload.courseId !== course_id) {
+                throw new ValidationError("El curso no coincide con la infracción");
+            }
+
+            const monitoringResult = await client.query(`
+            INSERT INTO monitoring (
+                school_id, infraction_id, student_id, course_id, notes, reported_by
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+        `, [
+                userSchoolId,
                 infractionId,
-                payload.studentId,
-                payload.courseId,
-                payload.monitoringNotes,
+                student_id,
+                course_id,
+                payload.monitoringNotes ?? null,
                 userId,
             ]);
-            monitoringId = monitoring.rows[0].id;
+
+            const monitoringId = monitoringResult.rows[0].id;
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -311,10 +344,10 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 action: "ESCALATE_MONITORING",
                 schoolId: userSchoolId,
                 metadata: {
-                    infractionId: infractionId,
-                    monitoringId: monitoringId,
-                    studentId: payload.studentId,
-                    course: payload.courseId
+                    infractionId,
+                    monitoringId,
+                    studentId: student_id,
+                    courseId: course_id,
                 },
             });
 
@@ -328,7 +361,6 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             if (error.code === '23503') {
                 throw new ConflictError("Alguna referencia es inválida (estudiante, curso o infracción)");
             }
-
             throw error;
         } finally {
             client.release();
@@ -336,77 +368,118 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
     }
 
     async createInfraction(
-        classId: string,
         payload: CreateInfractionPayload,
         authUser: AuthUser
     ): Promise<void> {
-        const {userId, userRole, userSchoolId} = authUser;
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
+        const isPrivileged = userRole === 'admin' || userRole === 'principal';
 
         try {
             await client.query('BEGIN');
 
-            const validation = await client.query(`
-                SELECT (SELECT co.id
-                        FROM class cl
-                                 JOIN course co ON cl.course_id = co.id
-                        WHERE cl.id = $1
-                          AND co.school_id = $4)   AS course_id,
+            let resolvedCourseId: string;
 
-                       (SELECT 1
-                        FROM student s
-                                 JOIN profile p ON s.profile_id = p.id
-                                 JOIN class cl ON cl.course_id = s.course_id
-                        WHERE s.id = $2
-                          AND cl.id = $1
-                          AND p.school_id = $4
-                          AND p.is_active = true)  AS student_valid,
+            if (payload.classId) {
+                const classCheck = await client.query(`
+                    SELECT
+                        co.id AS course_id,
+                        (SELECT 1 FROM class cl2
+                            JOIN teacher t ON cl2.teacher_id = t.id
+                         WHERE cl2.id = $1 AND t.profile_id = $3) AS teacher_owns,
+                        (SELECT 1 FROM course co2
+                            JOIN teacher t ON co2.teacher_id = t.id
+                         WHERE co2.id = co.id AND t.profile_id = $3) AS is_director
+                    FROM class cl
+                        JOIN course co ON co.id = cl.course_id
+                    WHERE cl.id = $1 AND co.school_id = $2
+                `, [payload.classId, userSchoolId, userId]);
 
-                       (SELECT 1
-                        FROM infraction_code ic
-                                 JOIN infraction_article ia ON ia.id = ic.article_id
-                                 JOIN infraction_type it ON it.id = ia.type_id
-                        WHERE ic.id = $3
-                          AND it.school_id = $4
-                          AND ic.is_active = true) AS code_valid,
+                if (classCheck.rowCount === 0) {
+                    throw new NotFoundError("La clase no existe en este colegio");
+                }
 
-                       (SELECT 1
-                        FROM class cl
-                                 JOIN teacher t ON cl.teacher_id = t.id
-                        WHERE cl.id = $1
-                          AND t.profile_id = $5)   AS teacher_owns_class
-            `, [classId, payload.studentId, payload.codeId, userSchoolId, userId]);
+                const { course_id, teacher_owns, is_director } = classCheck.rows[0];
 
-            const v = validation.rows[0];
+                if (payload.courseId && payload.courseId !== course_id) {
+                    throw new ValidationError("El curso no corresponde con la clase indicada");
+                }
 
-            if (!v.course_id) throw new NotFoundError("La clase no existe en este colegio");
-            if (!v.student_valid) throw new NotFoundError("El estudiante no pertenece a esta clase");
-            if (!v.code_valid) throw new NotFoundError("El código de infracción no existe o pertenece a otro colegio");
+                resolvedCourseId = course_id;
 
-            const isPrivileged = userRole === 'admin' || userRole === 'principal';
-            if (!isPrivileged && !v.teacher_owns_class) {
-                throw new ForbiddenError("No tienes permisos para crear infracciones en esta clase");
+                if (!isPrivileged && !teacher_owns && !is_director) {
+                    throw new ForbiddenError("No tienes permisos para crear infracciones en esta clase");
+                }
+            } else {
+                const courseCheck = await client.query(`
+                    SELECT co.id,
+                        (SELECT 1 FROM course co2
+                            JOIN teacher t ON co2.teacher_id = t.id
+                         WHERE co2.id = co.id AND t.profile_id = $3) AS is_director
+                    FROM course co
+                    WHERE co.id = $1 AND co.school_id = $2
+                `, [payload.courseId, userSchoolId, userId]);
+
+                if (courseCheck.rowCount === 0) {
+                    throw new NotFoundError("El curso no existe en este colegio");
+                }
+
+                resolvedCourseId = payload.courseId;
+
+                if (!isPrivileged && !courseCheck.rows[0].is_director) {
+                    throw new ForbiddenError("No tienes permisos para crear infracciones en este curso");
+                }
+            }
+
+            const studentCheck = await client.query(`
+                SELECT 1 FROM student s
+                    JOIN profile p ON p.id = s.profile_id
+                WHERE s.id = $1
+                  AND s.course_id = $2
+                  AND p.school_id = $3
+                  AND p.is_active = true
+            `, [payload.studentId, resolvedCourseId, userSchoolId]);
+
+            if (studentCheck.rowCount === 0) {
+                throw new NotFoundError("El estudiante no pertenece a este curso");
+            }
+
+            const codeCheck = await client.query(`
+                SELECT 1 FROM infraction_code ic
+                    JOIN infraction_article ia ON ia.id = ic.article_id
+                    JOIN infraction_type it ON it.id = ia.type_id
+                WHERE ic.id = $1 AND it.school_id = $2 AND ic.is_active = true
+            `, [payload.codeId, userSchoolId]);
+
+            if (codeCheck.rowCount === 0) {
+                throw new NotFoundError("El código de infracción no existe o pertenece a otro colegio");
             }
 
             const infractionResult = await client.query(`
                 WITH inserted AS (
-                    INSERT
-                    INTO infraction (student_id, class_id, infraction_code_id, description, reported_by)
-                    VALUES ($1, $2, $3, $4, $5)
-                        RETURNING id, infraction_code_id
+                INSERT INTO infraction (
+                    school_id, student_id, course_id, class_id,
+                    infraction_code_id, description, location_context, occurred_at, reported_by
                 )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::timestamptz, NOW()), $9)
+                    RETURNING id, infraction_code_id
+                    )
                 SELECT i.id,
                        it.name AS type_name,
                        ic.name AS code_name
                 FROM inserted i
                          JOIN infraction_code ic ON ic.id = i.infraction_code_id
                          JOIN infraction_article ia ON ia.id = ic.article_id
-                         JOIN infraction_type it ON it.id = ia.type_id;
+                         JOIN infraction_type it ON it.id = ia.type_id
             `, [
+                userSchoolId,
                 payload.studentId,
-                classId,
+                resolvedCourseId,
+                payload.classId ?? null,
                 payload.codeId,
                 payload.description,
+                payload.locationContext ?? null,
+                payload.occurredAt ?? null,
                 userId,
             ]);
 
@@ -415,13 +488,17 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
 
             if (payload.escalate) {
                 const monitoringResult = await client.query(`
-                    INSERT INTO monitoring (infraction_id, student_id, course_id, notes, reported_by)
-                    VALUES ($1, $2, $3, $4, $5) RETURNING id;
+                    INSERT INTO monitoring (
+                        school_id, infraction_id, student_id, course_id, notes, reported_by
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                        RETURNING id
                 `, [
+                    userSchoolId,
                     infraction.id,
                     payload.studentId,
-                    v.course_id,
-                    payload.monitoringNotes,
+                    resolvedCourseId,
+                    payload.monitoringNotes ?? null,
                     userId,
                 ]);
                 monitoringId = monitoringResult.rows[0].id;
@@ -434,9 +511,11 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 schoolId: userSchoolId,
                 metadata: {
                     infractionId: infraction.id,
-                    monitoringId: monitoringId,
+                    monitoringId,
                     studentId: payload.studentId,
-                    classId,
+                    courseId: resolvedCourseId,
+                    classId: payload.classId ?? null,
+                    locationContext: payload.locationContext ?? null,
                     typeName: infraction.type_name,
                     codeName: infraction.code_name,
                 },
@@ -446,7 +525,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         } catch (error: any) {
             await client.query('ROLLBACK');
             if (error.code === '23505') throw new ConflictError("Ya existe un monitoreo para esta infracción");
-            if (error.code === '23503') throw new ConflictError("Alguna referencia es inválida (estudiante, clase o tipo)");
+            if (error.code === '23503') throw new ConflictError("Alguna referencia es inválida (estudiante, curso o código)");
             throw error;
         } finally {
             client.release();
@@ -455,21 +534,21 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
 
 
     async updateInfraction(payload: UpdateInfractionPayload, authUser: AuthUser): Promise<void> {
-        const {userId, userRole, userSchoolId} = authUser;
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
             await client.query('BEGIN');
 
             const check = await client.query(`
-                SELECT i.infraction_code_id AS old_code_id,
-                       i.description        AS old_description,
-                       i.reported_by
+                SELECT
+                    i.infraction_code_id AS old_code_id,
+                    i.description        AS old_description,
+                    i.location_context   AS old_location_context,
+                    i.reported_by
                 FROM infraction i
-                         JOIN class cl ON cl.id = i.class_id
-                         JOIN course co ON co.id = cl.course_id
                 WHERE i.id = $1
-                  AND co.school_id = $2
+                  AND i.school_id = $2
                   AND i.is_deleted = false
             `, [payload.infractionId, userSchoolId]);
 
@@ -477,14 +556,14 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 throw new NotFoundError("La infracción no existe en este colegio");
             }
 
-            const {old_code_id, old_description, reported_by} = check.rows[0];
+            const { old_code_id, old_description, old_location_context, reported_by } = check.rows[0];
 
             const isPrivileged = userRole === 'admin' || userRole === 'principal';
             if (!isPrivileged && reported_by !== userId) {
                 throw new ForbiddenError("No tienes permiso. Solo quien reportó la infracción puede editarla.");
             }
 
-            const typeCheck = await client.query(`
+            const codeCheck = await client.query(`
                 SELECT 1
                 FROM infraction_code ic
                          JOIN infraction_article ia ON ia.id = ic.article_id
@@ -494,7 +573,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                   AND ic.is_active = true
             `, [payload.codeId, userSchoolId]);
 
-            if (typeCheck.rowCount === 0) {
+            if (codeCheck.rowCount === 0) {
                 throw new NotFoundError("El código de infracción no existe o pertenece a otro colegio");
             }
 
@@ -502,9 +581,15 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 UPDATE infraction
                 SET infraction_code_id = $1,
                     description        = $2,
+                    location_context   = COALESCE($3, location_context),
                     updated_at         = NOW()
-                WHERE id = $3
-            `, [payload.codeId, payload.description, payload.infractionId]);
+                WHERE id = $4
+            `, [
+                payload.codeId,
+                payload.description,
+                payload.locationContext ?? null,
+                payload.infractionId,
+            ]);
 
             await createAuditLog(client, {
                 actorUserId: userId,
@@ -517,6 +602,8 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     newCodeId: payload.codeId,
                     oldDescription: old_description,
                     newDescription: payload.description,
+                    oldLocationContext: old_location_context,
+                    newLocationContext: payload.locationContext ?? null,
                 },
             });
 
@@ -531,7 +618,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
     }
 
     async deleteInfraction(infractionId: string, authUser: AuthUser): Promise<void> {
-        const {userId, userRole, userSchoolId} = authUser;
+        const { userId, userRole, userSchoolId } = authUser;
         const client = await pool.connect();
 
         try {
@@ -540,12 +627,11 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             const check = await client.query(`
                 SELECT
                     i.reported_by,
-                    (SELECT m.id FROM monitoring m WHERE m.infraction_id = i.id AND m.is_deleted = false) AS monitoring_id
+                    (SELECT m.id FROM monitoring m
+                     WHERE m.infraction_id = i.id AND m.is_deleted = false) AS monitoring_id
                 FROM infraction i
-                    JOIN class cl ON cl.id = i.class_id
-                    JOIN course co ON co.id = cl.course_id
                 WHERE i.id = $1
-                  AND co.school_id = $2
+                  AND i.school_id = $2
                   AND i.is_deleted = false
             `, [infractionId, userSchoolId]);
 
@@ -553,7 +639,7 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                 throw new NotFoundError("La infracción no existe o ya fue eliminada");
             }
 
-            const {reported_by, monitoring_id} = check.rows[0];
+            const { reported_by, monitoring_id } = check.rows[0];
 
             const isPrivileged = userRole === 'admin' || userRole === 'principal';
             if (!isPrivileged && reported_by !== userId) {

@@ -2,19 +2,18 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { createInfraction, updateInfraction } from "../api";
 import type { modeTypes } from "../../../features/types/types.ts";
-import type { UpsertInfractionPayload } from "../types/types.ts";
 
 export const useUpsertCoexistence = (onSuccess: () => void) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
 
-    const upsertCoexistence = async (classId: string, mode: modeTypes, infractionId: null | string, payload: UpsertInfractionPayload) => {
+    const upsertCoexistence = async (mode: modeTypes, infractionId: null | string, payload: any) => {
         setLoading(true);
         setError("");
 
         try {
             if (mode === "create") {
-                await createInfraction(classId, payload);
+                await createInfraction(payload);
             } else if (mode === "edit" && infractionId) {
                 await updateInfraction(infractionId, payload);
             } else {

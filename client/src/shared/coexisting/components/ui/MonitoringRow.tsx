@@ -53,11 +53,14 @@ export function MonitoringRow({ monitoring, onOpenMessages }: MonitoringRowProps
             )}
 
             <p className="text-xs text-gray-400 mt-1">
-                En <span className="font-medium capitalize">{monitoring.course_name}</span>
-                {" · "}
+                {monitoring.course_name ? (
+                    <>En <span className="font-medium capitalize">{monitoring.course_name}</span> · </>
+                ) : (
+                    <>Curso no disponible · </>
+                )}
                 Reportado por <span className="font-medium capitalize">{monitoring.reported_by_name}</span>
                 {" · "}
-                {formatFullDateString(monitoring.created_at)}
+                Ocurrió el {formatFullDateString(monitoring.occurred_at)}
             </p>
         </li>
     );

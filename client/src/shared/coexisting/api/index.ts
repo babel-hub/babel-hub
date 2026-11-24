@@ -2,7 +2,7 @@ import type {
     InfractionTypeHierarchy,
     MonitoringMessage,
     StudentInfraction,
-    StudentMonitoring
+    StudentMonitoring, UpdateInfractionPayload, UpsertInfractionPayload
 } from "../types/types.ts";
 import api from "../../../api/client.ts";
 
@@ -21,11 +21,11 @@ export const getInfractionTypes = async (signal?: AbortSignal): Promise<Infracti
     return response.data.types;
 };
 
-export const createInfraction = async (classId: string, payload: any): Promise<void> => {
-    await api.post(`/api/coexistence/class/${classId}/infractions`, payload);
+export const createInfraction = async (payload: UpsertInfractionPayload): Promise<void> => {
+    await api.post(`/api/coexistence/infractions`, payload );
 };
 
-export const updateInfraction = async (infractionId: string, payload: any): Promise<void> => {
+export const updateInfraction = async (infractionId: string, payload: UpdateInfractionPayload): Promise<void> => {
     await api.put(`/api/coexistence/infraction/${infractionId}`, payload);
 };
 

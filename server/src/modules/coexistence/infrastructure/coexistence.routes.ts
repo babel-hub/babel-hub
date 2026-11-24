@@ -16,67 +16,51 @@ const router: Router = Router();
 router.get(
     "/infraction-types",
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.getInfractionTypes
 );
 
 router.get(
     "/class/:classId/student/:studentId/infractions",
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.getStudentInfractions
-);
-
-router.get(
-    "/course/:courseId/student/:studentId/monitoring",
-    authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
-    controller.getStudentMonitoring
 );
 
 router.get(
     "/course/:courseId/student/:studentId/infractions",
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.getStudentInfractionsByCourse
+);
+
+router.get(
+    "/course/:courseId/student/:studentId/monitoring",
+    authMiddleware,
+    authorizedRoles(["teacher", "principal", "admin"]),
+    controller.getStudentMonitoring
 );
 
 router.get(
     "/monitoring/:monitoringId/messages",
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.getMonitoringMessages
 );
 
 router.post(
-    "/monitoring/:monitoringId/messages",
+    "/infractions",
     strictLimiter,
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
-    controller.createMonitoringMessage
-);
-
-router.post(
-    "/class/:classId/infractions",
-    strictLimiter,
-    authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.createInfraction
-);
-
-router.post(
-    "/infraction/:infractionId/escalate",
-    strictLimiter,
-    authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
-    controller.escalateInfraction
 );
 
 router.put(
     "/infraction/:infractionId",
     strictLimiter,
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.updateInfraction
 );
 
@@ -84,8 +68,24 @@ router.delete(
     "/infraction/:infractionId",
     strictLimiter,
     authMiddleware,
-    authorizedRoles(["teacher", "principal"]),
+    authorizedRoles(["teacher", "principal", "admin"]),
     controller.deleteInfraction
+);
+
+router.post(
+    "/infraction/:infractionId/escalate",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal", "admin"]),
+    controller.escalateInfraction
+);
+
+router.post(
+    "/monitoring/:monitoringId/messages",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["teacher", "principal", "admin"]),
+    controller.createMonitoringMessage
 );
 
 export default router;

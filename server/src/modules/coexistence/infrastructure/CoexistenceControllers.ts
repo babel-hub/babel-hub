@@ -47,22 +47,56 @@ export class CoexistenceController {
     createInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
         try {
             const authUser = getAuthUser(request);
-            const classId = request.params.classId as string;
-            const { studentId, codeId, description, escalate, monitoringNotes } = request.body;
-
-            const result = await this.coexistenceService.createInfraction(
+            const {
+                studentId,
+                courseId,
                 classId,
+                codeId,
+                description,
+                locationContext,
+                occurredAt,
+                escalate,
+                monitoringNotes,
+            } = request.body;
+
+            await this.coexistenceService.createInfraction(
                 {
                     studentId,
+                    courseId,
+                    classId,
                     codeId,
-                    description: description,
+                    description,
+                    locationContext,
+                    occurredAt,
                     escalate: Boolean(escalate),
-                    monitoringNotes: monitoringNotes,
+                    monitoringNotes,
                 },
                 authUser
             );
 
-            response.status(201).json(result);
+            response.status(201).send();
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    updateInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const infractionId = request.params.infractionId as string;
+            const { codeId, description, locationContext } = request.body;
+
+            await this.coexistenceService.updateInfraction(
+                {
+                    infractionId,
+                    codeId,
+                    description,
+                    locationContext,
+                },
+                authUser
+            );
+
+            response.status(204).send();
         } catch (error) {
             next(error);
         }
@@ -90,23 +124,6 @@ export class CoexistenceController {
             );
             res.status(201).json({ message: responseMessage });
         } catch (error) { next(error); }
-    };
-
-    updateInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
-        try {
-            const authUser = getAuthUser(request);
-            const infractionId = request.params.infractionId as string;
-            const { codeId, description } = request.body;
-
-            await this.coexistenceService.updateInfraction(
-                { infractionId, codeId, description: description ?? null },
-                authUser
-            );
-
-            response.status(204).send();
-        } catch (error) {
-            next(error);
-        }
     };
 
     getStudentInfractionsByCourse = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
