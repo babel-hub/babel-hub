@@ -15,7 +15,7 @@ import type {
 } from "../domain/Coexistence.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
-import { ValidationError } from "../../errors/domain/CustomErrors.js";
+import {ForbiddenError, ValidationError} from "../../errors/domain/CustomErrors.js";
 import { nullifyEmpty } from "../../shared/domain/normalize.js";
 
 export class CoexistenceService {
@@ -205,6 +205,24 @@ export class CoexistenceService {
         await this.coexistenceRepository.deleteInfraction(infractionId, auth);
     }
 
+    async publishInfraction(
+        infractionId: string,
+        published: boolean,
+        authUser: AuthUser,
+    ): Promise<void> {
+        const auth = requireAuth(authUser);
+
+        if (!infractionId) throw new ValidationError("El ID de la infracción es inválido");
+        if (typeof published !== 'boolean') {
+            throw new ValidationError("El campo 'published' debe ser booleano");
+        }
+        if (auth.userRole !== 'principal' && auth.userRole !== 'admin') {
+            throw new ForbiddenError("Solo el director o el administrador pueden publicar infracciones al acudiente");
+        }
+
+        await this.coexistenceRepository.publishInfraction(infractionId, published, auth);
+    }
+
     async escalateInfraction(
         infractionId: string,
         payload: EscalateInfraction,
@@ -219,5 +237,10 @@ export class CoexistenceService {
             monitoringNotes: nullifyEmpty(payload.monitoringNotes),
         };
         return this.coexistenceRepository.escalateInfraction(infractionId, normalized, auth);
+    }
+
+    async getDashboardStats(authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.coexistenceRepository.getDashboardStats(auth);
     }
 }

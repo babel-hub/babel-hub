@@ -169,3 +169,13 @@ export interface HonorStudent extends BaseStudent{
     rank: number;
     period_average: number;
 }
+
+export interface CourseOverview {
+    course_id: string;
+    course_name: string;
+    students_count: number;
+    attendance_rate: number;
+    period_average: number | null;
+    monitorings_count: number;
+    director_name: string | null;
+}

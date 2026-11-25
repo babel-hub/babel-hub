@@ -64,6 +64,14 @@ router.put(
     controller.updateInfraction
 );
 
+router.patch(
+    "/infraction/:infractionId/publish",
+    strictLimiter,
+    authMiddleware,
+    authorizedRoles(["principal", "admin"]),
+    controller.publishInfraction
+);
+
 router.delete(
     "/infraction/:infractionId",
     strictLimiter,

@@ -90,4 +90,9 @@ export class AnnouncementService {
 
         await this.announcementRepository.deleteAnnouncement(announcementId, auth);
     }
+
+    async getUpcomingAnnouncements(limit: number, authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.announcementRepository.getUpcomingAnnouncements(limit, auth);
+    }
 }

@@ -113,4 +113,9 @@ export class AttendanceService {
         const payload: BulkUpsertAttendancePayload = { classId, records, date };
         await this.attendanceRepository.bulkUpsertAttendance(payload, auth);
     }
+
+    async getAttendanceAlerts(limit: number, authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.attendanceRepository.getAttendanceAlerts(limit, auth);
+    }
 }

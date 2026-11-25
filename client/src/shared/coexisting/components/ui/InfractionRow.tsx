@@ -1,15 +1,22 @@
-import {HiPencil, HiTrash, HiOutlineDuplicate, HiOutlineShieldExclamation, HiOutlineEye} from "react-icons/hi";
+import {
+    HiPencil,
+    HiTrash,
+    HiOutlineDuplicate,
+    HiOutlineEye,
+    HiOutlineEyeOff
+} from "react-icons/hi";
 import type { StudentInfraction } from "../../types/types.ts";
 import { ActionMenu, type MenuOption } from "../../../../components/ui/menu/ActionMenu.tsx";
 import { formatFullDateString } from "../../../../features/utils/utils.ts";
 import { getTypeStyle } from "../../utils/utils.ts";
+import { FaArrowTrendUp } from "react-icons/fa6";
 
 interface InfractionRowProps {
     infraction: StudentInfraction;
     onEdit?: (infraction: StudentInfraction) => void;
     onDelete?: (infraction: StudentInfraction) => void;
     onRepeat?: (infraction: StudentInfraction) => void;
-    onView?: (infraction: StudentInfraction) => void;
+    onPublish?: (infraction: StudentInfraction) => void;
     onEscalate?: (infraction: StudentInfraction) => void;
     showClassName?: boolean;
     classId?: string | null;
@@ -21,15 +28,25 @@ export function InfractionRow({
                                   classId,
                                   onDelete,
                                   onRepeat,
-                                  onView,
+                                  onPublish,
                                   onEscalate,
                                   showClassName = true,
                               }: InfractionRowProps) {
     const menuOptions: MenuOption[] = [];
     if (onEdit) menuOptions.push({ label: "Editar", icon: <HiPencil />, onClick: () => onEdit(infraction) });
     if (onRepeat) menuOptions.push({ label: "Reincidir", icon: <HiOutlineDuplicate />, onClick: () => onRepeat(infraction) });
-    if (onEscalate) menuOptions.push({ label: "Escalar", icon: <HiOutlineShieldExclamation />, onClick: () => onEscalate(infraction) });
-    if (onView) menuOptions.push({ label: "Mostrar", icon: <HiOutlineEye />, onClick: () => onView(infraction) });
+    if (onEscalate) menuOptions.push({ label: "Escalar", icon: <FaArrowTrendUp />, onClick: () => onEscalate(infraction) });
+    if (onPublish) {
+        menuOptions.push({
+            label: infraction.published_to_guardian
+                ? "Ocultar"
+                : "Publicar",
+            icon: infraction.published_to_guardian
+                ? <HiOutlineEyeOff />
+                : <HiOutlineEye />,
+            onClick: () => onPublish(infraction),
+        });
+    }
     if (onDelete) {
         if (menuOptions.length > 0) menuOptions.push({ isSeparator: true, label: "separator" });
         menuOptions.push({ label: "Eliminar", icon: <HiTrash />, onClick: () => onDelete(infraction), isDanger: true });
@@ -48,17 +65,21 @@ export function InfractionRow({
                     </span>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center shrink-0">
+                    {infraction.published_to_guardian && (
+                        <span className="text-sm mr-2 text-gray-500" title="Visible para el acudiente">
+                            <HiOutlineEye />
+                        </span>
+                    )}
                     <span className={`text-[10px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-md ${getTypeStyle(infraction.infraction_type_order)}`}>
                         {infraction.infraction_type_order === 1
                             ? "I"
                             : infraction.infraction_type_order === 2
                                 ? "II"
                                 : "III"}
-
                     </span>
                     {menuOptions.length > 0 && (
-                        <div className="shrink-0 -mt-1">
+                        <div className="shrink-0">
                             <ActionMenu options={menuOptions} />
                         </div>
                     )}

@@ -1,6 +1,6 @@
 import type { ICumulativeRepository } from "../domain/ICumulativeRepository.js";
 import type {
-    CourseFailStat,
+    CourseFailStat, CourseOverview,
     CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
@@ -488,4 +488,105 @@ export class PostgresCumulativeRepository implements ICumulativeRepository {
         }
     }
 
+    async getCoursesOverview(authUser: AuthUser): Promise<CourseOverview[]> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            const query = `
+                WITH ActivePeriod AS (
+                    SELECT id, start_date, end_date
+                    FROM academic_period
+                    WHERE school_id = $1
+                      AND CURRENT_DATE BETWEEN start_date AND end_date
+                    LIMIT 1
+                ),
+                CourseBasic AS (
+                    SELECT
+                        co.id AS course_id,
+                        co.name AS course_name,
+                        co.teacher_id,
+                        COUNT(DISTINCT s.id) FILTER (WHERE p.is_active = true)::int AS students_count
+                    FROM course co
+                        LEFT JOIN student s ON s.course_id = co.id
+                        LEFT JOIN profile p ON s.profile_id = p.id
+                    WHERE co.school_id = $1
+                    GROUP BY co.id, co.name, co.teacher_id
+                ),
+                Directors AS (
+                    SELECT
+                        t.id AS teacher_id,
+                        CONCAT_WS(' ', d.first_name, d.first_last_name) AS director_name
+                    FROM teacher t
+                        JOIN profile d ON t.profile_id = d.id
+                ),
+                AttendanceRate AS (
+                    SELECT
+                        s.course_id,
+                        CASE
+                            WHEN COUNT(*) FILTER (WHERE a.status IN ('present', 'absent', 'late', 'excused')) = 0
+                                THEN 0
+                            ELSE ROUND(
+                                COUNT(*) FILTER (WHERE a.status = 'present')::numeric * 100.0
+                                / COUNT(*) FILTER (WHERE a.status IN ('present', 'absent', 'late', 'excused')),
+                                1
+                            )::float
+                        END AS attendance_rate
+                    FROM attendance a
+                        JOIN student s ON a.student_id = s.id
+                        CROSS JOIN ActivePeriod ap
+                    WHERE a.date >= ap.start_date
+                      AND a.date <= ap.end_date
+                    GROUP BY s.course_id
+                ),
+                MonitoringCount AS (
+                    SELECT
+                        course_id,
+                        COUNT(*)::int AS monitorings_count
+                    FROM monitoring
+                    WHERE school_id = $1
+                      AND is_deleted = false
+                    GROUP BY course_id
+                ),
+                ${this.buildFinalGradeCTEs(`
+                    a.period_id = (SELECT id FROM ActivePeriod)
+                `)},
+                StudentCourseAvg AS (
+                    SELECT
+                        sfg.student_id,
+                        cl.course_id,
+                        AVG(sfg.final_grade) AS student_avg
+                    FROM SubjectFinalGrades sfg
+                        JOIN class cl ON cl.id = sfg.class_id
+                    GROUP BY sfg.student_id, cl.course_id
+                ),
+                GradesAvg AS (
+                    SELECT
+                        course_id,
+                        ROUND(AVG(student_avg)::numeric, 2)::float AS period_average
+                    FROM StudentCourseAvg
+                    GROUP BY course_id
+                )
+                SELECT
+                    cb.course_id,
+                    cb.course_name,
+                    cb.students_count,
+                    COALESCE(ar.attendance_rate, 0)::float AS attendance_rate,
+                    COALESCE(ga.period_average, 0)::int AS period_average,
+                    COALESCE(mc.monitorings_count, 0)::int AS monitorings_count,
+                    d.director_name
+                FROM CourseBasic cb
+                    LEFT JOIN AttendanceRate ar ON ar.course_id = cb.course_id
+                    LEFT JOIN GradesAvg ga ON ga.course_id = cb.course_id
+                    LEFT JOIN MonitoringCount mc ON mc.course_id = cb.course_id
+                    LEFT JOIN Directors d ON d.teacher_id = cb.teacher_id
+                ORDER BY cb.course_name ASC;
+            `;
+
+            const result = await client.query(query, [userSchoolId]);
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
 }

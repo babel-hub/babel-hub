@@ -69,8 +69,12 @@ export interface StudentInfraction {
 
     class_name?: string | null;
     course_name?: string | null;
+    published_to_guardian: boolean;
 }
 
+export interface PublishInfractionPayload {
+    published: boolean;
+}
 
 export interface StudentMonitoring {
     id: string;

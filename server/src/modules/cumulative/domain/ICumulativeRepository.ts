@@ -1,6 +1,6 @@
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
-    CourseFailStat,
+    CourseFailStat, CourseOverview,
     CoursePeriodTrend,
     CumulativeAttendance,
     CumulativeGrades,
@@ -23,4 +23,8 @@ export interface ICumulativeRepository {
     getStudentInfo(studentId: string, authUser: AuthUser): Promise<StudentCourseSummaryRow>;
     getCourseFailStats(courseId: string, periodId: string, authUser: AuthUser): Promise<CourseFailStat[]>;
     getCourseHonorStudents(courseId: string, periodId: string, authUser: AuthUser): Promise<HonorStudent[]>;
+
+    // Dashboard interfaces
+    getCoursesOverview(authUser: AuthUser): Promise<CourseOverview[]>;
+
 }

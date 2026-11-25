@@ -408,4 +408,24 @@ export class PostgresStudentRepository implements IStudentRepository {
             client.release();
         }
     }
+
+    // Dashboard queries
+
+    async getDashboardStats(authUser: AuthUser): Promise<{ total: number; active: number }> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE p.is_active = true)::int AS active
+            FROM student s
+                JOIN profile p ON s.profile_id = p.id
+            WHERE p.school_id = $1
+        `, [userSchoolId]);
+            return result.rows[0];
+        } finally {
+            client.release();
+        }
+    }
 }

@@ -1,7 +1,7 @@
 import type { IAnnouncementsRepository } from "../domain/IAnnouncementsRepository.js";
 import type {
     Announcement,
-    CreateAnnouncementPayload, GetFeedPayload,
+    CreateAnnouncementPayload, GetFeedPayload, UpcomingAnnouncement,
     UpdateAnnouncementPayload
 } from "../domain/Announcements.types.js";
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
@@ -228,5 +228,31 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                  ON CONFLICT DO NOTHING`,
             [announcementId, targetValue],
         );
+    }
+
+    async getUpcomingAnnouncements(limit: number, authUser: AuthUser): Promise<UpcomingAnnouncement[]> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    id,
+                    title,
+                    type,
+                    scheduled_for,
+                    CASE
+                        WHEN scheduled_for > NOW() THEN 'scheduled'
+                        ELSE 'published'
+                    END AS status
+                FROM announcement
+                WHERE school_id = $1
+                  AND scheduled_for >= CURRENT_DATE
+                ORDER BY scheduled_for ASC
+                LIMIT $2
+            `, [userSchoolId, limit]);
+            return result.rows;
+        } finally {
+            client.release();
+        }
     }
 }

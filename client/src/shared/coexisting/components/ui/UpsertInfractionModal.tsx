@@ -125,7 +125,7 @@ export function UpsertInfractionModal({
             if (!classId) {
                 base.push({
                     name: "locationContext",
-                    label: "Lugar del incidente (opcional)",
+                    label: "Lugar del incidente",
                     type: "text",
                     required: false,
                     placeholder: "Ej: Patio, cafetería, fuera del colegio... Déjalo vacío si fue en el salón",
@@ -138,8 +138,8 @@ export function UpsertInfractionModal({
                 type: "radio",
                 required: true,
                 options: [
-                    { value: "false", label: "No — solo infracción de clase" },
-                    { value: "true",  label: "Sí — crear seguimiento visible a todo el curso" },
+                    { value: "false", label: "No" },
+                    { value: "true",  label: "Sí" },
                 ],
             });
 

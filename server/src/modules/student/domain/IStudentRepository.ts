@@ -15,7 +15,11 @@ export interface IStudentRepository {
     getCourseStudents(payload: GetClassStudentsPayload, authUser: AuthUser): Promise<CourseStudents[]>;
     getStudentProfile(studentId: string, authUser: AuthUser): Promise<StudentBaseRow | null>;
     getStudentsByName(payload: GetStudentsByNamePayload, authUser: AuthUser): Promise<StudentByName[]>;
+
     createStudent(studentCredentials: StudentCreateCredentials, authUser: AuthUser): Promise<void>;
     updateStudent(studentCredentials: StudentUpdateCredentials, authUser: AuthUser): Promise<void>;
     deleteStudent(studentId: string, authUser: AuthUser): Promise<void>;
+
+    // Dashboard interfaces
+    getDashboardStats(authUser: AuthUser): Promise<{ total: number; active: number }>;
 }

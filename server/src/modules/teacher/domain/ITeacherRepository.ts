@@ -13,4 +13,11 @@ export interface ITeacherRepository {
     createTeacher(teacherCredentials: TeacherCreateCredentials, authUser: AuthUser): Promise<CreateTeacher>;
     updateTeacher(teacherCredentials: TeacherUpdateCredentials, authUser: AuthUser): Promise<void>;
     deleteTeacher(teacherId: string, authUser: AuthUser): Promise<void>;
+
+    // Dashboard interfaces
+    getDashboardStats(authUser: AuthUser): Promise<{
+        total: number;
+        active: number;
+        without_classes: number;
+    }>;
 }

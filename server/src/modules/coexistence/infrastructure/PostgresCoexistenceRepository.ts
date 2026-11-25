@@ -8,7 +8,7 @@ import type {
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { pool } from "../../../db/index.js";
 import { createAuditLog } from "../../../services/audit.service.js";
-import {ConflictError, ForbiddenError, NotFoundError, ValidationError} from "../../errors/domain/CustomErrors.js";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../errors/domain/CustomErrors.js";
 
 export class PostgresCoexistenceRepository implements ICoexistenceRepository {
     async getMonitoringMessages(monitoringId: string, authUser: AuthUser): Promise<MonitoringMessage[]> {
@@ -124,7 +124,8 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     i.occurred_at,
                     i.reported_by,
                     CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
-                    i.created_at
+                    i.created_at,
+                    i.published_to_guardian
                 FROM infraction i
                     JOIN infraction_code ic ON ic.id = i.infraction_code_id
                     JOIN infraction_article ia ON ia.id = ic.article_id
@@ -224,7 +225,8 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
                     i.occurred_at,
                     i.reported_by,
                     CONCAT_WS(' ', p.first_name, p.middle_name, p.first_last_name, p.second_last_name) AS reported_by_name,
-                    i.created_at
+                    i.created_at,
+                    i.published_to_guardian
                 FROM infraction i
                     JOIN infraction_code ic ON ic.id = i.infraction_code_id
                     JOIN infraction_article ia ON ia.id = ic.article_id
@@ -276,6 +278,45 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
             `, [userSchoolId]);
 
             return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async publishInfraction(
+        infractionId: string,
+        published: boolean,
+        authUser: AuthUser,
+    ): Promise<void> {
+        const { userId, userRole, userSchoolId } = authUser;
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            const result = await client.query(`
+                UPDATE infraction
+                SET published_to_guardian = $1, updated_at = NOW()
+                WHERE id = $2 AND school_id = $3 AND is_deleted = false
+                RETURNING id
+            `, [published, infractionId, userSchoolId]);
+
+            if (result.rowCount === 0) {
+                throw new NotFoundError("La infracción no existe en este colegio");
+            }
+
+            await createAuditLog(client, {
+                actorUserId: userId,
+                actorRole: userRole,
+                action: published ? "PUBLISH_INFRACTION" : "UNPUBLISH_INFRACTION",
+                schoolId: userSchoolId,
+                metadata: { infractionId },
+            });
+
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
         } finally {
             client.release();
         }
@@ -677,6 +718,39 @@ export class PostgresCoexistenceRepository implements ICoexistenceRepository {
         } catch (error: any) {
             await client.query('ROLLBACK');
             throw error;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getDashboardStats(authUser: AuthUser): Promise<{
+        unpublished_infractions: number;
+        stale_monitorings: number;
+    }> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+                SELECT
+                    (SELECT COUNT(*)::int
+                     FROM infraction
+                     WHERE school_id = $1
+                       AND is_deleted = false
+                       AND published_to_guardian = false) AS unpublished_infractions,
+    
+                    (SELECT COUNT(*)::int
+                     FROM monitoring m
+                     WHERE m.school_id = $1
+                       AND m.is_deleted = false
+                       AND m.created_at < NOW() - interval '7 days'
+                       AND NOT EXISTS (
+                           SELECT 1 FROM monitoring_message mm
+                           WHERE mm.monitoring_id = m.id
+                             AND mm.is_deleted = false
+                             AND mm.created_at > NOW() - interval '7 days'
+                       )) AS stale_monitorings
+            `, [userSchoolId]);
+            return result.rows[0];
         } finally {
             client.release();
         }

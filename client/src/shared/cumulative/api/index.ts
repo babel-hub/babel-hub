@@ -82,3 +82,7 @@ export const getStudentInfractions = async (courseId: string, studentId: string,
     return response.data.infractions;
 }
 
+export const publishInfraction = async (infractionId: string, published: boolean): Promise<void> => {
+    await api.patch(`/api/coexistence/infraction/${infractionId}/publish`, { published });
+}
+

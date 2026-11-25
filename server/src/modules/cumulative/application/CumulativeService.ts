@@ -218,4 +218,9 @@ export class CumulativeService {
         this.validate(payload);
         return this.cumulativeRepository.getCumulativeAttendance(payload, auth);
     }
+
+    async getCoursesOverview(authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.cumulativeRepository.getCoursesOverview(auth);
+    }
 }

@@ -23,7 +23,7 @@ interface InfractionsMonitoringTabsProps {
     onDelete?: (infraction: StudentInfraction) => void;
     onRepeat?: (infraction: StudentInfraction) => void;
     onEscalate?: (infraction: StudentInfraction) => void;
-    onView?: (infraction: StudentInfraction) => void;
+    onPublish?: (infraction: StudentInfraction) => void;
 }
 
 export function InfractionsMonitoringTabs({
@@ -37,7 +37,7 @@ export function InfractionsMonitoringTabs({
                                               loadingMonitoring,
                                               onEscalate,
                                               onRepeat,
-                                              onView,
+                                              onPublish,
                                               errorInfractions,
                                               errorMonitoring,
                                               onEdit,
@@ -77,7 +77,7 @@ export function InfractionsMonitoringTabs({
                         <InfractionRow
                             key={inf.id}
                             classId={classId}
-                            onView={onView}
+                            onPublish={onPublish}
                             infraction={inf}
                             onEdit={onEdit}
                             onDelete={onDelete}

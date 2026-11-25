@@ -129,4 +129,11 @@ export class StudentService {
         if (!studentId) throw new ValidationError("El ID del estudiante es obligatorio");
         await this.studentRepository.deleteStudent(studentId, auth);
     }
+
+    // Dashboard Services
+
+    async getDashboardStats(authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.studentRepository.getDashboardStats(auth);
+    }
 }

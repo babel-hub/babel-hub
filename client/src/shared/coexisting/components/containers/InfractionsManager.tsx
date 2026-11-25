@@ -9,6 +9,7 @@ import { useDeleteInfraction } from "../../hooks/useDeleteInfraction.ts";
 import type { Student } from "../../../../features/types/types.ts";
 import type { StudentInfraction, StudentMonitoring } from "../../types/types.ts";
 import { useRepeatInfraction } from "../../hooks/useRepeatInfraction.ts";
+import { usePublishInfraction } from "../../../cumulative/hooks/usePublishInfraction.ts";
 
 type Tab = "infractions" | "monitoring";
 
@@ -34,8 +35,7 @@ interface InfractionsManagerProps {
     canEdit?: boolean;
     canDelete?: boolean;
     canEscalate?: boolean;
-
-    onView?: (infraction: StudentInfraction) => void;
+    canPublish?: boolean;
 }
 
 export function InfractionsManager({
@@ -44,8 +44,7 @@ export function InfractionsManager({
                                        loadingInfractions, loadingMonitoring, errorInfractions, errorMonitoring,
                                        classId, courseId,
                                        refetch,
-                                       canCreate = false, canEdit = false, canDelete = false, canEscalate = false,
-                                       onView
+                                       canCreate = false, canEdit = false, canDelete = false, canEscalate = false, canPublish = false
                                    }: InfractionsManagerProps) {
     const [tab, setTab] = useState<Tab>("infractions");
     const [modalMode, setModalMode] = useState<ModalModeTypes>("none");
@@ -55,6 +54,7 @@ export function InfractionsManager({
 
     const { loading: loadingDelete, deleteInfractionById } = useDeleteInfraction(refetch);
     const { repeatInfraction } = useRepeatInfraction(refetch);
+    const { togglePublish } = usePublishInfraction(refetch);
 
     const openCreate = () => { setInfractionToEdit(null); setModalMode("create"); };
     const openEdit = (inf: StudentInfraction) => { setInfractionToEdit(inf); setModalMode("edit"); };
@@ -63,6 +63,10 @@ export function InfractionsManager({
         if (!infractionToDelete) return;
         await deleteInfractionById(infractionToDelete.id);
         setInfractionToDelete(null);
+    };
+
+    const handlePublish = async (infraction: StudentInfraction) => {
+        await togglePublish(infraction.id, !infraction.published_to_guardian);
     };
 
     const onRepeatInfraction = async (infraction: StudentInfraction) => {
@@ -156,7 +160,7 @@ export function InfractionsManager({
                     onEdit={canEdit ? openEdit : undefined}
                     onDelete={canDelete ? (inf) => setInfractionToDelete(inf) : undefined}
                     onEscalate={canEscalate ? (inf) => setInfractionToEscalate(inf) : undefined}
-                    onView={onView}
+                    onPublish={canPublish ? (inf) => handlePublish(inf) : undefined}
                     onRepeat={canCreate ? onRepeatInfraction : undefined}
                 />
             </div>

@@ -27,4 +27,13 @@ export interface ICoexistenceRepository {
 
     getMonitoringMessages(monitoringId: string, authUser: AuthUser): Promise<MonitoringMessage[]>;
     createMonitoringMessage(monitoringId: string, payload: CreateMonitoringMessagePayload, authUser: AuthUser): Promise<MonitoringMessage>;
+
+    publishInfraction(infractionId: string, published: boolean, authUser: AuthUser): Promise<void>;
+
+    // Dashboard interfaces
+
+    getDashboardStats(authUser: AuthUser): Promise<{
+        unpublished_infractions: number;
+        stale_monitorings: number;
+    }>;
 }

@@ -129,4 +129,9 @@ export class TeacherServices {
 
         await this.teacherRepository.deleteTeacher(teacherId, auth);
     }
+
+    async getDashboardStats(authUser: AuthUser) {
+        const auth = requireAuth(authUser);
+        return this.teacherRepository.getDashboardStats(auth);
+    }
 }

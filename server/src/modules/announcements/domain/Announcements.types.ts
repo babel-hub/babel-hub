@@ -35,3 +35,11 @@ export interface CreateAnnouncementPayload {
 export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {
     announcementId: string;
 }
+
+export interface UpcomingAnnouncement {
+    id: string;
+    title: string;
+    type: string;
+    scheduled_for: string;
+    status: "scheduled" | "published";
+}

@@ -22,15 +22,13 @@ export function Infractions({ students, courseId }: InfractionsProps) {
     const {
         monitoring,
         loading: loadingMonitoring,
-        error: errorMonitoring,
-        refetch: refetchMonitoring,
+        error: errorMonitoring
     } = useMonitoringData(courseId, selectedStudentId);
 
     const selectedStudent = students.find(s => s.student_id === selectedStudentId);
 
     const handleRefetchAll = () => {
         refetch();
-        refetchMonitoring();
     };
 
     return (
@@ -46,12 +44,12 @@ export function Infractions({ students, courseId }: InfractionsProps) {
             errorInfractions={errorInfractions}
             errorMonitoring={errorMonitoring}
             courseId={courseId}
-            onView={() => {}}
             refetch={handleRefetchAll}
             canCreate
             canEdit
             canDelete
             canEscalate
+            canPublish
         />
     );
 }

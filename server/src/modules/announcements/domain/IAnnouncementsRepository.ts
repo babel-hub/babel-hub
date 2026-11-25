@@ -1,7 +1,7 @@
 import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import type {
     Announcement,
-    CreateAnnouncementPayload, GetFeedPayload,
+    CreateAnnouncementPayload, GetFeedPayload, UpcomingAnnouncement,
     UpdateAnnouncementPayload
 } from "./Announcements.types.js";
 
@@ -10,4 +10,8 @@ export interface IAnnouncementsRepository {
     createAnnouncement(payload: CreateAnnouncementPayload, authUser: AuthUser): Promise<void>;
     updateAnnouncement(payload: UpdateAnnouncementPayload, authUser: AuthUser): Promise<void>;
     deleteAnnouncement(announcementId: string, authUser: AuthUser): Promise<void>;
+
+    // Dashboard interface
+    getUpcomingAnnouncements(limit: number, authUser: AuthUser): Promise<UpcomingAnnouncement[]>;
+
 }

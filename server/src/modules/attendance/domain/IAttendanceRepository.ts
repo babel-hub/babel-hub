@@ -18,4 +18,7 @@ export interface IAttendanceRepository {
     getStudentDailyAttendance(studentId: string, date: string, authUser: AuthUser): Promise<DailyAttendance[]>;
     getAttendanceSummary(payload: GetAttendanceSummaryPayload, authUser: AuthUser): Promise<AttendanceSummary[]>;
     bulkUpsertAttendance(payload: BulkUpsertAttendancePayload, authUser: AuthUser): Promise<void>;
+
+    // Dashboard interfaces
+    getAttendanceAlerts(limit: number, authUser: AuthUser): Promise<AttendanceSummary[]>;
 }

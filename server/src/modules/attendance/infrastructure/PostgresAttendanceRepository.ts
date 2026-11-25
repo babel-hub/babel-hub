@@ -382,4 +382,39 @@ export class PostgresAttendanceRepository implements IAttendanceRepository {
             client.release();
         }
     }
+
+    // Dashboard queries
+
+    async getAttendanceAlerts(limit: number, authUser: AuthUser): Promise<AttendanceSummary[]> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const period = await client.query(`
+                SELECT id, start_date, end_date
+                FROM academic_period
+                WHERE school_id = $1
+                  AND CURRENT_DATE BETWEEN start_date AND end_date
+                LIMIT 1
+            `, [userSchoolId]);
+
+            if (period.rowCount === 0) return [];
+
+            const today = new Date().toISOString().slice(0, 10);
+            const { start_date, end_date } = period.rows[0];
+
+            const allAlerts = await this.getAttendanceSummary(
+                {
+                    today: today,
+                    startDate: start_date,
+                    endDate: end_date,
+                    isActive: true,
+                },
+                authUser,
+            );
+
+            return allAlerts.slice(0, limit);
+        } finally {
+            client.release();
+        }
+    }
 }

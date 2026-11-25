@@ -102,6 +102,24 @@ export class CoexistenceController {
         }
     };
 
+    publishInfraction = async (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+        try {
+            const authUser = getAuthUser(request);
+            const infractionId = request.params.infractionId as string;
+            const { published } = request.body;
+
+            await this.coexistenceService.publishInfraction(
+                infractionId,
+                published,
+                authUser
+            );
+
+            response.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    };
+
     getMonitoringMessages = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         try {
             const authUser = getAuthUser(req);

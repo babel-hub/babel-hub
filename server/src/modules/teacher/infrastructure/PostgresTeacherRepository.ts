@@ -340,4 +340,32 @@ export class PostgresTeacherRepository implements ITeacherRepository {
             client.release();
         }
     }
+
+    async getDashboardStats(authUser: AuthUser): Promise<{
+        total: number;
+        active: number;
+        without_classes: number;
+    }> {
+        const { userSchoolId } = authUser;
+        const client = await pool.connect();
+        try {
+            const result = await client.query(`
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE p.is_active = true)::int AS active,
+                COUNT(*) FILTER (
+                    WHERE p.is_active = true
+                      AND NOT EXISTS (
+                          SELECT 1 FROM class c WHERE c.teacher_id = t.id
+                      )
+                )::int AS without_classes
+            FROM teacher t
+                JOIN profile p ON t.profile_id = p.id
+            WHERE p.school_id = $1
+        `, [userSchoolId]);
+            return result.rows[0];
+        } finally {
+            client.release();
+        }
+    }
 }

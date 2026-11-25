@@ -1,0 +1,1 @@
+export { PrincipalDashboardLayout } from "./container/PrincipalDashboardLayout.tsx"
