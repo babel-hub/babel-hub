@@ -13,7 +13,7 @@ export class PrincipalDashboardController {
             const authUser = getAuthUser(request);
 
             const dashboard = await this.principalDashboardService.getDashboard(authUser);
-            response.status(201).json({ dashboard });
+            response.status(200).json({ dashboard });
         } catch (error) {
             next(error);
         }

@@ -8,7 +8,7 @@ import type { AuthUser } from "../../shared/domain/Shared.types.js";
 import { requireAuth } from "../../shared/auth/requireAuth.js";
 import { ForbiddenError } from "../../errors/domain/CustomErrors.js";
 import type { CourseOverview } from "../../cumulative/domain/Cumulative.types.js";
-import type { Alert } from "../domain/Principal.types.js";
+import type { Alert, PrincipalDashboard } from "../domain/Principal.types.js";
 
 export class PrincipalDashboardService {
     constructor(
@@ -20,7 +20,7 @@ export class PrincipalDashboardService {
         private readonly cumulativeService: CumulativeService,
     ) {}
 
-    async getDashboard(authUser: AuthUser) {
+    async getDashboard(authUser: AuthUser): Promise<PrincipalDashboard> {
         const auth = requireAuth(authUser);
         if (auth.userRole !== 'principal' && auth.userRole !== 'admin') {
             throw new ForbiddenError("Solo el director puede acceder");
@@ -96,6 +96,7 @@ export class PrincipalDashboardService {
         const problematicCourses = coursesOverview.filter(
             c => c.students_count > 0 && (
                 c.attendance_rate < 80 ||
+                // This is hardcoded, the 3.5 is supposed to be a value from the db, but rn i havent solved that issue
                 (c.period_average !== null && c.period_average < 3.5)
             )
         );

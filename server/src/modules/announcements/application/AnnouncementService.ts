@@ -25,6 +25,7 @@ export class AnnouncementService {
             caption: nullifyEmpty(payload.caption),
             target_type: payload.target_type,
             target_value: nullifyEmptyArray(payload.target_value),
+            scheduled_for: payload.scheduled_for
         };
     }
 
@@ -37,6 +38,7 @@ export class AnnouncementService {
             target_type: payload.target_type,
             caption: nullifyEmpty(payload.caption),
             target_value: nullifyEmptyArray(payload.target_value),
+            scheduled_for: payload.scheduled_for
         };
     }
 

@@ -33,7 +33,8 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                     a.description,
                     a.target_type,
                     a.created_at,
-                    a.caption
+                    a.caption,
+                    a.scheduled_for
                 FROM announcement a
                          JOIN profile p ON a.author_id = p.id
                 WHERE a.school_id = $1
@@ -75,8 +76,8 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
             if (check.rowCount === 0) throw new ForbiddenError("No puedes hacer esta acción");
 
             const result = await client.query(`
-                INSERT INTO announcement (title, description, type, target_type, school_id, author_id, caption)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO announcement (title, description, type, target_type, school_id, author_id, caption, scheduled_for)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id;
             `, [
                 payload.title,
@@ -85,7 +86,8 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
                 payload.target_type,
                 userSchoolId,
                 userId,
-                payload.caption
+                payload.caption,
+                payload.scheduled_for,
             ]);
 
             const newId = result.rows[0].id;
@@ -130,14 +132,15 @@ export class PostgresAnnouncementsRepository implements IAnnouncementsRepository
 
             await client.query(`
                 UPDATE announcement
-                SET title = $1, description = $2, type = $3, caption = $4, target_type = $5
-                WHERE id = $6
+                SET title = $1, description = $2, type = $3, caption = $4, target_type = $5, scheduled_for = $6,
+                WHERE id = $7
             `, [
                 payload.title,
                 payload.description,
                 payload.type,
                 payload.caption,
                 payload.target_type,
+                payload.scheduled_for,
                 payload.announcementId
             ]);
 

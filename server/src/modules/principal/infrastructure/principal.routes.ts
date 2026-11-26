@@ -5,7 +5,7 @@ import { strictLimiter } from "../../../middleware/ratelimit.middleware.js";
 
 import { PrincipalController } from "./PrincipalControllers.js";
 import { PrincipalDashboardController } from "./PrincipalDashboardController.js";
-import { principalService, principalDashboardService } from "./PrincipalDashboardRoutes.js";
+import { principalService, principalDashboardService } from "./principal.container.js";
 
 const controller = new PrincipalController(principalService);
 const dashboardController = new PrincipalDashboardController(principalDashboardService)

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { getPrincipalDashboard } from "../api";
-import type { PrincipalDashboard } from "../types/types.ts";
+import type { PrincipalDashboardData } from "../types/types.ts";
 
 export const usePrincipalDashboard = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [dashboard, setDashboard] = useState<PrincipalDashboard | null>(null);
+    const [dashboard, setDashboard] = useState<PrincipalDashboardData | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {

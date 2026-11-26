@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { modeTypes } from "../../../../features/types/types.ts";
 import { useUpsertAnnouncements } from "../../hooks/useUpsertAnnouncements.ts";
 import DynamicModalForm, { type FormField } from "../../../../components/ui/modals/ModalForm.tsx";
-
 import { useCourses } from "../../hooks/useCourses.ts";
 import { useProfiles } from "../../hooks/useProfiles.ts";
 import { roleTranslations } from "../../../../types";
@@ -17,6 +16,11 @@ interface AnnouncementModalFormProps {
 
 const FORM_REGEXP = {
     name: /^(?=.*[a-zA-Z0-9])[a-zA-Z0-9À-ÿ\s´\.,]+$/
+};
+
+function toLocalDatetimeString(date: Date): string {
+    const offset = date.getTimezoneOffset();
+    return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 16);
 }
 
 export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }: AnnouncementModalFormProps) {
@@ -30,7 +34,10 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
         targetValue: [],
         profileSearch: "",
         description: announcement?.description || "",
-        caption: announcement?.caption || ""
+        caption: announcement?.caption || "",
+        scheduledFor: announcement?.scheduled_for
+            ? toLocalDatetimeString(new Date(announcement.scheduled_for))
+            : toLocalDatetimeString(new Date()),
     });
 
     const { courses, loading: loadingCourses } = useCourses(formData.targetType);
@@ -38,20 +45,16 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
 
     const handleOnChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = event.target;
-
         setFormData((prev) => {
             const newData = { ...prev, [name]: value };
-
             if (name === "targetType") {
                 newData.targetValue = [];
                 newData.profileSearch = "";
             }
-
             return newData;
         });
-
         setError("");
-    }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,17 +63,24 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             setError("El título debe contener solo caracteres válidos.");
             return;
         }
-
         if (formData.targetType !== "ALL" && formData.targetValue.length === 0) {
             setError("Debes seleccionar al menos un destinatario específico.");
             return;
         }
+        if (!formData.scheduledFor) {
+            setError("Debes indicar cuándo se publicará el comunicado.");
+            return;
+        }
 
-        const { profileSearch, ...apiPayload } = formData;
+        const { profileSearch, scheduledFor, ...rest } = formData;
+        const apiPayload = {
+            ...rest,
+            scheduledFor: new Date(scheduledFor).toISOString(),
+        };
 
-        console.log(mode, announcement ? announcement.id : null, JSON.stringify(apiPayload, null, 2));
         await upsertAnnouncement(mode, announcement ? announcement.id : null, apiPayload);
-    }
+
+    };
 
     const baseFields: FormField[] = [
         {
@@ -84,7 +94,7 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             name: "caption",
             label: "Leyenda",
             type: "text",
-            placeholder: "Reunion breve para hablar sobre el avance de los estudiantes",
+            placeholder: "Reunión breve para hablar sobre el avance de los estudiantes",
             required: true
         },
         {
@@ -99,6 +109,12 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
                 { value: "POLL", label: "Encuesta" }
             ],
             required: true
+        },
+        {
+            name: "scheduledFor",
+            label: "Programar para",
+            type: "datetime-local",
+            required: true,
         },
         {
             name: "targetType",
@@ -181,5 +197,5 @@ export function AnnouncementModalForm({ mode, onClose, announcement, onSuccess }
             onChange={handleOnChange}
             onSubmit={handleSubmit}
         />
-    )
+    );
 }

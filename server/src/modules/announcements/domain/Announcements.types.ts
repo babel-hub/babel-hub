@@ -30,6 +30,7 @@ export interface CreateAnnouncementPayload {
     caption: string | null;
     target_type: AnnouncementTargetType;
     target_value: string[] | null;
+    scheduled_for: string;
 }
 
 export interface UpdateAnnouncementPayload extends CreateAnnouncementPayload {

@@ -46,7 +46,7 @@ export interface CourseOverview {
     director_name: string | null;
 }
 
-export interface PrincipalDashboard {
+export interface PrincipalDashboardData {
     kpis: {
         students: StudentStats;
         teachers: TeacherStats;

@@ -28,12 +28,15 @@ export class AnnouncementsController {
             const {
                 title, description, type, caption,
                 targetType: target_type,
-                targetValue: target_value
+                targetValue: target_value,
+                scheduledFor: scheduled_for,
             } = request.body;
 
             const payload: CreateAnnouncementPayload = {
-                title, description, type, caption, target_type, target_value
+                title, description, type, caption, target_type, target_value, scheduled_for
             };
+
+            console.log(payload);
 
             await this.announcementService.createAnnouncement(payload, authUser);
             response.status(201).send();
@@ -49,11 +52,12 @@ export class AnnouncementsController {
             const {
                 title, description, type, caption,
                 targetType: target_type,
-                targetValue: target_value
+                targetValue: target_value,
+                scheduledFor: scheduled_for,
             } = request.body;
 
             const payload: UpdateAnnouncementPayload = {
-                announcementId, title, description, type, caption, target_type, target_value
+                announcementId, title, description, type, caption, target_type, target_value, scheduled_for
             };
 
             await this.announcementService.updateAnnouncement(payload, authUser);
