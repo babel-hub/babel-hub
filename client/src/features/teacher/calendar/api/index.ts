@@ -1,5 +1,6 @@
 import api from "../../../../api/client.ts";
-import type {AssignmentsByTeacherAndDate, TeacherSchedule} from "../types/types.ts";
+import type { AssignmentsByTeacherAndDate } from "../types/types.ts";
+import type { TeacherSchedule } from "../../../../components/ui/calendars/calendar.types.ts";
 
 export const getTeacherSchedule = async (teacherId: string): Promise<TeacherSchedule[]> => {
     const response = await api.get(`/teacher/${teacherId}/schedule`);
