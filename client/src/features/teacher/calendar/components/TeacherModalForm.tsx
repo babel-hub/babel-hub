@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DynamicModalForm, {type FormField} from "../../../../components/ui/modals/ModalForm.tsx";
 import { useEditSchedule } from "../hooks/useEditSchedule.ts";
-import type { TeacherSchedule } from "../types/types.ts";
+import type { TeacherSchedule } from "../../../../components/ui/calendars/calendar.types.ts";
 
 interface TeacherModalFormProps {
     initialData: TeacherSchedule;
@@ -87,7 +87,7 @@ export function TeacherModalForm({ initialData, onClose, onSuccess }: TeacherMod
     return (
         <DynamicModalForm
             isOpen={true}
-            title={`Editar horario de ${initialData.subject_name}`}
+            title={`Editar horario de ${initialData.class_name}`}
             fields={scheduleFields}
             formData={formData}
             formError={error}
