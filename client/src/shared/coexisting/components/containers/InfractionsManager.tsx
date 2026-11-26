@@ -128,20 +128,20 @@ export function InfractionsManager({
                                 className={`py-2 px-5 font-medium rounded-l-xl cursor-pointer text-sm transition-colors ${
                                     tab === "infractions" ? "bg-primary-darker text-white" : "bg-primary-shadow text-primary"
                                 }`}>
-                            Infracciones
+                            Faltas
                         </button>
                         <button type="button" onClick={() => setTab("monitoring")}
                                 className={`py-2 px-5 font-medium cursor-pointer rounded-r-xl text-sm transition-colors ${
                                     tab === "monitoring" ? "bg-primary-darker text-white" : "bg-primary-shadow text-primary"
                                 }`}>
-                            Monitoreo
+                            Seguimientos
                         </button>
                     </div>
 
                     {canCreate && selectedStudentId && tab === "infractions" && (
                         <button onClick={openCreate}
                                 className="ml-auto px-3 py-1.5 text-sm bg-primary-darker cursor-pointer text-white rounded-xl font-medium transition-colors">
-                            + Nueva infracción
+                            + Nueva falta
                         </button>
                     )}
                 </div>
